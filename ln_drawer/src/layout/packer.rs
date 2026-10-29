@@ -30,12 +30,28 @@ impl<T: Send + 'static, F: Fn(&World) -> T + Send + 'static> Packer<'_, T, F> {
         Packer { world, that, fun }
     }
 
+    /// standard val bind observer
     pub fn listen(&self, this: impl HandleGeneric) -> &Self {
         let &Packer { world, that, fun } = self;
         world.observer(this, move |ValChanged, world| {
             let fun = world.fetch(fun);
             let mut that = world.fetch_mut(that);
             that.val = (fun.val)(world);
+            world.queue_trigger(that.handle(), ValChanged);
+        });
+        self
+    }
+
+    /// any observer
+    pub fn observer<E: Send + 'static>(
+        &self,
+        this: impl HandleGeneric,
+        mut action: impl FnMut(&E, &World) -> T + Send + 'static,
+    ) -> &Self {
+        let &Packer { world, that, .. } = self;
+        world.observer(this, move |event: &E, world| {
+            let mut that = world.fetch_mut(that);
+            that.val = (action)(event, world);
             world.queue_trigger(that.handle(), ValChanged);
         });
         self

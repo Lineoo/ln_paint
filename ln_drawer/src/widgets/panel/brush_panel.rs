@@ -1,4 +1,5 @@
 use cosmic_text::{Attrs, Metrics};
+use glam::Vec4;
 use ln_world::{Element, Handle, World};
 
 use crate::{
@@ -12,7 +13,7 @@ use crate::{
         },
         packer::Packer,
         transform::{Transform, TransformEdge, TransformValue},
-        val::Val,
+        val::{Val, ValChanged},
     },
     measures::IRect,
     theme::{Theme, ThemeVal},
@@ -162,8 +163,8 @@ impl Element for BrushListPanel {
                 rect: button_rect,
                 theme: ToggleButtonTheme {
                     idle_color: theme_val.gray2,
-                    hover_color: theme_val.gray3,
-                    press_color: theme_val.gray3,
+                    hover_color: theme_val.gray2,
+                    press_color: theme_val.gray2,
                     selected_color: theme_val.gray2,
                 },
                 image: None,
@@ -257,9 +258,9 @@ impl Element for BrushListPanel {
 
             let preview = world.insert(world.build(BrushPreviewDescriptor {
                 common,
-                background: theme_val.gray1,
+                background: theme_val.gray2,
                 c0: theme_val.c0,
-                c1: theme_val.c1,
+                c1: theme_val.gray2,
                 bc: theme_val.gray4,
                 rect: preview_rect,
                 brush: page.brushes[i].brush.dup(),
@@ -267,9 +268,6 @@ impl Element for BrushListPanel {
 
             world.observer(button, move |&ButtonClick, world| {
                 let mut page = world.single_fetch_mut::<LayerPage>();
-                if page.active_brush == i {
-                    return;
-                }
                 page.select_brush(i);
                 world.queue_trigger(page.handle(), BrushConfigurationChanged);
             });

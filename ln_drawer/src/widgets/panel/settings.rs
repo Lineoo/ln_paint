@@ -70,6 +70,20 @@ impl Element for SettingPanel {
             ..Default::default()
         }));
 
+        let active_bc = Packer::derive(world, move |world| {
+            let page = world.single_fetch::<LayerPage>();
+            let theme = world.single_fetch::<ThemeVal>();
+            let fallback = world.fetch(theme.gray4).val;
+            page.active().color().unwrap_or(fallback)
+        })
+        .observer(page.handle(), move |&BrushConfigurationChanged, world| {
+            let page = world.single_fetch::<LayerPage>();
+            let theme = world.single_fetch::<ThemeVal>();
+            let fallback = world.fetch(theme.gray4).val;
+            page.active().color().unwrap_or(fallback)
+        })
+        .finish();
+
         let preview = world.insert(world.build(BrushPreviewDescriptor {
             common,
             rect: preview_rect,
@@ -77,7 +91,7 @@ impl Element for SettingPanel {
             background: theme.gray0,
             c0: theme.c0,
             c1: theme.c1,
-            bc: theme.gray4,
+            bc: active_bc,
         }));
         let settings_rect = world.build(luni.child(LuniChild {
             basis: Some(200),
