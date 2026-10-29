@@ -19,8 +19,8 @@ fn vs_main(@builtin(vertex_index) index: u32) -> VertexOutput {
     let extend = vec2f(quad.extend);
     let uv = vec2f(pose) + vec2f(2 * pose - 1) * vec2f(quad.edge) / extend;
 
-    let left_down = snap_to_pixel(world_to_clip(quad.origin));
-    let right_up = snap_to_pixel(world_to_clip(quad.origin + vec2i(quad.extend)));
+    let left_down = world_to_clip(quad.origin);
+    let right_up = world_to_clip(quad.origin + vec2i(quad.extend));
 
     var ret: VertexOutput;
     ret.pos = vec4f(left_down + (right_up - left_down) * uv, 0.0, 1.0);

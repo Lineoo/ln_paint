@@ -25,8 +25,3 @@ fn world_to_clip_relative(world_space: vec2f) -> vec2f {
 fn clip_to_world(clip_space: vec2f) -> vec2i {
     return vec2i(round(camera.inverse * clip_space + vec2f(camera.center_fract) * vec2f(0x1p-32))) + camera.center;
 }
-
-fn snap_to_pixel(clip_space: vec2f) -> vec2f {
-    let pixel = (clip_space * 0.5 + 0.5) * camera.size;
-    return ((pixel) / camera.size) * 2.0 - 1.0;
-}
