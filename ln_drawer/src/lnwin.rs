@@ -177,9 +177,6 @@ impl Element for Lnwindow {
         world.scope("lnwindow");
         world.set_autodeps(Some(this));
 
-        let rect = world.insert(Val::new(self.window_rect()));
-        world.insert(LnwindowRect(rect));
-
         let here = world.here();
         world.enter(this, || world.insert(ViewRef(here)));
         world.enter_queue(this, move |world| {
@@ -227,20 +224,13 @@ impl Element for Lnwindow {
             world.flush();
 
             let lnwindow = world.fetch(this);
+            let window_rect = world.insert(Val::new(lnwindow.window_rect()));
+            world.insert(LnwindowRect(window_rect));
             let ui_camera = world.insert(world.build(CameraDescriptor {
-                center: I64Vec2::ZERO,
+                center: lnwindow.window_rect().q32_center(),
                 zoom: i64::q32_from_f64(lnwindow.scale_factor().log2()),
             }));
             world.insert(UICamera(ui_camera));
-            world.observer(ui_camera, move |&SetCameraOutdated, world| {
-                let mut camera = world.fetch_mut(ui_camera);
-                let lnwindow = world.single_fetch::<Lnwindow>();
-                let size = lnwindow.window.surface_size();
-                camera.surface_size = UVec2::new(size.width, size.height);
-                camera.upload();
-                lnwindow.window.request_redraw();
-                world.queue_trigger(ui_camera, CameraOutdated);
-            });
             drop(lnwindow);
             world.observer(this, move |event: &WindowEvent, world| {
                 if let WindowEvent::CloseRequested = event {
@@ -254,16 +244,24 @@ impl Element for Lnwindow {
             world.observer(this, move |event: &WindowEvent, world| {
                 if let WindowEvent::SurfaceResized(_) = event {
                     let lnwindow = world.fetch(this);
-                    let mut rect = world.fetch_mut(rect);
+                    let mut rect = world.fetch_mut(window_rect);
                     let mut camera = world.fetch_mut(ui_camera);
 
                     let scale = lnwindow.scale_factor();
                     let next = lnwindow.window_rect();
+                    let size = lnwindow.window.surface_size();
 
                     rect.val = next;
                     world.queue_trigger(rect.handle(), ValChanged);
 
+                    camera.center = rect.val.q32_center();
+                    camera.global_center = rect.val.q32_center();
                     camera.zoom = i64::q32_from_f64(scale.log2());
+                    camera.global_zoom = i64::q32_from_f64(scale.log2());
+                    camera.surface_size = UVec2::new(size.width, size.height);
+                    camera.upload();
+                    lnwindow.window.request_redraw();
+                    world.queue_trigger(camera.handle(), CameraOutdated);
                     world.queue_trigger(camera.handle(), SetCameraOutdated);
                 }
             });
@@ -305,6 +303,16 @@ impl Lnwindow {
             .unwrap_or_else(|| self.window.scale_factor())
     }
 
+    pub fn scaled_size(&self, size: UVec2) -> UVec2 {
+        let scale = self.scale_factor();
+        (size.as_dvec2() * scale).round().as_uvec2()
+    }
+
+    pub fn scaled_delta(&self, delta: IVec2) -> IVec2 {
+        let scale = self.scale_factor();
+        (delta.as_dvec2() * scale).round().as_ivec2()
+    }
+
     pub fn screen_scissor(&self, rect: IRect, camera: &Camera) -> URect {
         let size = self.window.surface_size();
         let left_up =
@@ -344,8 +352,11 @@ impl Lnwindow {
         let size = self.window.surface_size();
         let scale = self.scale_factor();
         let size = DVec2::new(size.width as f64, size.height as f64);
-        let half = (size / (2.0 * scale)).ceil().as_uvec2();
-        IRect::new_half(IVec2::ZERO, half)
+        let extend = (size / scale).ceil().as_uvec2();
+        IRect {
+            origin: IVec2::ZERO,
+            extend,
+        }
     }
 }
 

@@ -53,9 +53,9 @@ impl Descriptor for ContainerWithCamera {
     type Target = (Handle<Container>, WidgetCommon);
 
     fn when_build(self, world: &World) -> Self::Target {
-        let parent = world.fetch(self.common.camera);
+        // container-local coordinates are anchored at rect, so the camera starts at zero
         let camera = world.insert(world.build(CameraDescriptor {
-            center: parent.center,
+            center: I64Vec2::ZERO,
             zoom: 1,
         }));
 
@@ -196,15 +196,16 @@ impl Element for Container {
 }
 
 impl Container {
-    fn update_camera(&self, rect: IRect, parent_camera: &Camera, child_camera: &mut Camera) {
-        child_camera.global_center = parent_camera.global_center + child_camera.center
-            - rect.q32_anchor(self.attr.anchor)
-            + self.attr.scroll;
+    fn update_camera(&self, rect: IRect, parent: &Camera, child: &mut Camera) {
         if !self.attr.top {
-            child_camera.global_zoom = parent_camera.global_zoom + child_camera.zoom;
+            child.global_zoom = parent.global_zoom + child.zoom;
         } else {
-            child_camera.global_zoom = child_camera.zoom;
+            child.global_zoom = child.zoom;
         }
+        let scale = (child.global_zoom - parent.global_zoom).q32_as_f64().exp2();
+        let offset = (parent.global_center - rect.q32_anchor(self.attr.anchor)).q32_as_f64();
+        child.global_center =
+            I64Vec2::q32_from_f64(offset / scale) + (child.center + self.attr.scroll);
     }
 
     fn clamp_scroll(&mut self, rect: IRect, restrict: IRect) {
@@ -250,19 +251,22 @@ impl Descriptor for ContainerEcho {
             world.scope("container_echo");
             world.set_autodeps(Some(container));
 
-            let container = world.fetch(container);
-            let container_rect = container.rect;
-            let anchor = container.attr.anchor;
+            let container_rect = world.fetch(container).rect;
             world.observer(container_rect, move |ValChanged, world| {
-                let rect = world.fetch(container_rect).val;
+                let container = world.fetch(container);
+                let parent = world.fetch(container.common.camera);
+                let child = world.fetch(container.child);
+                let rect = world.fetch(container.rect).val;
                 let mut inner = world.fetch_mut(inner);
+                let anchor = container.attr.anchor;
 
                 let min = I64Vec2::q32_from_i32(rect.left_down());
                 let max = I64Vec2::q32_from_i32(rect.right_up());
                 let center = rect.q32_anchor(anchor);
-                let min = (min - center).q32_round();
-                let max = (max - center).q32_round();
-                inner.val = IRect::new_minmax(min, max);
+                let scale = (child.global_zoom - parent.global_zoom).q32_as_f64().exp2();
+                let min = ((min - center).q32_as_f64() / scale).ceil();
+                let max = ((max - center).q32_as_f64() / scale).ceil();
+                inner.val = IRect::new_minmax(min.as_ivec2(), max.as_ivec2());
                 world.queue_trigger(inner.handle(), ValChanged);
             });
         });

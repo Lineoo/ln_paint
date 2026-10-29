@@ -203,8 +203,8 @@ impl Camera {
             &self.uniform,
             0,
             bytemuck::bytes_of(&CameraUniform {
-                center: translate.q32_floor().into(),
-                center_fract: translate.q32_fract().into(),
+                center: translate.q32_floor(),
+                center_fract: translate.q32_fract(),
                 transform,
                 inverse: transform.inverse(),
                 size: self.surface_size.as_vec2(),

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # pwd: should be executed at workspace root
 # Export regression images into the given directory, defaults to the baselines
+# Regression test is performed in CI. Don't run it locally.
 
 set -e
 
