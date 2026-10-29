@@ -123,9 +123,9 @@ fn compute(rect: IRect, parent: &LuniParent, children: &[&LuniChild]) -> Vec<IRe
         let child = child.apply(&parent.template);
 
         let delta = if available > 0 && child.grow > 0.0 {
-            (available as f32 * (child.grow / grow_sum)).round() as i32
+            (available as f32 * (child.grow / grow_sum)).ceil() as i32
         } else if available < 0 && child.shrink > 0.0 {
-            (available as f32 * (child.shrink * child.basis as f32 / shrink_sum)).round() as i32
+            (available as f32 * (child.shrink * child.basis as f32 / shrink_sum)).ceil() as i32
         } else {
             0
         };
