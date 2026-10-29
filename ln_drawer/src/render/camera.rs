@@ -35,6 +35,8 @@ pub struct Camera {
 pub struct CameraDescriptor {
     pub center: I64Vec2,
     pub zoom: i64,
+    pub global_center: I64Vec2,
+    pub global_zoom: i64,
 }
 
 pub struct CameraBind {
@@ -110,9 +112,8 @@ impl Descriptor for CameraDescriptor {
         Camera {
             center: self.center,
             zoom: self.zoom,
-            // TODO this is not global, obviously
-            global_center: self.center,
-            global_zoom: self.zoom,
+            global_center: self.global_center,
+            global_zoom: self.global_zoom,
             surface_size: size,
             bind,
             uniform,

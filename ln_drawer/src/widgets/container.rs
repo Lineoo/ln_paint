@@ -53,10 +53,12 @@ impl Descriptor for ContainerWithCamera {
     type Target = (Handle<Container>, WidgetCommon);
 
     fn when_build(self, world: &World) -> Self::Target {
-        // container-local coordinates are anchored at rect, so the camera starts at zero
+        let parent = world.fetch(self.common.camera);
         let camera = world.insert(world.build(CameraDescriptor {
             center: I64Vec2::ZERO,
+            global_center: parent.global_center,
             zoom: 1,
+            global_zoom: if self.attr.top { 1 } else { parent.global_zoom },
         }));
 
         let container = world.insert(Container {

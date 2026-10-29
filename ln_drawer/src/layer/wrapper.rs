@@ -625,6 +625,8 @@ impl Element for LayerPage {
         let page_camera = world.build(CameraDescriptor {
             center: save.sn().page_camera.center,
             zoom: save.sn().page_camera.zoom,
+            global_center: save.sn().page_camera.center,
+            global_zoom: save.sn().page_camera.zoom,
         });
         let page_camera_utils = CameraUtils::new(&page_camera);
 

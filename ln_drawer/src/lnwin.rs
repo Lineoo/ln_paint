@@ -228,7 +228,9 @@ impl Element for Lnwindow {
             world.insert(LnwindowRect(window_rect));
             let ui_camera = world.insert(world.build(CameraDescriptor {
                 center: lnwindow.window_rect().q32_center(),
+                global_center: lnwindow.window_rect().q32_center(),
                 zoom: i64::q32_from_f64(lnwindow.scale_factor().log2()),
+                global_zoom: i64::q32_from_f64(lnwindow.scale_factor().log2()),
             }));
             world.insert(UICamera(ui_camera));
             drop(lnwindow);
