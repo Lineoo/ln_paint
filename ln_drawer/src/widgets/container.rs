@@ -374,6 +374,20 @@ impl Element for ContainerDeco {
             container.update_camera(rect, &parent_camera, &mut child_camera);
             world.queue_trigger(child_camera.handle(), SetCameraOutdated);
         });
+
+        // Re-clamp when content shrinks, otherwise the camera stays below the new bounds.
+        world.observer(self.restriction, move |ValChanged, world| {
+            let this = world.fetch(this);
+            let mut container = world.fetch_mut(handle);
+            let parent_camera = world.fetch(container.common.camera);
+            let mut child_camera = world.fetch_mut(container.child);
+            let rect = world.fetch(container.rect).val;
+            let restriction = world.fetch(this.restriction).val;
+
+            container.clamp_scroll(rect, restriction);
+            container.update_camera(rect, &parent_camera, &mut child_camera);
+            world.queue_trigger(child_camera.handle(), SetCameraOutdated);
+        });
     }
 }
 

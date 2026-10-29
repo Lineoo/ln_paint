@@ -22,9 +22,10 @@ doc_label = "المستند"
 layer_label = "الصفحات"
 layer_name = "صفحة {index}"
 
-[settings.page.zoom]
-label = "إزاحة التكبير"
-desc = "إزاحة مستوى تفاصيل اللوحة"
+[settings.page]
+title = "إعدادات اللوحة"
+zoom.label = "إزاحة التكبير"
+zoom.desc = "إزاحة مستوى تفاصيل اللوحة"
 
 [brush]
 pen = "قلم صلب مستدير حساس للضغط"

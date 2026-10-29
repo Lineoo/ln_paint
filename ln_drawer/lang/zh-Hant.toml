@@ -22,9 +22,10 @@ doc_label = "文件"
 layer_label = "分頁"
 layer_name = "頁 {index}"
 
-[settings.page.zoom]
-label = "縮放偏移"
-desc = "畫布細節層級的偏移"
+[settings.page]
+title = "畫布設定"
+zoom.label = "縮放偏移"
+zoom.desc = "畫布細節層級的偏移"
 
 [brush]
 pen = "壓感硬圓"

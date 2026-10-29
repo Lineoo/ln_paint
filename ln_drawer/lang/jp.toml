@@ -22,9 +22,10 @@ doc_label = "ドキュメント"
 layer_label = "ページ"
 layer_name = "ページ {index}"
 
-[settings.page.zoom]
-label = "ズームオフセット"
-desc = "キャンバス詳細レベルのオフセット"
+[settings.page]
+title = "キャンバス設定"
+zoom.label = "ズームオフセット"
+zoom.desc = "キャンバス詳細レベルのオフセット"
 
 [brush]
 pen = "筆圧対応ハード円"

@@ -22,9 +22,10 @@ doc_label = "Document"
 layer_label = "Pages"
 layer_name = "Page {index}"
 
-[settings.page.zoom]
-label = "Zoom Offset"
-desc = "Canvas detail level offset"
+[settings.page]
+title = "Canvas Settings"
+zoom.label = "Zoom Offset"
+zoom.desc = "Canvas detail level offset"
 
 [brush]
 pen = "Pressure Hard Round"
