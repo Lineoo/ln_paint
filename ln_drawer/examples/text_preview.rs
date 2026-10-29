@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use cosmic_text::{Align, Attrs, Family, Metrics};
 use ln_drawer::{
-    layout::transform::{Transform, TransformValue},
+    layout::{
+        transform::{Transform, TransformValue},
+        val::Val,
+    },
     lnwin::{Lnwin, LnwindowRect},
     measures::IRect,
     theme::ThemeVal,
@@ -73,7 +76,7 @@ impl Element for TextPreview {
         let small = row(490, 50);
 
         let text = |text: String, rect, metrics: Metrics, family: &'static str, modulate| Text {
-            text,
+            text: world.insert(Val::new(text)),
             rect,
             attr: TextAttr {
                 metrics,
@@ -127,7 +130,7 @@ impl Element for TextPreview {
             (right, Align::Right),
         ] {
             world.insert(Text {
-                text: format!("对齐 / {align:?}\n第二行 line two").into(),
+                text: world.insert(Val::new(format!("对齐 / {align:?}\n第二行 line two"))),
                 rect,
                 attr: TextAttr {
                     metrics: Metrics::new(14.0, 20.0),

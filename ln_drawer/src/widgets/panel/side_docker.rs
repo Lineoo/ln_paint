@@ -8,6 +8,7 @@ use crate::{
     },
     layout::{
         luni::{LuniAlign, LuniAxis, LuniChild, LuniChildTemplate, LuniFlex, LuniParent, LuniRect},
+        transfer::Transfer,
         transform::{Transform, TransformEdge, TransformValue},
         val::{Val, ValChanged},
     },
@@ -17,7 +18,7 @@ use crate::{
         button::{ButtonClick, ButtonImage, ButtonSelected, SetButtonSelected, ToggleButton},
         common::WidgetCommon,
         panel::{Panel, PanelAttr, brush_panel::BrushPanel, color_picker::ColorPickerButton},
-        renderer::{svg::svg_render, text::SetText},
+        renderer::svg::svg_render,
         slider::{Slider, SliderLabel, SliderValue},
     },
 };
@@ -186,8 +187,12 @@ impl Element for SideDocker {
             pressed: false,
         });
 
-        let slider_label = world.insert(SliderLabel {
-            text: String::new(),
+        let slider_label_text = Transfer::derive(world, value).build(|&value| {
+            let scale = (value.exp2() - 1.0) * 127.5 + 0.5;
+            format!("{scale:.2} px")
+        });
+        world.insert(SliderLabel {
+            text: slider_label_text,
             clockwise: true,
             source: slider,
             hover: false,
@@ -266,7 +271,6 @@ impl Element for SideDocker {
                     .unwrap_or(0.0)
             };
             set_slider_value(world, slider, ((value - 0.5) / 127.5 + 1.).log2());
-            world.queue_trigger(slider_label, SetText(format!("{value:.2} px")));
         });
 
         world.insert(luni);

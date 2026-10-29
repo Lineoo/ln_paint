@@ -24,7 +24,7 @@ use atlas::{GLYPH_ATLAS_SIZE, GLYPH_PADDING, GlyphAtlasPage};
 use raster::{GlyphKind, SwashRasterizer};
 
 pub struct Text {
-    pub text: String,
+    pub text: Handle<Val<String>>,
     pub rect: Handle<Val<IRect>>,
     pub attr: TextAttr,
     pub order: isize,
@@ -55,8 +55,6 @@ pub struct TextPipeline {
     atlas_layout: BindGroupLayout,
     sampler: Sampler,
 }
-
-pub struct SetText(pub String);
 
 #[derive(Clone, Copy)]
 struct GlyphSlot {
@@ -116,6 +114,7 @@ impl Text {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
         world.dependency(this, self.modulate);
+        world.dependency(this, self.text);
 
         let lnwindow = world.single_fetch::<Lnwindow>();
         let modulate = world.fetch(self.modulate).val;
@@ -234,9 +233,9 @@ impl Text {
             lnwindow.window.request_redraw();
         });
 
-        world.observer(this, move |SetText(text), world| {
+        world.observer(self.text, move |ValChanged, world| {
             let mut this = world.fetch_mut(this);
-            this.set_text(&text[..]);
+            this.outdated = true;
 
             let lnwindow = world.single_fetch::<Lnwindow>();
             lnwindow.window.request_redraw();
@@ -271,13 +270,14 @@ impl Text {
 
         let size = rect.extend.as_vec2() * upscale;
         let metrics = self.attr.metrics.scale(upscale);
+        let text = world.fetch(self.text).val.clone();
 
         let mut keys: Vec<(CacheKey, i32, i32)> = Vec::new();
         let mut buffer_font = instance.buffer.borrow_with(&mut pipeline.font_system);
         buffer_font.set_metrics(metrics);
         buffer_font.set_size(Some(size.x), Some(size.y));
         buffer_font.set_text(
-            &self.text,
+            &text,
             &self.attr.attrs,
             Shaping::Advanced,
             Some(self.attr.align),
@@ -339,13 +339,6 @@ impl Text {
 
         if pipeline.reset_pending {
             lnwindow.window.request_redraw();
-        }
-    }
-
-    pub fn set_text(&mut self, text: impl Into<String> + PartialEq<String>) {
-        if text != self.text {
-            self.outdated = true;
-            self.text = text.into();
         }
     }
 

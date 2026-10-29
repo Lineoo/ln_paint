@@ -14,6 +14,7 @@ use crate::{
             LuniAlign, LuniAxis, LuniChild, LuniChildTemplate, LuniDistribution, LuniFlex,
             LuniParent, LuniRect,
         },
+        transfer::Transfer,
         transform::{Transform, TransformEdge, TransformValue},
         val::{Val, ValChanged},
     },
@@ -30,7 +31,7 @@ use crate::{
         },
         renderer::{
             svg::svg_render,
-            text::{SetText, Text, TextAttr},
+            text::{Text, TextAttr},
         },
         slider::{Slider, SliderLabel, SliderValue},
         tabs::{TabEntry, Tabs},
@@ -254,8 +255,12 @@ impl Element for ToolBar {
             pressed: false,
         });
 
-        let slider_label = world.insert(SliderLabel {
-            text: String::new(),
+        let slider_label_text = Transfer::derive(world, value).build(|&value| {
+            let scale = (value.exp2() - 1.0) * 127.5 + 0.5;
+            format!("{scale:.2} px")
+        });
+        world.insert(SliderLabel {
+            text: slider_label_text,
             clockwise: true,
             source: slider,
             hover: false,
@@ -332,7 +337,6 @@ impl Element for ToolBar {
                 .unwrap_or(0.0);
             slider_value.val = ((value - 0.5) / 127.5 + 1.).log2();
             world.queue_trigger(slider_value.handle(), ValChanged);
-            world.queue_trigger(slider_label, SetText(format!("{value:.2} px")));
         });
     }
 }
@@ -377,7 +381,10 @@ impl Element for StatusBar {
             local,
         ));
         world.insert(Text {
-            text: trp("title", &[("version", env!("CARGO_PKG_VERSION"))]).into(),
+            text: world.insert(Val::new(trp(
+                "title",
+                &[("version", env!("CARGO_PKG_VERSION"))],
+            ))),
             rect: text_rect,
             attr: TextAttr {
                 metrics: Metrics {

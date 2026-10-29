@@ -12,6 +12,7 @@ use crate::{
             LuniAxis, LuniChild, LuniChildTemplate, LuniDistribution, LuniFlex, LuniParent,
             LuniRect,
         },
+        transfer::Transfer,
         transform::{Transform, TransformEdge, TransformValue},
         val::{Val, ValChanged},
     },
@@ -24,7 +25,7 @@ use crate::{
         container::{
             ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerEcho, ContainerWithCamera,
         },
-        renderer::text::{SetText, Text, TextAttr},
+        renderer::text::{Text, TextAttr},
         slider::{Slider, SliderLabel, SliderValue},
     },
 };
@@ -158,7 +159,7 @@ impl Element for TextSettingPanel {
             label1_frame,
         ));
         world.insert(Text {
-            text: tr("settings.brush.title").into(),
+            text: world.insert(Val::new(tr("settings.brush.title").to_string())),
             rect: label1_rect,
             attr: TextAttr {
                 metrics: Metrics {
@@ -178,22 +179,24 @@ impl Element for TextSettingPanel {
             basis: Some(108),
             ..Default::default()
         }));
-        let flow_label = option_label(
+        option_label(
             world,
-            String::new(),
+            tr("settings.brush.flow.label").into(),
             flow_frame,
             common.camera,
             self.common.visible,
         );
-        let flow_desc = option_desc(
+        option_desc(
             world,
-            String::new(),
+            tr("settings.brush.flow.desc").into(),
             flow_frame,
             common.camera,
             self.common.visible,
         );
-        let (flow_slider, flow_slider_label) =
-            option_slider(world, flow_frame, common.camera, self.common.visible);
+        let flow_slider =
+            option_slider(world, flow_frame, common.camera, self.common.visible, |v| {
+                format!("{v:.2}")
+            });
         world.observer(flow_slider, move |&SliderValue(value), world| {
             let mut layer = world.fetch_mut(layer);
             match layer.active_mut().param_mut(BrushParamKey::Flow) {
@@ -208,22 +211,27 @@ impl Element for TextSettingPanel {
             basis: Some(108),
             ..Default::default()
         }));
-        let sigma_label = option_label(
+        option_label(
             world,
-            String::new(),
+            tr("settings.brush.sigma.label").into(),
             sigma_frame,
             common.camera,
             self.common.visible,
         );
-        let sigma_desc = option_desc(
+        option_desc(
             world,
-            String::new(),
+            tr("settings.brush.sigma.desc").into(),
             sigma_frame,
             common.camera,
             self.common.visible,
         );
-        let (sigma_slider, sigma_slider_label) =
-            option_slider(world, sigma_frame, common.camera, self.common.visible);
+        let sigma_slider = option_slider(
+            world,
+            sigma_frame,
+            common.camera,
+            self.common.visible,
+            |v| format!("{:.2}", v * 3.0),
+        );
         world.observer(sigma_slider, move |&SliderValue(value), world| {
             let mut layer = world.fetch_mut(layer);
             if let Some(param) = layer.active_mut().scalar_mut(BrushParamKey::Sigma) {
@@ -236,22 +244,27 @@ impl Element for TextSettingPanel {
             basis: Some(108),
             ..Default::default()
         }));
-        let softness_label = option_label(
+        option_label(
             world,
-            String::new(),
+            tr("settings.brush.softness.label").into(),
             softness_frame,
             common.camera,
             self.common.visible,
         );
-        let softness_desc = option_desc(
+        option_desc(
             world,
-            String::new(),
+            tr("settings.brush.softness.desc").into(),
             softness_frame,
             common.camera,
             self.common.visible,
         );
-        let (softness_slider, softness_slider_label) =
-            option_slider(world, softness_frame, common.camera, self.common.visible);
+        let softness_slider = option_slider(
+            world,
+            softness_frame,
+            common.camera,
+            self.common.visible,
+            |v| format!("{v:.2}"),
+        );
         world.observer(softness_slider, move |&SliderValue(value), world| {
             let mut layer = world.fetch_mut(layer);
             if let Some(param) = layer.active_mut().scalar_mut(BrushParamKey::Softness) {
@@ -264,22 +277,27 @@ impl Element for TextSettingPanel {
             basis: Some(108),
             ..Default::default()
         }));
-        let spacing_label = option_label(
+        option_label(
             world,
-            String::new(),
+            tr("settings.brush.spacing.label").into(),
             spacing_frame,
             common.camera,
             self.common.visible,
         );
-        let spacing_desc = option_desc(
+        option_desc(
             world,
-            String::new(),
+            tr("settings.brush.spacing.desc").into(),
             spacing_frame,
             common.camera,
             self.common.visible,
         );
-        let (spacing_slider, spacing_slider_label) =
-            option_slider(world, spacing_frame, common.camera, self.common.visible);
+        let spacing_slider = option_slider(
+            world,
+            spacing_frame,
+            common.camera,
+            self.common.visible,
+            |v| format!("{v:.2}"),
+        );
         world.observer(spacing_slider, move |&SliderValue(value), world| {
             let mut layer = world.fetch_mut(layer);
             if let Some(param) = layer.active_mut().scalar_mut(BrushParamKey::Spacing) {
@@ -292,22 +310,27 @@ impl Element for TextSettingPanel {
             basis: Some(108),
             ..Default::default()
         }));
-        let color_ratio_label = option_label(
+        option_label(
             world,
-            String::new(),
+            tr("settings.brush.color_ratio.label").into(),
             color_ratio_frame,
             common.camera,
             self.common.visible,
         );
-        let color_ratio_desc = option_desc(
+        option_desc(
             world,
-            String::new(),
+            tr("settings.brush.color_ratio.desc").into(),
             color_ratio_frame,
             common.camera,
             self.common.visible,
         );
-        let (color_ratio_slider, color_ratio_slider_label) =
-            option_slider(world, color_ratio_frame, common.camera, self.common.visible);
+        let color_ratio_slider = option_slider(
+            world,
+            color_ratio_frame,
+            common.camera,
+            self.common.visible,
+            |v| format!("{v:.2}"),
+        );
         world.observer(color_ratio_slider, move |&SliderValue(value), world| {
             let mut layer = world.fetch_mut(layer);
             if let Some(param) = layer.active_mut().scalar_mut(BrushParamKey::ColorRatio) {
@@ -320,25 +343,26 @@ impl Element for TextSettingPanel {
             basis: Some(108),
             ..Default::default()
         }));
-        let sample_radius_label = option_label(
+        option_label(
             world,
-            String::new(),
+            tr("settings.brush.sample_radius.label").into(),
             sample_radius_frame,
             common.camera,
             self.common.visible,
         );
-        let sample_radius_desc = option_desc(
+        option_desc(
             world,
-            String::new(),
+            tr("settings.brush.sample_radius.desc").into(),
             sample_radius_frame,
             common.camera,
             self.common.visible,
         );
-        let (sample_radius_slider, sample_radius_slider_label) = option_slider(
+        let sample_radius_slider = option_slider(
             world,
             sample_radius_frame,
             common.camera,
             self.common.visible,
+            |v| format!("{v:.2}"),
         );
         world.observer(sample_radius_slider, move |&SliderValue(value), world| {
             let mut layer = world.fetch_mut(layer);
@@ -352,22 +376,27 @@ impl Element for TextSettingPanel {
             basis: Some(108),
             ..Default::default()
         }));
-        let sample_rate_label = option_label(
+        option_label(
             world,
-            String::new(),
+            tr("settings.brush.sample_rate.label").into(),
             sample_rate_frame,
             common.camera,
             self.common.visible,
         );
-        let sample_rate_desc = option_desc(
+        option_desc(
             world,
-            String::new(),
+            tr("settings.brush.sample_rate.desc").into(),
             sample_rate_frame,
             common.camera,
             self.common.visible,
         );
-        let (sample_rate_slider, sample_rate_slider_label) =
-            option_slider(world, sample_rate_frame, common.camera, self.common.visible);
+        let sample_rate_slider = option_slider(
+            world,
+            sample_rate_frame,
+            common.camera,
+            self.common.visible,
+            |v| format!("{v:.2}"),
+        );
         world.observer(sample_rate_slider, move |&SliderValue(value), world| {
             let mut layer = world.fetch_mut(layer);
             if let Some(param) = layer.active_mut().scalar_mut(BrushParamKey::SampleRate) {
@@ -394,121 +423,74 @@ impl Element for TextSettingPanel {
             common.camera,
             self.common.visible,
         );
-        let (zoom_slider, zoom_slider_label) =
-            option_slider(world, zoom_frame, common.camera, self.common.visible);
+        let zoom_slider =
+            option_slider(world, zoom_frame, common.camera, self.common.visible, |v| {
+                format!("{:+.2}", (v as f64 - 0.8) * 3.0)
+            });
         world.observer(zoom_slider, move |&SliderValue(value), world| {
             let mut layer = world.fetch_mut(layer);
             layer.zoom_offset = (value as f64 - 0.8) * 3.;
             set_slider_value(world, zoom_slider, value);
-            world.queue_trigger(
-                zoom_slider_label,
-                SetText(format!("{:+.2}", layer.zoom_offset)),
-            );
         });
 
-        let _ob = world.observer(layer, move |&BrushConfigurationChanged, world| {
+        world.observer(layer, move |&BrushConfigurationChanged, world| {
             let layer = world.fetch(layer);
 
-            let mut flow_label = world.fetch_mut(flow_label);
-            let mut flow_desc = world.fetch_mut(flow_desc);
-            let mut sigma_label = world.fetch_mut(sigma_label);
-            let mut sigma_desc = world.fetch_mut(sigma_desc);
-            let mut softness_label = world.fetch_mut(softness_label);
-            let mut softness_desc = world.fetch_mut(softness_desc);
-            let mut spacing_label = world.fetch_mut(spacing_label);
-            let mut spacing_desc = world.fetch_mut(spacing_desc);
-            let mut color_ratio_label = world.fetch_mut(color_ratio_label);
-            let mut color_ratio_desc = world.fetch_mut(color_ratio_desc);
-            let mut sample_radius_label = world.fetch_mut(sample_radius_label);
-            let mut sample_radius_desc = world.fetch_mut(sample_radius_desc);
-            let mut sample_rate_label = world.fetch_mut(sample_rate_label);
-            let mut sample_rate_desc = world.fetch_mut(sample_rate_desc);
-
             // Flow //
-            flow_label.set_text(tr("settings.brush.flow.label"));
-            flow_desc.set_text(tr("settings.brush.flow.desc"));
             let flow = match layer.active().param(BrushParamKey::Flow) {
                 Some(BrushValue::Scalar(param)) => param.scale,
                 Some(BrushValue::Vec4(flow)) => flow.w,
                 _ => 0.0,
             };
             set_slider_value(world, flow_slider, flow);
-            world.queue_trigger(flow_slider_label, SetText(format!("{flow:.2}")));
 
             // Sigma //
-            sigma_label.set_text(tr("settings.brush.sigma.label"));
-            sigma_desc.set_text(tr("settings.brush.sigma.desc"));
             let sigma = layer
                 .active()
                 .scalar(BrushParamKey::Sigma)
                 .map(|param| param.scale)
                 .unwrap_or(0.0);
             set_slider_value(world, sigma_slider, sigma / 3.0);
-            world.queue_trigger(sigma_slider_label, SetText(format!("{sigma:.2}")));
 
             // Softness
-            softness_label.set_text(tr("settings.brush.softness.label"));
-            softness_desc.set_text(tr("settings.brush.softness.desc"));
             let softness = layer
                 .active()
                 .scalar(BrushParamKey::Softness)
                 .map(|param| 1. - param.scale)
                 .unwrap_or(1.0);
             set_slider_value(world, softness_slider, softness);
-            world.queue_trigger(softness_slider_label, SetText(format!("{softness:.2}")));
 
             // Spacing //
-            spacing_label.set_text(tr("settings.brush.spacing.label"));
-            spacing_desc.set_text(tr("settings.brush.spacing.desc"));
             let spacing = layer
                 .active()
                 .scalar(BrushParamKey::Spacing)
                 .map(|param| param.scale)
                 .unwrap_or(0.1);
             set_slider_value(world, spacing_slider, spacing);
-            world.queue_trigger(spacing_slider_label, SetText(format!("{spacing:.2}")));
 
             // Color Ratio //
-            color_ratio_label.set_text(tr("settings.brush.color_ratio.label"));
-            color_ratio_desc.set_text(tr("settings.brush.color_ratio.desc"));
             let color_ratio = layer
                 .active()
                 .scalar(BrushParamKey::ColorRatio)
                 .map(|param| param.scale)
                 .unwrap_or(0.0);
             set_slider_value(world, color_ratio_slider, color_ratio);
-            world.queue_trigger(
-                color_ratio_slider_label,
-                SetText(format!("{color_ratio:.2}")),
-            );
 
             // Sample Radius //
-            sample_radius_label.set_text(tr("settings.brush.sample_radius.label"));
-            sample_radius_desc.set_text(tr("settings.brush.sample_radius.desc"));
             let sample_radius = layer
                 .active()
                 .scalar(BrushParamKey::SampleRadius)
                 .map(|param| param.scale)
                 .unwrap_or(0.0);
             set_slider_value(world, sample_radius_slider, sample_radius);
-            world.queue_trigger(
-                sample_radius_slider_label,
-                SetText(format!("{sample_radius:.2}")),
-            );
 
             // Sample Rate //
-            sample_rate_label.set_text(tr("settings.brush.sample_rate.label"));
-            sample_rate_desc.set_text(tr("settings.brush.sample_rate.desc"));
             let sample_rate = layer
                 .active()
                 .scalar(BrushParamKey::SampleRate)
                 .map(|param| param.scale)
                 .unwrap_or(0.0);
             set_slider_value(world, sample_rate_slider, sample_rate);
-            world.queue_trigger(
-                sample_rate_slider_label,
-                SetText(format!("{sample_rate:.2}")),
-            );
         });
 
         world.insert(luni);
@@ -521,7 +503,7 @@ fn option_label(
     frame: Handle<Val<IRect>>,
     camera: Handle<Camera>,
     visible: Handle<Val<bool>>,
-) -> Handle<Text> {
+) {
     let theme = world.single_fetch::<ThemeVal>();
 
     let rect = world.build(Transform::new(
@@ -546,6 +528,8 @@ fn option_label(
         frame,
     ));
 
+    let text = world.insert(Val::new(text));
+
     world.insert(Text {
         text,
         rect,
@@ -560,7 +544,7 @@ fn option_label(
         common: WidgetCommon { camera, visible },
         modulate: theme.distinct,
         outdated: false,
-    })
+    });
 }
 
 fn option_desc(
@@ -569,7 +553,7 @@ fn option_desc(
     frame: Handle<Val<IRect>>,
     camera: Handle<Camera>,
     visible: Handle<Val<bool>>,
-) -> Handle<Text> {
+) {
     let theme = world.single_fetch::<ThemeVal>();
 
     let rect = world.build(Transform::new(
@@ -594,6 +578,8 @@ fn option_desc(
         frame,
     ));
 
+    let text = world.insert(Val::new(text));
+
     world.insert(Text {
         text,
         rect,
@@ -608,7 +594,7 @@ fn option_desc(
         common: WidgetCommon { camera, visible },
         modulate: theme.gray4,
         outdated: false,
-    })
+    });
 }
 
 fn option_slider(
@@ -616,7 +602,8 @@ fn option_slider(
     frame: Handle<Val<IRect>>,
     camera: Handle<Camera>,
     visible: Handle<Val<bool>>,
-) -> (Handle<Slider>, Handle<SliderLabel>) {
+    format: impl Fn(f32) -> String + Send + 'static,
+) -> Handle<Slider> {
     let rect = world.build(Transform::new(
         TransformValue {
             left: TransformEdge {
@@ -648,15 +635,17 @@ fn option_slider(
         pressed: false,
     });
 
-    let slider_label = world.insert(SliderLabel {
-        text: String::new(),
+    let text = Transfer::derive(world, value).build(move |&value| format(value));
+
+    world.insert(SliderLabel {
+        text,
         clockwise: false,
         source: slider,
         hover: false,
         common: WidgetCommon { camera, visible },
     });
 
-    (slider, slider_label)
+    slider
 }
 
 fn set_slider_value(world: &World, slider: Handle<Slider>, next: f32) {

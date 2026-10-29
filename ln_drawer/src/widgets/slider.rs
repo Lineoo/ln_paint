@@ -19,7 +19,7 @@ use crate::{
         common::WidgetCommon,
         renderer::{
             rrect::RRect,
-            text::{SetText, Text, TextAttr},
+            text::{Text, TextAttr},
         },
     },
 };
@@ -35,7 +35,7 @@ pub struct Slider {
 }
 
 pub struct SliderLabel {
-    pub text: String,
+    pub text: Handle<Val<String>>,
     pub clockwise: bool,
     pub source: Handle<Slider>,
     pub hover: bool,
@@ -260,8 +260,8 @@ impl SliderLabel {
             width: 0.0,
         });
 
-        let label = world.insert(Text {
-            text: self.text.clone(),
+        world.insert(Text {
+            text: self.text,
             rect: label_rect,
             attr: TextAttr {
                 metrics: Metrics::new(12., 2. * LABEL_HALF.y as f32),
@@ -314,10 +314,6 @@ impl SliderLabel {
             let position = into_position_pressed(rect, source.axis, value);
             label_rect.val = label_back_rect(rect, source.axis, this.clockwise, position);
             world.queue_trigger(label_rect.handle(), ValChanged);
-        });
-
-        world.observer(this, move |val: &SetText, world| {
-            world.trigger(label, val);
         });
     }
 }

@@ -6,7 +6,7 @@ use crate::{
     layer::wrapper::{LayerDebugMessage, LayerPage},
     layout::{
         transform::{Transform, TransformValue},
-        val::Val,
+        val::{Val, ValChanged},
     },
     measures::IRect,
     render::{
@@ -60,7 +60,7 @@ impl Element for DebugPanel {
 
         let text_rect = world.build(Transform::new(TransformValue::shrink(24, 24), local));
         let debug_text = world.insert(Text {
-            text: "Hi there".into(),
+            text: world.insert(Val::new("Hi there".to_string())),
             rect: text_rect,
             attr: TextAttr {
                 metrics: Metrics::new(12.0, 18.0),
@@ -74,10 +74,11 @@ impl Element for DebugPanel {
         });
 
         world.observer(world.single::<Render>(), move |msg: &String, world| {
-            let mut text = world.fetch_mut(debug_text);
-            if text.text != *msg {
-                text.text.clone_from(msg);
-                text.outdated = true;
+            let text = world.fetch(debug_text).text;
+            let mut text = world.fetch_mut(text);
+            if text.val != *msg {
+                text.val.clone_from(msg);
+                world.queue_trigger(text.handle(), ValChanged);
             }
         });
 
@@ -89,10 +90,11 @@ impl Element for DebugPanel {
                     return;
                 }
 
-                let mut text = world.fetch_mut(debug_text);
-                if text.text != *msg {
-                    text.text.clone_from(msg);
-                    text.outdated = true;
+                let text = world.fetch(debug_text).text;
+                let mut text = world.fetch_mut(text);
+                if text.val != *msg {
+                    text.val.clone_from(msg);
+                    world.queue_trigger(text.handle(), ValChanged);
                 }
             },
         );

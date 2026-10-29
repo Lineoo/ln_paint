@@ -225,7 +225,7 @@ impl Element for BrushListPanel {
                     attrs: Attrs::new(),
                     ..Default::default()
                 },
-                text: tr(page.brushes[i].label).into(),
+                text: world.insert(Val::new(tr(page.brushes[i].label).to_string())),
                 rect: label_rect,
                 order: 150,
                 common,

@@ -71,7 +71,7 @@ impl Element for WidgetShowcase {
             root,
         ));
         world.insert(Text {
-            text: "组件展示 / Widget Gallery".into(),
+            text: world.insert(Val::new("组件展示 / Widget Gallery".to_string())),
             rect: title_rect,
             attr: TextAttr {
                 metrics: Metrics::new(28.0, 34.0),
@@ -105,7 +105,7 @@ impl Element for WidgetShowcase {
                 outer,
             ));
             world.insert(Text {
-                text: title.into(),
+                text: world.insert(Val::new(title.to_string())),
                 rect: title_rect,
                 attr: TextAttr {
                     metrics: Metrics::new(12.0, 18.0),
@@ -130,7 +130,7 @@ impl Element for WidgetShowcase {
         };
 
         let text = |rect, text: &str, metrics, family, modulate, order| Text {
-            text: text.into(),
+            text: world.insert(Val::new(text.to_string())),
             rect,
             attr: TextAttr {
                 metrics,

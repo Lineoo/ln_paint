@@ -60,7 +60,9 @@ impl Element for LayerSelectionPanel {
             local,
         ));
         world.insert(Text {
-            text: tr("settings.layer_selection.doc_label").into(),
+            text: world.insert(Val::new(
+                tr("settings.layer_selection.doc_label").to_string(),
+            )),
             rect: doc_label_rect,
             attr: TextAttr {
                 metrics: Metrics {
@@ -111,7 +113,9 @@ impl Element for LayerSelectionPanel {
             local,
         ));
         world.insert(Text {
-            text: tr("settings.layer_selection.layer_label").into(),
+            text: world.insert(Val::new(
+                tr("settings.layer_selection.layer_label").to_string(),
+            )),
             rect: layer_label_rect,
             attr: TextAttr {
                 metrics: Metrics {
@@ -184,11 +188,10 @@ impl Element for LayerSelectionPanel {
                 button_rect,
             ));
             world.insert(Text {
-                text: trp(
+                text: world.insert(Val::new(trp(
                     "settings.layer_selection.layer_name",
                     &[("index", &i.to_string()[..])],
-                )
-                .into(),
+                ))),
                 rect: name_rect,
                 attr: TextAttr {
                     metrics: Metrics {
