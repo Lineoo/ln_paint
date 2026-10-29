@@ -14,12 +14,6 @@ pub struct MultiTouchTool {
     groups: HashMap<HandleAny, Vec<MultiTouch>>,
 }
 
-impl Element for MultiTouchTool {
-    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
-        self.listening_window_event(world, this);
-    }
-}
-
 #[derive(Debug, Clone, Copy)]
 pub struct MultiTouch {
     pub position: I64Vec2,
@@ -52,188 +46,224 @@ struct Touch {
     handle: HandleAny,
 }
 
-impl MultiTouchTool {
-    fn listening_window_event(&mut self, world: &World, _this: Handle<Self>) {
+struct BranchData {
+    screen: Option<DVec2>,
+    // TODO device: Option<DeviceId>,
+    kind: Option<PointerKind>,
+    force: Option<f32>,
+    event: BranchKind,
+}
+
+enum BranchKind {
+    Enter,
+    Press,
+    Move,
+    Release,
+    Exit,
+}
+
+impl Element for MultiTouchTool {
+    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
+        world.scope("multi_touch_tool");
+        world.set_autodeps(Some(this));
+
         let lnwindow = world.single::<Lnwindow>();
-        world.observer(lnwindow, |event, world| match event {
-            WindowEvent::PointerButton {
-                state: ElementState::Pressed,
-                position,
-                button,
-                ..
-            } => {
-                let Some(kind) = MultiTouchTool::button_to_kind(button) else {
-                    return;
-                };
+        world.observer(lnwindow, |event, world| {
+            let lnwindow = world.single_fetch::<Lnwindow>();
+            let tool = &mut *world.single_fetch_mut::<MultiTouchTool>();
 
-                let lnwindow = world.single_fetch::<Lnwindow>();
-                let screen = lnwindow.cursor_to_screen(*position);
-                drop(lnwindow);
-
-                let Some(hit) = ToolControl::intersect_main(world, screen) else {
-                    return;
-                };
-
-                let camera = world.fetch(hit.camera);
-                let position = camera.screen_to_world(screen);
-                drop(camera);
-
-                let event = MultiTouch {
+            let case = match event {
+                WindowEvent::PointerButton {
+                    state,
                     position,
-                    status: MultiTouchStatus::Press,
-                    data: MultiTouchData {
-                        screen,
+                    button,
+                    ..
+                } => {
+                    let screen = lnwindow.cursor_to_screen(*position);
+                    let kind = MultiTouchTool::button_to_kind(button);
+                    BranchData {
+                        screen: Some(screen),
+                        event: match state {
+                            ElementState::Pressed => BranchKind::Press,
+                            ElementState::Released => BranchKind::Release,
+                        },
                         kind,
                         force: MultiTouchTool::button_to_force(button),
-                    },
-                };
+                    }
+                }
 
-                let touch = Touch {
-                    camera: hit.camera,
-                    handle: hit.handle,
-                };
+                WindowEvent::PointerMoved {
+                    position, source, ..
+                } => {
+                    let screen = lnwindow.cursor_to_screen(*position);
+                    BranchData {
+                        screen: Some(screen),
+                        kind: Some(PointerKind::from(source.clone())),
+                        force: MultiTouchTool::pointer_to_force(source),
+                        event: BranchKind::Move,
+                    }
+                }
 
-                let tool = &mut *world.single_fetch_mut::<MultiTouchTool>();
-                let replaced = tool.touches.insert(kind, touch);
-                if let Some(replaced) = replaced {
-                    // Edge-cases: duplicated TouchId is pressed
-                    let list = tool.groups.get_mut(&replaced.handle).unwrap();
-                    let (idx, event) = list
-                        .iter_mut()
-                        .enumerate()
-                        .find(|(_, touch)| touch.data.kind == kind)
-                        .unwrap();
+                WindowEvent::PointerEntered { position, kind, .. } => {
+                    let screen = lnwindow.cursor_to_screen(*position);
+                    BranchData {
+                        screen: Some(screen),
+                        kind: Some(*kind),
+                        force: None,
+                        event: BranchKind::Enter,
+                    }
+                }
 
-                    *event = MultiTouch {
+                WindowEvent::PointerLeft { position, kind, .. } => {
+                    let screen = position.map(|x| lnwindow.cursor_to_screen(x));
+                    BranchData {
+                        screen,
+                        kind: Some(*kind),
+                        force: None,
+                        event: BranchKind::Exit,
+                    }
+                }
+
+                _ => return,
+            };
+
+            // return if it is right-click or something not for us.
+            let Some(kind) = case.kind else { return };
+
+            match (tool.touches.get(&kind), case.event, case.screen) {
+                // not related
+                (None, BranchKind::Enter, _) => (),
+                // good, register the press
+                (None, BranchKind::Press, Some(screen)) => {
+                    let Some(hit) = ToolControl::intersect_main(world, screen) else {
+                        return;
+                    };
+
+                    let camera = world.fetch(hit.camera);
+                    let position = camera.screen_to_world(screen);
+                    drop(camera);
+
+                    let event = MultiTouch {
+                        position,
+                        status: MultiTouchStatus::Press,
+                        data: MultiTouchData {
+                            screen,
+                            kind,
+                            force: case.force,
+                        },
+                    };
+
+                    let replaced = tool.touches.insert(
+                        kind,
+                        Touch {
+                            camera: hit.camera,
+                            handle: hit.handle,
+                        },
+                    );
+                    assert!(replaced.is_none());
+
+                    let list = tool.groups.entry(hit.handle).or_default();
+                    list.push(event);
+
+                    let mut group = MultiTouchGroup {
+                        active: event,
+                        members: std::mem::take(list),
+                    };
+
+                    world.trigger(hit.handle, &group.active);
+                    world.trigger(hit.handle, &group);
+
+                    std::mem::swap(list, &mut group.members);
+                }
+                // we don't know where the pointer is!
+                (None, BranchKind::Press, None) => unreachable!("winit"),
+                // not related
+                (None, BranchKind::Move, _) => (),
+                // somehow we don't know it's pressed
+                (None, BranchKind::Release, _) => (),
+                // not related
+                (None, BranchKind::Exit, _) => (),
+                // im not sure about this
+                (Some(_), BranchKind::Enter, _) => {
+                    log::warn!("pointer enter while we think it's still touching");
+                }
+                // im not sure about this
+                (Some(_), BranchKind::Press, _) => {
+                    log::warn!("pointer touch while we think it's still touching");
+                }
+                // good, let's update data
+                (Some(target), BranchKind::Move, Some(screen)) => {
+                    let list = tool.groups.get_mut(&target.handle).unwrap();
+                    let touch = list.iter_mut().find(|x| x.data.kind == kind).unwrap();
+
+                    let camera = world.fetch(target.camera);
+                    let position = camera.screen_to_world(screen);
+                    drop(camera);
+
+                    *touch = MultiTouch {
+                        position,
+                        status: MultiTouchStatus::Holding,
+                        data: MultiTouchData {
+                            screen,
+                            kind,
+                            force: case.force,
+                        },
+                    };
+
+                    let mut group = MultiTouchGroup {
+                        active: *touch,
+                        members: std::mem::take(list),
+                    };
+
+                    world.trigger(target.handle, &group.active);
+                    world.trigger(target.handle, &group);
+
+                    std::mem::swap(list, &mut group.members);
+                }
+                // we don't know where the pointer is, it's meaningless, ignore
+                (Some(_), BranchKind::Move, None) => unreachable!("winit"),
+                // good, release
+                (Some(_), BranchKind::Release, Some(screen)) => {
+                    let target = tool.touches.remove(&kind).unwrap();
+                    let list = tool.groups.get_mut(&target.handle).unwrap();
+                    list.retain(|touch| touch.data.kind != kind);
+
+                    let camera = world.fetch(target.camera);
+                    let position = camera.screen_to_world(screen);
+                    drop(camera);
+
+                    let active = MultiTouch {
                         position,
                         status: MultiTouchStatus::Release,
                         data: MultiTouchData {
                             screen,
                             kind,
-                            force: MultiTouchTool::button_to_force(button),
+                            force: case.force,
                         },
                     };
 
                     let mut group = MultiTouchGroup {
-                        active: *event,
+                        active,
                         members: std::mem::take(list),
                     };
 
-                    world.trigger(replaced.handle, &group.active);
-                    world.trigger(replaced.handle, &group);
+                    world.trigger(target.handle, &group.active);
+                    world.trigger(target.handle, &group);
 
                     std::mem::swap(list, &mut group.members);
-
-                    list.swap_remove(idx);
                 }
-
-                let list = tool.groups.entry(hit.handle).or_default();
-                list.push(event);
-
-                let mut group = MultiTouchGroup {
-                    active: event,
-                    members: std::mem::take(list),
-                };
-
-                world.trigger(hit.handle, &group.active);
-                world.trigger(hit.handle, &group);
-
-                std::mem::swap(list, &mut group.members);
+                // we don't know where the pointer is, released though so we use old data
+                (Some(_), BranchKind::Release, None) => unreachable!("winit"),
+                // oops, we may need to handle this
+                (Some(_), BranchKind::Exit, _) => {
+                    log::warn!("potential cancelled touch");
+                }
             }
-
-            WindowEvent::PointerMoved {
-                position, source, ..
-            } => {
-                let kind = PointerKind::from(source.clone());
-
-                let tool = &mut *world.single_fetch_mut::<MultiTouchTool>();
-                let Some(target) = tool.touches.get(&kind) else {
-                    return;
-                };
-
-                let list = tool.groups.get_mut(&target.handle).unwrap();
-                let touch = list.iter_mut().find(|x| x.data.kind == kind).unwrap();
-
-                let lnwindow = world.single_fetch::<Lnwindow>();
-                let screen = lnwindow.cursor_to_screen(*position);
-                drop(lnwindow);
-
-                let camera = world.fetch(target.camera);
-                let position = camera.screen_to_world(screen);
-                drop(camera);
-
-                *touch = MultiTouch {
-                    position,
-                    status: MultiTouchStatus::Holding,
-                    data: MultiTouchData {
-                        screen,
-                        kind,
-                        force: MultiTouchTool::pointer_to_force(source),
-                    },
-                };
-
-                let mut group = MultiTouchGroup {
-                    active: *touch,
-                    members: std::mem::take(list),
-                };
-
-                world.trigger(target.handle, &group.active);
-                world.trigger(target.handle, &group);
-
-                std::mem::swap(list, &mut group.members);
-            }
-
-            WindowEvent::PointerButton {
-                state: ElementState::Released,
-                position,
-                button,
-                ..
-            } => {
-                let Some(kind) = MultiTouchTool::button_to_kind(button) else {
-                    return;
-                };
-
-                let tool = &mut *world.single_fetch_mut::<MultiTouchTool>();
-                let Some(touch) = tool.touches.remove(&kind) else {
-                    return;
-                };
-
-                let lnwindow = world.single_fetch::<Lnwindow>();
-                let screen = lnwindow.cursor_to_screen(*position);
-                drop(lnwindow);
-
-                let camera = world.fetch(touch.camera);
-                let position = camera.screen_to_world(screen);
-                drop(camera);
-
-                let active = MultiTouch {
-                    position,
-                    status: MultiTouchStatus::Release,
-                    data: MultiTouchData {
-                        screen,
-                        kind,
-                        force: MultiTouchTool::button_to_force(button),
-                    },
-                };
-
-                let list = tool.groups.get_mut(&touch.handle).unwrap();
-                list.retain(|touch| touch.data.kind != kind);
-
-                let mut group = MultiTouchGroup {
-                    active,
-                    members: std::mem::take(list),
-                };
-
-                world.trigger(touch.handle, &group.active);
-                world.trigger(touch.handle, &group);
-
-                std::mem::swap(list, &mut group.members);
-            }
-
-            _ => {}
         });
     }
+}
 
+impl MultiTouchTool {
     fn button_to_kind(button: &ButtonSource) -> Option<PointerKind> {
         match button {
             ButtonSource::Mouse(MouseButton::Left) => Some(PointerKind::Mouse),
