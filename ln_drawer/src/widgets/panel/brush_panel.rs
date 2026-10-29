@@ -1,5 +1,4 @@
 use cosmic_text::{Attrs, Metrics};
-use glam::Vec4;
 use ln_world::{Element, Handle, World};
 
 use crate::{
@@ -13,7 +12,7 @@ use crate::{
         },
         packer::Packer,
         transform::{Transform, TransformEdge, TransformValue},
-        val::{Val, ValChanged},
+        val::Val,
     },
     measures::IRect,
     theme::{Theme, ThemeVal},

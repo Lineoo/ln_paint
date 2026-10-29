@@ -38,7 +38,6 @@ pub struct TextAttr {
     pub metrics: Metrics,
     pub attrs: Attrs<'static>,
     pub align: Align,
-    pub extra_upscale: f32,
 }
 
 pub struct TextPipeline {
@@ -102,7 +101,6 @@ impl Default for TextAttr {
             metrics: Metrics::new(24.0, 20.0),
             attrs: Attrs::new(),
             align: Align::Justified,
-            extra_upscale: 1.0,
         }
     }
 }
@@ -118,7 +116,7 @@ impl Text {
 
         let lnwindow = world.single_fetch::<Lnwindow>();
         let modulate = world.fetch(self.modulate).val;
-        let upscale = self.upscale(&lnwindow);
+        let upscale = lnwindow.scale_factor() as f32;
         let metrics = self.attr.metrics.scale(upscale);
 
         let render = world.single_fetch::<Render>();
@@ -251,7 +249,7 @@ impl Text {
         }
 
         let lnwindow = world.single_fetch::<Lnwindow>();
-        let upscale = self.upscale(&lnwindow);
+        let upscale = lnwindow.scale_factor() as f32;
         let rect = world.fetch(self.rect).val;
         let render = world.single_fetch::<Render>();
 
@@ -340,10 +338,6 @@ impl Text {
         if pipeline.reset_pending {
             lnwindow.window.request_redraw();
         }
-    }
-
-    fn upscale(&self, lnwindow: &Lnwindow) -> f32 {
-        self.attr.extra_upscale * lnwindow.scale_factor() as f32
     }
 }
 
