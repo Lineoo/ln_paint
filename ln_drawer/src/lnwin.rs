@@ -227,8 +227,8 @@ impl Element for Lnwindow {
             let window_rect = world.insert(Val::new(lnwindow.window_rect()));
             world.insert(LnwindowRect(window_rect));
             let ui_camera = world.insert(world.build(CameraDescriptor {
-                center: lnwindow.window_rect().q32_center(),
-                global_center: lnwindow.window_rect().q32_center(),
+                center: lnwindow.surface_center(),
+                global_center: lnwindow.surface_center(),
                 zoom: i64::q32_from_f64(lnwindow.scale_factor().log2()),
                 global_zoom: i64::q32_from_f64(lnwindow.scale_factor().log2()),
             }));
@@ -256,8 +256,8 @@ impl Element for Lnwindow {
                     rect.val = next;
                     world.queue_trigger(rect.handle(), ValChanged);
 
-                    camera.center = rect.val.q32_center();
-                    camera.global_center = rect.val.q32_center();
+                    camera.center = lnwindow.surface_center();
+                    camera.global_center = lnwindow.surface_center();
                     camera.zoom = i64::q32_from_f64(scale.log2());
                     camera.global_zoom = i64::q32_from_f64(scale.log2());
                     camera.surface_size = UVec2::new(size.width, size.height);
@@ -359,6 +359,13 @@ impl Lnwindow {
             origin: IVec2::ZERO,
             extend,
         }
+    }
+
+    fn surface_center(&self) -> I64Vec2 {
+        let size = self.window.surface_size();
+        let scale = self.scale_factor();
+        let size = DVec2::new(size.width as f64, size.height as f64);
+        I64Vec2::q32_from_f64(size / scale / 2.0)
     }
 }
 
