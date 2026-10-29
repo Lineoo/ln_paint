@@ -266,8 +266,8 @@ impl Descriptor for ContainerEcho {
                 let max = I64Vec2::q32_from_i32(rect.right_up());
                 let center = rect.q32_anchor(anchor);
                 let scale = (child.global_zoom - parent.global_zoom).q32_as_f64().exp2();
-                let min = ((min - center).q32_as_f64() / scale).ceil();
-                let max = ((max - center).q32_as_f64() / scale).ceil();
+                let min = ((min - center).q32_as_f64() / scale).round();
+                let max = ((max - center).q32_as_f64() / scale).round();
                 inner.val = IRect::new_minmax(min.as_ivec2(), max.as_ivec2());
                 world.queue_trigger(inner.handle(), ValChanged);
             });
