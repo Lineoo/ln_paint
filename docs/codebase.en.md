@@ -88,4 +88,26 @@ let lnwindow = world.single_fetch::<Lnwindow>();
 let scale = lnwindow.window.scale_factor();
 ```
 
-The command queue will handle most reference collisions. If `drop(lnwindow)` is unavoidable, it means either that your implementation touches the danger zone (tell users about it), or you've implement it in a wrong way (think twice).
+The command queue will handle most reference collisions. If `drop(lnwindow)` is unavoidable, it means either that your implementation touches the danger zone (tell someone else / agent user about it), or you've implement it in a wrong way (think twice).
+
+### rust module - no `mod.rs`
+
+Use new style:
+
+DO:
+
+```text
+foo/
+  bar.rs
+  baz.rs
+foo.rs
+```
+
+DO NOT:
+
+```text
+foo/
+  mod.rs
+  bar.rs
+  baz.rs
+```

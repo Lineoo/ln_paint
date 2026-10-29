@@ -22,9 +22,8 @@ GPU-accelerated drawing app featured infinite canvas in Rust (winit + wgpu). Car
 ## Conventions
 
 - Comments should not exceed one line. Keep minimalistic. Don't leave any outdated, unrelated or redundant information.
-- Never use `try_*` family functions in `ln_world`. `unwrap_or_*()` / `if let Ok(x) =  ...` / `match result { Ok(x) => ... }` is strictly forbidden unless users explicit allow it. **Panicking is better than skipping potential errors.**
-- Never handle errors. Use `unwrap()` if `Result`s are returned. If you REALLY understand the error and REALLY need to handle it, ask user first and make sure they ARE fully aware of the error and intended to handle it. **Panicking is better than skipping unknown errors.**
-- Do not overuse blocks or early drops. While `ln_world` uses runtime borrow validation, most system is welled designed to avoid most borrow collisions.
+- Never assuming any behavior. Codes like `unwrap_or_*()` is strictly forbidden unless users explicit allow it. **Panicking is better than skipping potential errors.**
+- Never handle errors. Don't use `try_*` family functions in `ln_world`.  Use `unwrap()` if `Result`s are returned. If you REALLY understand the error and REALLY need to handle it, ask user first and make sure they ARE fully aware of the error and intended to handle it. **Panicking is better than skipping unknown errors.**
 - WGSL shaders are embedded via `include_str!` and macro-expanded with `shader_compile()` in `ln_drawer/src/widgets/shaders.rs`. Shared libs in `widgets/shaders/*.wgsl` are included via `#lib_*` during compiling.
 
 ## Documents
