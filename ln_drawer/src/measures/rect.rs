@@ -46,10 +46,8 @@ impl URect {
 impl fmt::Debug for IRect {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("IRect")
-            .field("left", &self.left())
-            .field("down", &self.down())
-            .field("right", &self.right())
-            .field("up", &self.up())
+            .field("origin", &self.origin)
+            .field("extend", &self.extend)
             .finish()
     }
 }
@@ -57,10 +55,8 @@ impl fmt::Debug for IRect {
 impl fmt::Display for IRect {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list()
-            .entry(&self.left())
-            .entry(&self.down())
-            .entry(&self.right())
-            .entry(&self.up())
+            .entry(&self.origin)
+            .entry(&self.extend)
             .finish()
     }
 }

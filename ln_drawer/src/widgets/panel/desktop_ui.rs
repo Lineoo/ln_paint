@@ -14,6 +14,7 @@ use crate::{
             LuniAlign, LuniAxis, LuniChild, LuniChildTemplate, LuniDistribution, LuniFlex,
             LuniParent, LuniRect,
         },
+        packer::Packer,
         transform::{Transform, TransformEdge, TransformValue},
         val::{Val, ValChanged},
     },
@@ -94,7 +95,6 @@ impl Element for DesktopUi {
 
         world.insert(luni);
 
-        world.scope("layer_init");
         world.queue(|world| {
             world.trigger(world.single::<LayerPage>(), &BrushConfigurationChanged);
         });
