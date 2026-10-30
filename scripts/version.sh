@@ -35,13 +35,8 @@ version_code=$(((1 << 24) | (major << 16) | (minor << 8) | patch))
 
 ## string match ##
 
-# `ln_drawer/Cargo.toml`
-sed -i "/^\[package\]/,/^\[/ s/^version = \".*\"$/version = \"$version\"/" ln_drawer/Cargo.toml
-
-# `Cargo.lock`
-if [[ -f Cargo.lock ]]; then
-    sed -i "/^name = \"ln_drawer\"$/,/^$/ s/^version = \".*\"$/version = \"$version\"/" Cargo.lock
-fi
+# `Cargo.toml`
+sed -i "/^\[package\]/,/^\[/ s/^version = \".*\"$/version = \"$version\"/" Cargo.toml
 
 # `ln_drawer/build/android/app/build.gradle.kts`
 gradle=ln_drawer/build/android/app/build.gradle.kts
