@@ -90,7 +90,7 @@ jobs:
         export WAYLAND_DISPLAY=wayland-headless
         unset DISPLAY
 
-        scripts/regression.sh "$RUNNER_TEMP/regression"
+        scripts/gen-regression.sh "$RUNNER_TEMP/regression"
 
     - name: '[Test] Compare Pixels'
       run: |
