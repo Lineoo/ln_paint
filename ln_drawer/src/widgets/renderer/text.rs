@@ -1,15 +1,21 @@
 use std::{collections::HashMap, mem::size_of};
 
-use cosmic_text::{Align, Attrs, Buffer as CosmicBuffer, CacheKey, FontSystem, Metrics, Shaping};
+use cosmic_text::{
+    Align, Attrs, Buffer as CosmicBuffer, CacheKey, FontSystem, Metrics, Shaping, SwashCache,
+    SwashContent,
+};
+use etagere::{AllocatorOptions, AtlasAllocator, size2};
 use glam::{DVec2, I64Vec2, Vec4};
 use ln_world::{Element, Handle, World};
 use smallvec::SmallVec;
+use swash::scale::Source;
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
     *,
 };
 
 use crate::{
+    color::srgb::srgb_gamma_decode_f32,
     layout::val::{Val, ValChanged},
     lnwin::Lnwindow,
     measures::{FI64Ext, IRect},
@@ -17,11 +23,8 @@ use crate::{
     widgets::{common::WidgetCommon, shaders::shader_compile},
 };
 
-mod atlas;
-mod raster;
-
-use atlas::{GLYPH_ATLAS_SIZE, GLYPH_PADDING, GlyphAtlasPage};
-use raster::{GlyphKind, SwashRasterizer};
+const GLYPH_ATLAS_SIZE: u32 = 2048;
+const GLYPH_PADDING: u32 = 1;
 
 pub struct Text {
     pub text: Handle<Val<String>>,
@@ -42,7 +45,7 @@ pub struct TextAttr {
 
 pub struct TextPipeline {
     font_system: FontSystem,
-    rasterizer: SwashRasterizer,
+    swash_cache: SwashCache,
 
     glyphs: HashMap<CacheKey, Option<GlyphSlot>>,
     pages: Vec<GlyphAtlasPage>,
@@ -84,6 +87,30 @@ struct GlyphRun {
     count: u32,
 }
 
+#[repr(u32)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum GlyphKind {
+    Mask = 0,
+    Color = 1,
+}
+
+struct GlyphRaster {
+    kind: GlyphKind,
+    left: i32,
+    top: i32,
+    width: u32,
+    height: u32,
+    data: Vec<u8>,
+}
+
+struct GlyphAtlasPage {
+    kind: GlyphKind,
+    bind: BindGroup,
+    allocator: AtlasAllocator,
+    texture: Texture,
+    size: u32,
+}
+
 struct TextInstance {
     buffer: CosmicBuffer,
     glyph_buffer: Option<Buffer>,
@@ -105,8 +132,8 @@ impl Default for TextAttr {
     }
 }
 
-impl Text {
-    pub fn init(&mut self, world: &World, this: Handle<Text>) {
+impl Element for Text {
+    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
         world.scope("text");
         world.set_autodeps(Some(this));
         world.dependency(this, self.rect);
@@ -241,7 +268,9 @@ impl Text {
 
         self.outdated = true;
     }
+}
 
+impl Text {
     fn prepare(&mut self, world: &World, instance: Handle<TextInstance>) {
         let visible = world.fetch(self.common.visible).val;
         if !visible {
@@ -490,7 +519,7 @@ impl TextPipeline {
 
         Self {
             font_system: Self::font_system(),
-            rasterizer: SwashRasterizer::new(),
+            swash_cache: SwashCache::new(),
             glyphs: HashMap::new(),
             pages: Vec::new(),
             epoch: 0,
@@ -544,7 +573,7 @@ impl TextPipeline {
             return *slot;
         }
 
-        let Some(raster) = self.rasterizer.rasterize(&mut self.font_system, key) else {
+        let Some(raster) = self.rasterize(key) else {
             self.glyphs.insert(key, None);
             return None;
         };
@@ -609,6 +638,54 @@ impl TextPipeline {
         Some(slot)
     }
 
+    fn rasterize(&mut self, key: CacheKey) -> Option<GlyphRaster> {
+        let image = self.swash_cache.get_image(&mut self.font_system, key);
+        let Some(image) = image.as_ref() else {
+            log::warn!("swash cannot image {key:?}");
+            return None;
+        };
+
+        let kind = match image.content {
+            SwashContent::Mask => GlyphKind::Mask,
+            SwashContent::Color => GlyphKind::Color,
+            SwashContent::SubpixelMask => {
+                log::warn!("TODO: SubpixelMask");
+                return None;
+            }
+        };
+
+        let data = match kind {
+            GlyphKind::Mask => image.data.clone(),
+            GlyphKind::Color => {
+                // Swash premultiplies sRGB color outlines; decoded bitmaps are straight.
+                let premultiplied = matches!(image.source, Source::ColorOutline(_));
+                let mut data = image.data.clone();
+                for px in data.chunks_exact_mut(4) {
+                    let alpha = px[3] as f32 / 255.0;
+                    for channel in &mut px[..3] {
+                        let value = *channel as f32 / 255.0;
+                        let straight = match premultiplied && alpha > 0.0 {
+                            true => value / alpha,
+                            false => value,
+                        };
+                        let linear = srgb_gamma_decode_f32(straight.min(1.0)) * alpha;
+                        *channel = (linear * 255.0).round() as u8;
+                    }
+                }
+                data
+            }
+        };
+
+        Some(GlyphRaster {
+            kind,
+            left: image.placement.left,
+            top: image.placement.top,
+            width: image.placement.width,
+            height: image.placement.height,
+            data,
+        })
+    }
+
     fn page_count(&self, kind: GlyphKind) -> usize {
         self.pages.iter().filter(|page| page.kind == kind).count()
     }
@@ -621,9 +698,121 @@ impl TextPipeline {
     }
 }
 
-impl Element for Text {
-    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
-        self.init(world, this);
+impl GlyphAtlasPage {
+    fn new(
+        kind: GlyphKind,
+        render: &Render,
+        atlas_layout: &BindGroupLayout,
+        sampler: &Sampler,
+    ) -> Self {
+        let format = match kind {
+            GlyphKind::Mask => TextureFormat::R8Unorm,
+            GlyphKind::Color => TextureFormat::Rgba8Unorm,
+        };
+
+        let texture = render.device.create_texture(&TextureDescriptor {
+            label: Some("text_glyph_atlas"),
+            size: Extent3d {
+                width: GLYPH_ATLAS_SIZE,
+                height: GLYPH_ATLAS_SIZE,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: TextureDimension::D2,
+            format,
+            usage: TextureUsages::TEXTURE_BINDING | TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+
+        let view = texture.create_view(&TextureViewDescriptor {
+            label: Some("text_glyph_atlas_view"),
+            ..Default::default()
+        });
+
+        let bind = render.device.create_bind_group(&BindGroupDescriptor {
+            label: Some("text_glyph_atlas"),
+            layout: atlas_layout,
+            entries: &[
+                BindGroupEntry {
+                    binding: 0,
+                    resource: BindingResource::TextureView(&view),
+                },
+                BindGroupEntry {
+                    binding: 1,
+                    resource: BindingResource::Sampler(sampler),
+                },
+            ],
+        });
+
+        let allocator = AtlasAllocator::with_options(
+            size2(GLYPH_ATLAS_SIZE as i32, GLYPH_ATLAS_SIZE as i32),
+            &AllocatorOptions {
+                alignment: size2(1, 1),
+                vertical_shelves: false,
+                num_columns: 4,
+            },
+        );
+
+        Self {
+            kind,
+            bind,
+            allocator,
+            texture,
+            size: GLYPH_ATLAS_SIZE,
+        }
+    }
+
+    fn insert(&mut self, queue: &Queue, raster: &GlyphRaster) -> Option<[f32; 4]> {
+        if raster.width == 0 || raster.height == 0 {
+            return None;
+        }
+
+        let extend = size2(
+            (raster.width + GLYPH_PADDING * 2) as i32,
+            (raster.height + GLYPH_PADDING * 2) as i32,
+        );
+        let allocation = self.allocator.allocate(extend)?;
+
+        let x = allocation.rectangle.min.x + GLYPH_PADDING as i32;
+        let y = allocation.rectangle.min.y + GLYPH_PADDING as i32;
+
+        let bytes_per_pixel = match self.kind {
+            GlyphKind::Mask => 1,
+            GlyphKind::Color => 4,
+        };
+
+        queue.write_texture(
+            TexelCopyTextureInfo {
+                texture: &self.texture,
+                mip_level: 0,
+                origin: Origin3d {
+                    x: x as u32,
+                    y: y as u32,
+                    z: 0,
+                },
+                aspect: TextureAspect::All,
+            },
+            &raster.data,
+            TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(raster.width * bytes_per_pixel),
+                rows_per_image: Some(raster.height),
+            },
+            Extent3d {
+                width: raster.width,
+                height: raster.height,
+                depth_or_array_layers: 1,
+            },
+        );
+
+        let inv = 1.0 / self.size as f32;
+        let u0 = x as f32 * inv;
+        let v0 = y as f32 * inv;
+        let u1 = (x as f32 + raster.width as f32) * inv;
+        let v1 = (y as f32 + raster.height as f32) * inv;
+
+        Some([u0, v0, u1, v1])
     }
 }
 

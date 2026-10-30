@@ -111,3 +111,42 @@ foo/
   bar.rs
   baz.rs
 ```
+
+### error handling - panic, or take cold path seriously
+
+DO NOT:
+
+```rs
+let Some(cache_chunk) = cache.chunks.get(&(chunk_key.0, chunk_key.1, 0)) else {
+    continue;
+};
+let Some(raw_chunk) = raw.chunks.get(&chunk_key) else {
+    continue;
+};
+```
+
+DO:
+
+```rs
+let cache_chunk = cache.chunks.get(&(chunk_key.0, chunk_key.1, 0)).unwrap();
+let raw_chunk = raw.chunks.get(&chunk_key).unwrap();
+```
+
+OR DO:
+
+```rs
+/// need cache & raw chunks ready
+fn draw(&self, ..)
+
+// ... //
+let Some(cache_chunk) = cache.chunks.get(&(chunk_key.0, chunk_key.1, 0)) else {
+    log::error!("cache not loaded");
+    continue;
+};
+let Some(raw_chunk) = raw.chunks.get(&chunk_key) else {
+    log::error!("raw not loaded");
+    continue;
+};
+```
+
+Every branch should be considered. If you're unsure about how to handle, use panicking functions instead of silent-skipping.
