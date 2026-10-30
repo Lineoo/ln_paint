@@ -5,7 +5,7 @@ use cosmic_text::{
     SwashContent,
 };
 use etagere::{AllocatorOptions, AtlasAllocator, size2};
-use glam::{DVec2, I64Vec2, Vec4};
+use glam::{DVec2, I64Vec2, IVec2, UVec2, Vec2, Vec4};
 use ln_world::{Element, Handle, World};
 use smallvec::SmallVec;
 use swash::scale::Source;
@@ -18,7 +18,7 @@ use crate::{
     color::srgb::srgb_gamma_decode_f32,
     layout::val::{Val, ValChanged},
     lnwin::Lnwindow,
-    measures::{FI64Ext, IRect},
+    measures::{FI64Ext, IRect, MinMax},
     render::{MSAA_STATE, Render, RenderDrawControl, RenderPrepareControl, camera::CameraBind},
     widgets::{common::WidgetCommon, shaders::shader_compile},
 };
@@ -62,7 +62,7 @@ pub struct TextPipeline {
 struct GlyphSlot {
     page: usize,
     kind: GlyphKind,
-    uv: [f32; 4],
+    uv: MinMax,
     left: i32,
     top: i32,
     width: u32,
@@ -72,10 +72,10 @@ struct GlyphSlot {
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 struct GlyphInstance {
-    origin: [i32; 2],
-    origin_fract: [u32; 2],
-    size: [f32; 2],
-    uv: [f32; 4],
+    origin: IVec2,
+    origin_fract: UVec2,
+    size: Vec2,
+    uv: MinMax,
     kind: u32,
     _pad: u32,
 }
@@ -326,25 +326,29 @@ impl Text {
         let mut glyphs = Vec::with_capacity(keys.len());
         let mut runs: SmallVec<[GlyphRun; 2]> = SmallVec::new();
 
-        for (key, x, line_y) in keys {
+        for (key, x, y) in keys {
             let Some(slot) = pipeline.glyph_slot(&render, key) else {
                 continue;
             };
 
             let left = x + slot.left;
-            let top = line_y - slot.top;
+            let top = y - slot.top;
             let origin = I64Vec2::q32_from_i32(rect.origin)
+                - I64Vec2::q32_from_f64(DVec2::splat(GLYPH_PADDING as f64) / upscale as f64)
                 + I64Vec2::new(0, (rect.extend.y as i64) << 32)
                 + I64Vec2::q32_from_f64(DVec2::new(
                     left as f64 / upscale as f64,
                     -((top + slot.height as i32) as f64 / upscale as f64),
                 ));
-            let size = [slot.width as f32 / upscale, slot.height as f32 / upscale];
+            let size = Vec2::new(
+                (slot.width + GLYPH_PADDING * 2) as f32 / upscale,
+                (slot.height + GLYPH_PADDING * 2) as f32 / upscale,
+            );
 
             let index = glyphs.len() as u32;
             glyphs.push(GlyphInstance {
-                origin: origin.q32_floor().into(),
-                origin_fract: origin.q32_fract().into(),
+                origin: origin.q32_floor(),
+                origin_fract: origin.q32_fract(),
                 size,
                 uv: slot.uv,
                 kind: slot.kind as u32,
@@ -763,7 +767,7 @@ impl GlyphAtlasPage {
         }
     }
 
-    fn insert(&mut self, queue: &Queue, raster: &GlyphRaster) -> Option<[f32; 4]> {
+    fn insert(&mut self, queue: &Queue, raster: &GlyphRaster) -> Option<MinMax> {
         if raster.width == 0 || raster.height == 0 {
             return None;
         }
@@ -807,12 +811,16 @@ impl GlyphAtlasPage {
         );
 
         let inv = 1.0 / self.size as f32;
-        let u0 = x as f32 * inv;
-        let v0 = y as f32 * inv;
-        let u1 = (x as f32 + raster.width as f32) * inv;
-        let v1 = (y as f32 + raster.height as f32) * inv;
-
-        Some([u0, v0, u1, v1])
+        Some(MinMax {
+            min: Vec2::new(
+                (x as u32 - GLYPH_PADDING) as f32 * inv,
+                (y as u32 - GLYPH_PADDING) as f32 * inv,
+            ),
+            max: Vec2::new(
+                (x as u32 + raster.width + GLYPH_PADDING) as f32 * inv,
+                (y as u32 + raster.height + GLYPH_PADDING) as f32 * inv,
+            ),
+        })
     }
 }
 

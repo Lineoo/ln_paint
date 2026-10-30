@@ -40,6 +40,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4f {
     if in.kind == 0u {
         let alpha = texel.r * material.color.a;
         return vec4f(material.color.rgb * alpha, alpha);
+        // return vec4f(material.color.rgb * alpha, alpha) + vec4f(in.uv, 0.5, 1) * (1 - alpha);
     } else {
         // Color glyphs are premultiplied `P(L)` and ignore the color, only alpha modulates.
         return texel * material.color.a;

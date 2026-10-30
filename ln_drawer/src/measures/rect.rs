@@ -1,6 +1,6 @@
 use std::{fmt, ops};
 
-use glam::{DVec2, I64Vec2, IVec2, UVec2};
+use glam::{DVec2, I64Vec2, IVec2, UVec2, Vec2};
 
 use crate::measures::{Axis, FI64Ext};
 
@@ -26,6 +26,13 @@ pub struct IRect {
 pub struct URect {
     pub origin: UVec2,
     pub extend: UVec2,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct MinMax {
+    pub min: Vec2,
+    pub max: Vec2,
 }
 
 impl URect {
