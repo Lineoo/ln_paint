@@ -86,7 +86,7 @@ enum RenderTarget {
     },
 }
 
-type RenderPrepareCommand = Box<dyn FnMut(&World) -> Option<RenderInformation> + Send>;
+type RenderPrepareCommand = Box<dyn FnMut(&World) + Send>;
 type RenderDrawCommand = Box<dyn FnMut(&World, &mut RenderPass<'_>, RenderExtra<'_, '_>) + Send>;
 
 /// prepare to render and give related information
@@ -452,11 +452,8 @@ impl Render {
         render.preparing = true;
         drop(render);
 
-        let mut refreshing = false;
         world.foreach_fetch_mut::<RenderPrepareControl>(|mut control| {
-            if let Some(info) = (control.prepare)(world) {
-                refreshing |= info.keep_redrawing;
-            };
+            (control.prepare)(world);
         });
 
         world.queue_cache::<RenderDrawControl>();
@@ -467,11 +464,6 @@ impl Render {
         let mut render = world.single_fetch_mut::<Render>();
         render.preparing = false;
         drop(render);
-
-        if refreshing {
-            let lnwindow = world.single_fetch::<Lnwindow>();
-            lnwindow.window.request_redraw();
-        }
 
         let timestamp_draw = Instant::now();
 

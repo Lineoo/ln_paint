@@ -7,7 +7,7 @@ use crate::{
     layout::val::{Val, ValChanged},
     lnwin::Lnwindow,
     measures::IRect,
-    render::{RenderInformation, RenderPrepareControl},
+    render::RenderPrepareControl,
 };
 
 pub struct Animator<T: AnimationType> {
@@ -84,9 +84,9 @@ impl<T: AnimationType> Element for AnimationCore<T> {
                     world.queue_trigger(this.src, ValChanged);
                 }
 
-                Some(RenderInformation {
-                    keep_redrawing: refresh,
-                })
+                if refresh {
+                    world.single_fetch::<Lnwindow>().window.request_redraw();
+                }
             }),
         });
 

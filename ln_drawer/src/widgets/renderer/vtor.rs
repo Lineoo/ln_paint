@@ -85,8 +85,6 @@ impl Vtor {
                         &render.device,
                     );
                 }
-
-                None
             }),
         });
 

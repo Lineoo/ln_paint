@@ -706,7 +706,6 @@ impl Element for LayerPage {
             prepare: Box::new(move |world| {
                 let this = &mut *world.fetch_mut(this);
                 this.process_stream(world);
-                None
             }),
         });
 

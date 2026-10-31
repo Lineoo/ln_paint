@@ -123,7 +123,6 @@ impl Element for BrushPreview {
                     Self::generate_preview(&page.lp, &canvas.val, this.brush.as_mut(), c0, c1, bc);
                     this.outdated = false;
                 }
-                None
             }),
         });
 

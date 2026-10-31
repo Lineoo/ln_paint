@@ -181,7 +181,6 @@ impl Element for Text {
             prepare: Box::new(move |world| {
                 let mut this = world.fetch_mut(this);
                 this.prepare(world, instance);
-                None
             }),
         });
 
@@ -829,7 +828,6 @@ impl Element for TextPipeline {
         world.insert(RenderPrepareControl {
             prepare: Box::new(|world| {
                 world.single_fetch_mut::<TextPipeline>().maintain();
-                None
             }),
         });
     }
