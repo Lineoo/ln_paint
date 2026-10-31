@@ -219,6 +219,17 @@ impl Container {
         child.center = I64Vec2::q32_from_f64(offset / scale) + self.attr.center;
     }
 
+    pub fn inner_rect(&self, rect: IRect, center: I64Vec2, zoom: i64) -> IRect {
+        let anchor = rect.q32_anchor(self.attr.anchor);
+        let scale = zoom.q32_as_f64().exp2();
+        let center = center.q32_as_f64();
+        let min = (I64Vec2::q32_from_i32(rect.left_down()) - anchor).q32_as_f64();
+        let max = (I64Vec2::q32_from_i32(rect.right_up()) - anchor).q32_as_f64();
+        let min = (min / scale + center).round();
+        let max = (max / scale + center).round();
+        IRect::new_minmax(min.as_ivec2(), max.as_ivec2())
+    }
+
     fn clamp_scroll(&mut self, rect: IRect, restrict: IRect) {
         let min = I64Vec2::q32_from_i32(rect.left_down());
         let max = I64Vec2::q32_from_i32(rect.right_up());
@@ -268,16 +279,10 @@ impl Descriptor for ContainerEcho {
                 let parent = world.fetch(container.common.camera);
                 let child = world.fetch(container.child);
                 let rect = world.fetch(container.rect).val;
+                let zoom = child.zoom - parent.zoom;
                 let mut inner = world.fetch_mut(inner);
-                let anchor = container.attr.anchor;
 
-                let min = I64Vec2::q32_from_i32(rect.left_down());
-                let max = I64Vec2::q32_from_i32(rect.right_up());
-                let center = rect.q32_anchor(anchor);
-                let scale = (child.zoom - parent.zoom).q32_as_f64().exp2();
-                let min = ((min - center).q32_as_f64() / scale).round();
-                let max = ((max - center).q32_as_f64() / scale).round();
-                inner.val = IRect::new_minmax(min.as_ivec2(), max.as_ivec2());
+                inner.val = container.inner_rect(rect, I64Vec2::ZERO, zoom);
                 world.queue_trigger(inner.handle(), ValChanged);
             });
         });

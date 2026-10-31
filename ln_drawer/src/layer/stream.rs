@@ -7,7 +7,7 @@ use std::{
     time::Instant,
 };
 
-use glam::{I64Vec2, IVec2, UVec2};
+use glam::{IVec2, UVec2};
 use hashbrown::HashSet;
 use indexmap::{IndexMap, IndexSet};
 use redb::{Database, ReadableDatabase};
@@ -26,7 +26,6 @@ use crate::{
         rect_chunks_stack_layer_iter, rect_chunks_stack_layer_range,
     },
     measures::{FI64Ext, IRect},
-    render::camera::Camera,
     save::chunk::{ChunkLoad, ChunkLoadResult, ChunkSave},
 };
 
@@ -41,7 +40,7 @@ const ZOOM_OFFSET: f64 = 0.5;
 
 pub enum ThreadInput {
     SetPage(u64),
-    SetStreamCamera(i64, UVec2, I64Vec2),
+    SetStreamCamera(i64, IRect),
     MarkRawUnsaved(Vec<(i32, i32)>),
     MarkCacheUnsaved(Vec<(i32, i32, u8)>),
     SwapRaw((i32, i32), RawLayerChunk),
@@ -171,10 +170,10 @@ impl StreamThread {
                     self.config.page = page;
                     self.queue.outdated = true;
                 }
-                Some(ThreadInput::SetStreamCamera(zoom, size, center)) => {
-                    self.camera.rect = Camera::view_rect(zoom, size, center);
+                Some(ThreadInput::SetStreamCamera(zoom, rect)) => {
+                    self.camera.rect = rect;
                     let stream_center_new = point_zoom_to_chunks_stack(
-                        center.q32_round(),
+                        rect.q32_center().q32_round(),
                         zoom + i64::q32_from_f64(ZOOM_OFFSET),
                         self.config.chunk_size,
                     );

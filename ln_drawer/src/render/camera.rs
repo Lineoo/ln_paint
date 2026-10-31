@@ -8,7 +8,7 @@ use winit::event::WindowEvent;
 
 use crate::{
     lnwin::Lnwindow,
-    measures::{FI64Ext, IRect},
+    measures::FI64Ext,
     render::{Render, RenderDrawControl},
     tools::collider::ToolControl,
     widgets::container::Container,
@@ -144,18 +144,6 @@ impl Camera {
         let scale = self.zoom.q32_as_f64().exp2();
         let pf = point.q32_as_f64() * 2.0 / self.surface_size.as_dvec2() * scale;
         pf.into()
-    }
-
-    // TODO #[deprecated = "view_rect should depend on scope size not surface size"]
-    pub fn world_view_rect(&self) -> IRect {
-        Self::view_rect(self.zoom, self.surface_size, self.center)
-    }
-
-    // TODO #[deprecated = "view_rect should depend on scope size not surface size"]
-    pub fn view_rect(zoom: i64, size: UVec2, center: I64Vec2) -> IRect {
-        let scale = zoom.q32_as_f64().exp2();
-        let view_size = size.as_dvec2() / scale * 0.5;
-        IRect::new_half(center.q32_round(), view_size.ceil().as_uvec2())
     }
 
     pub fn init(world: &World) {

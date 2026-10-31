@@ -9,7 +9,7 @@ use std::{
 use glam::{DVec2, I64Vec2, IVec2, UVec2, Vec4};
 use hashbrown::HashMap;
 use ln_world::{Element, Handle, World};
-use wgpu::{CommandEncoderDescriptor, ComputePassDescriptor, RenderPass};
+use wgpu::{CommandEncoderDescriptor, ComputePassDescriptor};
 
 use crate::{
     layer::{
@@ -29,7 +29,7 @@ use crate::{
     lnwin::Lnwindow,
     measures::{FI64Ext, IRect},
     render::{
-        Render, RenderDrawControl, RenderExtra, RenderPrepareControl,
+        Render, RenderDrawControl, RenderPrepareControl,
         camera::{CameraBind, CameraUtils, SetCameraOutdated, UICamera},
     },
     save::{Autosave, Save, object::Objects},
@@ -518,38 +518,6 @@ impl LayerPage {
         }
     }
 
-    fn render(&mut self, rpass: &mut RenderPass, extra: RenderExtra) {
-        let (start, end) = extra.diagnosis.assign("main > layers");
-        extra.diagnosis.write(rpass, start);
-
-        let camera = extra.camera;
-        let view_rect = camera.world_view_rect();
-        let mipmap = zoom_to_mipmap(camera.zoom + i64::q32_from_f64(self.zoom_offset))
-            .min(self.cache.mipmap_cap.saturating_sub(1));
-        let pixel = camera.zoom.q32_as_f64().exp2() > 4.0;
-
-        match self.debug {
-            false => rpass.set_pipeline(&self.lp.render_pipelines.main),
-            true => rpass.set_pipeline(&self.lp.render_pipelines.debug),
-        }
-
-        rpass.set_bind_group(0, &camera.bind, &[]);
-
-        match pixel {
-            true => rpass.set_bind_group(1, &self.rd.render_group_unfiltered, &[]),
-            false => rpass.set_bind_group(1, &self.rd.render_group_filtered, &[]),
-        }
-
-        for key in rect_chunks_stack_layer_iter(view_rect, self.cache.chunk_size, mipmap) {
-            if let Some(CacheLayerChunk::Filled(chunk)) = self.cache.chunks.get(&key) {
-                rpass.set_bind_group(2, &chunk.render, &[]);
-                rpass.draw(0..4, 0..1);
-            }
-        }
-
-        extra.diagnosis.write(rpass, end);
-    }
-
     pub fn undo(&mut self) {
         if self.traveler.undo_available(&self.raw) {
             let mut encoder = (self.lp.device).create_command_encoder(&CommandEncoderDescriptor {
@@ -641,13 +609,19 @@ impl Element for LayerPage {
         world.set_autodeps(Some(this));
         world.dependency(this, self.common.visible);
 
-        let page_camera = world.fetch(self.common.camera);
+        let container = world.fetch(self.container);
+        let parent = world.fetch(container.common.camera);
+        let child = world.fetch(container.child);
+        let container_rect = world.fetch(container.rect).val;
 
         self.thread_tx
             .send(ThreadInput::SetStreamCamera(
-                page_camera.zoom,
-                page_camera.surface_size,
-                page_camera.center,
+                child.zoom,
+                container.inner_rect(
+                    container_rect,
+                    container.attr.center,
+                    child.zoom - parent.zoom,
+                ),
             ))
             .unwrap();
 
@@ -665,19 +639,59 @@ impl Element for LayerPage {
             this.thread_tx.send(ThreadInput::Autosave).unwrap();
         })));
 
-        let page_camera = page_camera.retrieve();
-        world.observer(page_camera, move |&SetCameraOutdated, world| {
+        world.observer(self.common.camera, move |&SetCameraOutdated, world| {
             let this = world.single_fetch::<LayerPage>();
-            let camera = world.fetch(page_camera);
+            let container = world.fetch(this.container);
+            let parent = world.fetch(container.common.camera);
+            let child = world.fetch(container.child);
+            let container_rect = world.fetch(container.rect).val;
 
             this.thread_tx
                 .send(ThreadInput::SetStreamCamera(
-                    camera.zoom,
-                    camera.surface_size,
-                    camera.center,
+                    child.zoom,
+                    container.inner_rect(
+                        container_rect,
+                        container.attr.center,
+                        child.zoom - parent.zoom,
+                    ),
                 ))
                 .unwrap();
         });
+
+        // TEMP: verify Container::inner_rect; red border should hug the page clip.
+        // let test_rect = world.insert(Val::new(
+        //     container
+        //         .inner_rect(
+        //             container_rect,
+        //             container.attr.center,
+        //             child.zoom - parent.zoom,
+        //         )
+        //         .expand(-5),
+        // ));
+        // world.insert(RRect {
+        //     common: self.common,
+        //     rect: test_rect,
+        //     order: 1000,
+        //     color: world.insert(Val::new(Vec4::new(1.0, 0.0, 0.0, 0.3))),
+        //     radius: 0.0,
+        //     width: 0.0,
+        // });
+        // world.observer(self.common.camera, move |&SetCameraOutdated, world| {
+        //     let this = world.single_fetch::<LayerPage>();
+        //     let container = world.fetch(this.container);
+        //     let parent = world.fetch(container.common.camera);
+        //     let child = world.fetch(container.child);
+        //     let container_rect = world.fetch(container.rect).val;
+        //     let mut test_rect = world.fetch_mut(test_rect);
+        //     test_rect.val = container
+        //         .inner_rect(
+        //             container_rect,
+        //             container.attr.center,
+        //             child.zoom - parent.zoom,
+        //         )
+        //         .expand(-5);
+        //     world.queue_trigger(test_rect.handle(), ValChanged);
+        // });
 
         // Interaction //
 
@@ -699,9 +713,46 @@ impl Element for LayerPage {
         world.insert(RenderDrawControl {
             common: self.common,
             order: 0,
-            draw: Box::new(move |world, rpass, extra| {
-                let mut this = world.single_fetch_mut::<LayerPage>();
-                this.render(rpass, extra);
+            draw: Box::new(|world, rpass, extra| {
+                let this = world.single_fetch::<LayerPage>();
+                let container = world.fetch(this.container);
+                let parent = world.fetch(container.common.camera);
+                let child = world.fetch(container.child);
+                let container_rect = world.fetch(container.rect).val;
+
+                let (start, end) = extra.diagnosis.assign("main > layers");
+                extra.diagnosis.write(rpass, start);
+
+                let camera = extra.camera;
+                let view_rect = container.inner_rect(
+                    container_rect,
+                    container.attr.center,
+                    child.zoom - parent.zoom,
+                );
+                let mipmap = zoom_to_mipmap(camera.zoom + i64::q32_from_f64(this.zoom_offset))
+                    .min(this.cache.mipmap_cap.saturating_sub(1));
+                let pixel = camera.zoom.q32_as_f64().exp2() > 4.0;
+
+                match this.debug {
+                    false => rpass.set_pipeline(&this.lp.render_pipelines.main),
+                    true => rpass.set_pipeline(&this.lp.render_pipelines.debug),
+                }
+
+                rpass.set_bind_group(0, &camera.bind, &[]);
+
+                match pixel {
+                    true => rpass.set_bind_group(1, &this.rd.render_group_unfiltered, &[]),
+                    false => rpass.set_bind_group(1, &this.rd.render_group_filtered, &[]),
+                }
+
+                for key in rect_chunks_stack_layer_iter(view_rect, this.cache.chunk_size, mipmap) {
+                    if let Some(CacheLayerChunk::Filled(chunk)) = this.cache.chunks.get(&key) {
+                        rpass.set_bind_group(2, &chunk.render, &[]);
+                        rpass.draw(0..4, 0..1);
+                    }
+                }
+
+                extra.diagnosis.write(rpass, end);
             }),
         });
     }
