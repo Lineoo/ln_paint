@@ -15,8 +15,10 @@ use toml_edit::{DocumentMut, Item, Value};
 #[cfg(target_os = "android")]
 use crate::lnwin::LnAndroid;
 use crate::{
-    layer::input::{OffsetCorrection, TiltCorrection},
-    render::camera::PageCameraArchive,
+    layer::{
+        input::{OffsetCorrection, TiltCorrection},
+        wrapper::PageCameraArchive,
+    },
     save::{
         chunk::{TABLE_LAYER_CHUNK, TABLE_LAYER_CHUNK_RAW},
         object::TABLE_LAYER_OBJECT,

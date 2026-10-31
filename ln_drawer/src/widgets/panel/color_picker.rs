@@ -15,7 +15,6 @@ use crate::{
         val::{Val, ValChanged},
     },
     measures::{FI64Ext, IRect},
-    render::camera::PageCamera,
     theme::ThemeVal,
     widgets::{
         button::{
@@ -216,7 +215,7 @@ impl Element for ColorPickerButton {
         let mut dragging = None;
         world.observer(button, move |drag: &ButtonDrag, world| {
             let this = world.fetch(this);
-            let page_camera = world.single_fetch::<PageCamera>().0;
+            let page_camera = world.single_fetch::<LayerPage>().common.camera;
             let page_camera = world.fetch(page_camera);
             let page = world.single_fetch::<LayerPage>();
             let snip_rect = *dragging.get_or_insert_with(|| {

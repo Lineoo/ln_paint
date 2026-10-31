@@ -6,7 +6,7 @@ use std::{
     thread::JoinHandle,
 };
 
-use glam::{DVec2, I64Vec2, IVec2, UVec2, Vec4};
+use glam::{I64Vec2, IVec2, UVec2, Vec4};
 use hashbrown::HashMap;
 use ln_world::{Element, Handle, World};
 use wgpu::{CommandEncoderDescriptor, ComputePassDescriptor, RenderPass};
@@ -30,15 +30,12 @@ use crate::{
     measures::{FI64Ext, IRect},
     render::{
         Render, RenderDrawControl, RenderExtra, RenderPrepareControl,
-        camera::{
-            CameraBind, CameraDescriptor, CameraUtils, PageCamera, PageCameraArchive,
-            PageCameraUtils, SetCameraOutdated, UICamera,
-        },
+        camera::{CameraBind, CameraUtils, SetCameraOutdated, UICamera},
     },
     save::{Autosave, Save, object::Objects},
     widgets::{
         common::WidgetCommon,
-        container::{Container, ContainerAttr},
+        container::{Container, ContainerAttr, ContainerWithCamera},
         renderer::rrect::RRect,
     },
 };
@@ -62,6 +59,12 @@ pub struct BrushPreset {
     pub brush: Box<dyn BrushParams>,
 }
 
+#[derive(Debug, Default, serde::Serialize, serde::Deserialize)]
+pub struct PageCameraArchive {
+    pub center: I64Vec2,
+    pub zoom: i64,
+}
+
 /// layer page - the main entry of infinite canvas
 ///
 /// Page optimization comes from three layers:
@@ -81,8 +84,9 @@ pub struct LayerPage {
     pub lp: Arc<LayerPipeline>,
     rd: LayerRenderer,
 
-    common: WidgetCommon,
-    rect: Handle<Val<IRect>>,
+    pub common: WidgetCommon,
+    pub container: Handle<Container>,
+    pub camera_utils: Handle<CameraUtils>,
 
     cache: CacheLayers,
     raw: RawLayer,
@@ -120,6 +124,7 @@ impl LayerPage {
     pub fn new(world: &World, common: WidgetCommon, rect: Handle<Val<IRect>>) -> Self {
         let render = world.single_fetch::<Render>();
         let camera_bind = world.single_fetch::<CameraBind>();
+        let save = world.single_fetch::<Save>();
 
         let lp = Arc::new(LayerPipeline::new(
             render.adapter.clone(),
@@ -156,6 +161,20 @@ impl LayerPage {
         });
 
         let ui_camera = world.single_fetch::<UICamera>().0;
+
+        let (container, common) = world.build(ContainerWithCamera {
+            common,
+            rect,
+            attr: ContainerAttr {
+                center: save.sn().page_camera.center,
+                zoom: save.sn().page_camera.zoom,
+                ..Default::default()
+            },
+        });
+        let camera_utils = world.insert_with(move |world| {
+            let camera = world.fetch(common.camera);
+            CameraUtils::new(&camera)
+        });
 
         let cursor_visible = world.insert(Val::new(false));
         let cursor_rect = world.insert(Val::new(IRect::new_half(
@@ -268,7 +287,6 @@ impl LayerPage {
             lp,
             rd,
             common,
-            rect,
             cache: CacheLayers {
                 chunks: HashMap::new(),
                 chunk_size: DEFAULT_CHUNK_SIZE,
@@ -310,6 +328,8 @@ impl LayerPage {
             },
             color,
             debug: false,
+            container,
+            camera_utils,
             cursor_rect,
             cursor_shadow_rect,
             cursor_visible,
@@ -618,17 +638,7 @@ impl Element for LayerPage {
         world.set_autodeps(Some(this));
         world.dependency(this, self.common.visible);
 
-        let save = world.single_fetch::<Save>();
-
-        // Camera //
-
-        let page_camera = world.build(CameraDescriptor {
-            center: save.sn().page_camera.center,
-            zoom: save.sn().page_camera.zoom,
-            global_center: save.sn().page_camera.center,
-            global_zoom: save.sn().page_camera.zoom,
-        });
-        let page_camera_utils = CameraUtils::new(&page_camera);
+        let page_camera = world.fetch(self.common.camera);
 
         self.thread_tx
             .send(ThreadInput::SetStreamCamera(
@@ -638,11 +648,7 @@ impl Element for LayerPage {
             ))
             .unwrap();
 
-        let page_camera = world.insert(page_camera);
-        let page_camera_utils = world.insert(page_camera_utils);
-
-        world.insert(PageCamera(page_camera));
-        world.insert(PageCameraUtils(page_camera_utils));
+        let page_camera = page_camera.retrieve();
 
         world.insert(Autosave(Box::new(move |world, task| {
             let camera = world.fetch(page_camera);
@@ -651,27 +657,6 @@ impl Element for LayerPage {
                 zoom: camera.zoom,
             });
         })));
-
-        // Container //
-
-        world.insert(Container {
-            common: self.common,
-            order: -100,
-            child: page_camera,
-            rect: self.rect,
-            attr: ContainerAttr {
-                anchor: DVec2::new(0.5, 0.5),
-                top: true,
-                ..Default::default()
-            },
-        });
-
-        let common = WidgetCommon {
-            camera: page_camera,
-            visible: self.common.visible,
-        };
-
-        // Thread //
 
         world.insert(Autosave(Box::new(move |world, _write| {
             let this = world.single_fetch::<LayerPage>();
@@ -694,7 +679,9 @@ impl Element for LayerPage {
         // Interaction //
 
         world.insert(LayerInput::default());
-        world.insert(Objects { common });
+        world.insert(Objects {
+            common: self.common,
+        });
 
         // Render //
 
@@ -707,7 +694,7 @@ impl Element for LayerPage {
         });
 
         world.insert(RenderDrawControl {
-            common,
+            common: self.common,
             order: 0,
             draw: Box::new(move |world, rpass, extra| {
                 let mut this = world.single_fetch_mut::<LayerPage>();

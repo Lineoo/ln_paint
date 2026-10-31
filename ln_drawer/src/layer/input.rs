@@ -16,7 +16,7 @@ use crate::{
     layout::val::{Val, ValChanged},
     lnwin::Lnwindow,
     measures::{FI64Ext, IRect},
-    render::camera::{PageCamera, PageCameraUtils, UICamera},
+    render::camera::UICamera,
     save::Save,
     theme::Theme,
     tools::{
@@ -82,7 +82,7 @@ impl LayerInput {
         world.scope("layer_input");
         world.set_autodeps(Some(this));
 
-        let page_camera = world.single_fetch::<PageCamera>().0;
+        let page_camera = world.single_fetch::<LayerPage>().common.camera;
         let visible = world.insert(Val::new(true));
         let rect = world.insert(Val::new(IRect::FULLSCREEN));
         world.insert(ToolRectCollider {
@@ -101,7 +101,7 @@ impl LayerInput {
             }
 
             let mut this = world.fetch_mut(this);
-            let page_camera = world.single_fetch::<PageCamera>().0;
+            let page_camera = world.single_fetch::<LayerPage>().common.camera;
             let page_camera = world.fetch(page_camera);
             let ui_camera = world.single_fetch::<UICamera>().0;
             let camera = world.fetch(ui_camera);
@@ -226,8 +226,8 @@ impl LayerInput {
         });
 
         world.observer(this, move |event: &PointerScroll, world| {
-            let main = world.single_fetch::<PageCamera>().0;
-            let utils = world.single_fetch::<PageCameraUtils>().0;
+            let main = world.single_fetch::<LayerPage>().common.camera;
+            let utils = world.single_fetch::<LayerPage>().camera_utils;
             let mut camera_utils = world.fetch_mut(utils);
 
             let zoom_delta = -event.delta.y;
@@ -247,8 +247,8 @@ impl LayerInput {
 
         let mut state = LayerInputState::None;
         world.observer(this, move |event: &MultiTouchGroup, world| {
-            let page_camera = world.single_fetch::<PageCamera>().0;
-            let utils = world.single_fetch::<PageCameraUtils>().0;
+            let page_camera = world.single_fetch::<LayerPage>().common.camera;
+            let utils = world.single_fetch::<LayerPage>().camera_utils;
             let mut this = world.fetch_mut(this);
             let lnwindow = world.fetch(lnwindow);
             let camera_utils = &mut *world.fetch_mut(utils);

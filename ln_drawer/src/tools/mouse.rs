@@ -2,12 +2,7 @@ use glam::{DVec2, IVec2};
 use ln_world::{Element, Handle, World};
 use winit::event::{ButtonSource, ElementState, MouseButton, PointerSource, WindowEvent};
 
-use crate::{
-    lnwin::Lnwindow,
-    measures::FI64Ext,
-    render::camera::{PageCamera, PageCameraUtils},
-    tools::collider::ToolControl,
-};
+use crate::{layer::wrapper::LayerPage, lnwin::Lnwindow, measures::FI64Ext, tools::collider::ToolControl};
 
 /// Mouse-specific operations like right-click and middle-click.
 #[derive(Default)]
@@ -51,7 +46,7 @@ impl Element for MouseTool {
                 button: ButtonSource::Mouse(MouseButton::Middle),
                 ..
             } => {
-                let utils = world.single_fetch::<PageCameraUtils>().0;
+                let utils = world.single_fetch::<LayerPage>().camera_utils;
                 let lnwindow = world.single_fetch::<Lnwindow>();
                 let cursor = lnwindow.cursor_to_screen(*position);
                 middle = true;
@@ -66,8 +61,8 @@ impl Element for MouseTool {
                 source: PointerSource::Mouse,
                 ..
             } => {
-                let main = world.single_fetch::<PageCamera>().0;
-                let utils = world.single_fetch::<PageCameraUtils>().0;
+                let main = world.single_fetch::<LayerPage>().common.camera;
+                let utils = world.single_fetch::<LayerPage>().camera_utils;
                 let lnwindow = world.single_fetch::<Lnwindow>();
                 let cursor = lnwindow.cursor_to_screen(*position);
                 drop(lnwindow);

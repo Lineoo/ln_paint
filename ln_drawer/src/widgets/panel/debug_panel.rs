@@ -9,10 +9,7 @@ use crate::{
         val::{Val, ValChanged},
     },
     measures::IRect,
-    render::{
-        Render,
-        camera::{PageCamera, PageCameraUtils},
-    },
+    render::Render,
     save::Save,
     theme::ThemeVal,
     widgets::{
@@ -122,13 +119,13 @@ impl Element for DebugPanel {
             include_bytes!("../../../res/interface/compass.svg"),
         );
         world.observer(compass, move |&ButtonClick, world| {
-            let page_camera = world.single_fetch::<PageCamera>().0;
-            let utils = world.single_fetch::<PageCameraUtils>().0;
+            let container = world.single_fetch::<LayerPage>().common.camera;
+            let utils = world.single_fetch::<LayerPage>().camera_utils;
             let mut camera = world.fetch_mut(utils);
             camera.force_clear();
             camera.force_camera_center(I64Vec2::ZERO);
             camera.force_camera_zoom(0);
-            camera.write_camera(world, page_camera);
+            camera.write_camera(world, container);
         });
 
         let page_debug_rect = world.build(Transform::new(

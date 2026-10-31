@@ -228,9 +228,7 @@ impl Element for Lnwindow {
             world.insert(LnwindowRect(window_rect));
             let ui_camera = world.insert(world.build(CameraDescriptor {
                 center: lnwindow.surface_center(),
-                global_center: lnwindow.surface_center(),
                 zoom: i64::q32_from_f64(lnwindow.scale_factor().log2()),
-                global_zoom: i64::q32_from_f64(lnwindow.scale_factor().log2()),
             }));
             world.insert(UICamera(ui_camera));
             drop(lnwindow);
@@ -257,9 +255,7 @@ impl Element for Lnwindow {
                     world.queue_trigger(rect.handle(), ValChanged);
 
                     camera.center = lnwindow.surface_center();
-                    camera.global_center = lnwindow.surface_center();
                     camera.zoom = i64::q32_from_f64(scale.log2());
-                    camera.global_zoom = i64::q32_from_f64(scale.log2());
                     camera.surface_size = UVec2::new(size.width, size.height);
                     camera.upload();
                     lnwindow.window.request_redraw();

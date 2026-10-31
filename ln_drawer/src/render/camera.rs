@@ -19,8 +19,6 @@ pub struct Camera {
 
     // responsible by lnwindow/container
     pub surface_size: UVec2,
-    pub global_center: I64Vec2,
-    pub global_zoom: i64,
 
     pub bind: BindGroup,
     pub uniform: Buffer,
@@ -35,8 +33,6 @@ pub struct Camera {
 pub struct CameraDescriptor {
     pub center: I64Vec2,
     pub zoom: i64,
-    pub global_center: I64Vec2,
-    pub global_zoom: i64,
 }
 
 pub struct CameraBind {
@@ -45,15 +41,6 @@ pub struct CameraBind {
 
 pub struct SetCameraOutdated;
 pub struct CameraOutdated;
-
-pub struct PageCamera(pub Handle<Camera>);
-pub struct PageCameraUtils(pub Handle<CameraUtils>);
-
-#[derive(Debug, Default, serde::Serialize, serde::Deserialize)]
-pub struct PageCameraArchive {
-    pub center: I64Vec2,
-    pub zoom: i64,
-}
 
 pub struct UICamera(pub Handle<Camera>);
 
@@ -112,8 +99,6 @@ impl Descriptor for CameraDescriptor {
         Camera {
             center: self.center,
             zoom: self.zoom,
-            global_center: self.global_center,
-            global_zoom: self.global_zoom,
             surface_size: size,
             bind,
             uniform,
@@ -141,21 +126,21 @@ impl Element for CameraBind {}
 impl Camera {
     #[inline]
     pub fn screen_to_world(&self, point: DVec2) -> I64Vec2 {
-        self.global_center + self.screen_to_world_relative(point)
+        self.center + self.screen_to_world_relative(point)
     }
 
     pub fn screen_to_world_relative(&self, delta: DVec2) -> I64Vec2 {
-        let scale = self.global_zoom.q32_as_f64().exp2();
+        let scale = self.zoom.q32_as_f64().exp2();
         let pf = delta / scale * self.surface_size.as_dvec2() / 2.0;
         I64Vec2::q32_from_f64(pf)
     }
 
     pub fn world_to_screen(&self, point: I64Vec2) -> DVec2 {
-        self.world_to_screen_relative(point - self.global_center)
+        self.world_to_screen_relative(point - self.center)
     }
 
     pub fn world_to_screen_relative(&self, point: I64Vec2) -> DVec2 {
-        let scale = self.global_zoom.q32_as_f64().exp2();
+        let scale = self.zoom.q32_as_f64().exp2();
         let pf = point.q32_as_f64() * 2.0 / self.surface_size.as_dvec2() * scale;
         pf.into()
     }
@@ -195,11 +180,10 @@ impl Camera {
 
     pub fn upload(&self) {
         let transform = Mat2::from_scale_angle(
-            Vec2::splat(self.global_zoom.q32_as_f64().exp2() as f32) * 2.
-                / self.surface_size.as_vec2(),
+            Vec2::splat(self.zoom.q32_as_f64().exp2() as f32) * 2. / self.surface_size.as_vec2(),
             0.0,
         );
-        let translate = self.global_center;
+        let translate = self.center;
         self.queue.write_buffer(
             &self.uniform,
             0,
@@ -226,7 +210,7 @@ pub struct CameraUtils {
     anchor_cursor: DVec2,
     anchor_distance: f64,
 
-    camera_size: UVec2,
+    surface_size: UVec2,
     anchor_lock: bool,
 }
 
@@ -241,7 +225,7 @@ impl CameraUtils {
             anchor_zoom: 0,
             anchor_cursor: DVec2::ZERO,
             anchor_distance: 1.0,
-            camera_size: camera.surface_size,
+            surface_size: camera.surface_size,
             anchor_lock: false,
         }
     }
@@ -332,14 +316,14 @@ impl CameraUtils {
         let camera = world.fetch(camera);
         self.camera_zoom = camera.zoom;
         self.camera_center = camera.center;
-        self.camera_size = camera.surface_size;
+        self.surface_size = camera.surface_size;
     }
 
     pub fn write_camera(&self, world: &World, camera: Handle<Camera>) {
-        world.queue_trigger(camera, SetCameraOutdated);
         let mut camera = world.fetch_mut(camera);
         camera.zoom = self.camera_zoom;
         camera.center = self.camera_center;
+        world.queue_trigger(camera.handle(), SetCameraOutdated);
     }
 
     /// -> camera_center camera_zoom
@@ -374,20 +358,18 @@ impl CameraUtils {
 
     fn screen_to_world_relative(&self, delta: DVec2) -> I64Vec2 {
         let scale = self.camera_zoom.q32_as_f64().exp2();
-        let pf = delta / scale * self.camera_size.as_dvec2() / 2.0;
+        let pf = delta / scale * self.surface_size.as_dvec2() / 2.0;
         I64Vec2::q32_from_f64(pf)
     }
 
     fn world_to_screen_relative(&self, delta: I64Vec2) -> DVec2 {
         let scale = self.camera_zoom.q32_as_f64().exp2();
-        let pf = delta.q32_as_f64() * 2.0 / self.camera_size.as_dvec2() * scale;
+        let pf = delta.q32_as_f64() * 2.0 / self.surface_size.as_dvec2() * scale;
         pf.into()
     }
 }
 
-impl Element for PageCamera {}
 impl Element for UICamera {}
-impl Element for PageCameraUtils {}
 impl Element for CameraUtils {}
 
 #[cfg(test)]
@@ -403,7 +385,7 @@ mod test {
         anchor_zoom: 0,
         anchor_cursor: DVec2::ZERO,
         anchor_distance: 1.0,
-        camera_size: UVec2::new(640, 360),
+        surface_size: UVec2::new(640, 360),
         anchor_lock: false,
     };
 
