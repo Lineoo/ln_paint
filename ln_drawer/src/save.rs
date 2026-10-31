@@ -17,7 +17,7 @@ use crate::lnwin::LnAndroid;
 use crate::{
     layer::{
         input::{OffsetCorrection, TiltCorrection},
-        wrapper::PageCameraArchive,
+        wrapper::PageContainerArchive,
     },
     save::{
         chunk::{TABLE_LAYER_CHUNK, TABLE_LAYER_CHUNK_RAW},
@@ -268,7 +268,7 @@ pub struct SceneFile {
     pub desktop_mode: Option<bool>,
     pub dark_mode: Option<bool>,
     #[serde(default)]
-    pub page_camera: PageCameraArchive,
+    pub page_camera: PageContainerArchive,
     pub tilt_correction: Option<TiltCorrection>,
     pub offset_correction: Option<OffsetCorrection>,
 }
@@ -304,7 +304,7 @@ impl Default for SceneFile {
             compact_on_startup: false,
             desktop_mode: None,
             dark_mode: None,
-            page_camera: PageCameraArchive::default(),
+            page_camera: PageContainerArchive::default(),
             tilt_correction: None,
             offset_correction: None,
         }
@@ -354,7 +354,7 @@ impl SceneDocument {
         self.doc["compact_on_startup"] = toml_edit::value(compact);
     }
 
-    pub fn set_page_camera(&mut self, camera: PageCameraArchive) {
+    pub fn set_page_camera(&mut self, camera: PageContainerArchive) {
         let camera = toml_edit::ser::to_document(&camera).unwrap();
         self.doc["page_camera"] = match camera.into_item() {
             Item::Table(t) => Item::Table(t),

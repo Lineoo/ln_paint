@@ -6,7 +6,7 @@ use std::{
     thread::JoinHandle,
 };
 
-use glam::{I64Vec2, IVec2, UVec2, Vec4};
+use glam::{DVec2, I64Vec2, IVec2, UVec2, Vec4};
 use hashbrown::HashMap;
 use ln_world::{Element, Handle, World};
 use wgpu::{CommandEncoderDescriptor, ComputePassDescriptor, RenderPass};
@@ -59,8 +59,9 @@ pub struct BrushPreset {
     pub brush: Box<dyn BrushParams>,
 }
 
+/// container
 #[derive(Debug, Default, serde::Serialize, serde::Deserialize)]
-pub struct PageCameraArchive {
+pub struct PageContainerArchive {
     pub center: I64Vec2,
     pub zoom: i64,
 }
@@ -168,6 +169,8 @@ impl LayerPage {
             attr: ContainerAttr {
                 center: save.sn().page_camera.center,
                 zoom: save.sn().page_camera.zoom,
+                anchor: DVec2::new(0.5, 0.5),
+                top: true,
                 ..Default::default()
             },
         });
@@ -648,13 +651,12 @@ impl Element for LayerPage {
             ))
             .unwrap();
 
-        let page_camera = page_camera.retrieve();
-
         world.insert(Autosave(Box::new(move |world, task| {
-            let camera = world.fetch(page_camera);
-            task.sn_doc.set_page_camera(PageCameraArchive {
-                center: camera.center,
-                zoom: camera.zoom,
+            let this = world.fetch(this);
+            let container = world.fetch(this.container);
+            task.sn_doc.set_page_camera(PageContainerArchive {
+                center: container.attr.center,
+                zoom: container.attr.zoom,
             });
         })));
 
@@ -663,6 +665,7 @@ impl Element for LayerPage {
             this.thread_tx.send(ThreadInput::Autosave).unwrap();
         })));
 
+        let page_camera = page_camera.retrieve();
         world.observer(page_camera, move |&SetCameraOutdated, world| {
             let this = world.single_fetch::<LayerPage>();
             let camera = world.fetch(page_camera);

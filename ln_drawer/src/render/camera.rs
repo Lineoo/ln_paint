@@ -11,6 +11,7 @@ use crate::{
     measures::{FI64Ext, IRect},
     render::{Render, RenderDrawControl},
     tools::collider::ToolControl,
+    widgets::container::Container,
 };
 
 pub struct Camera {
@@ -312,17 +313,29 @@ impl CameraUtils {
         self.anchor_lock = false;
     }
 
-    pub fn read_camera(&mut self, world: &World, camera: Handle<Camera>) {
-        let camera = world.fetch(camera);
+    pub fn read_camera(&mut self, world: &World, container: Handle<Container>) {
+        let container = world.fetch(container);
+        let camera = world.fetch(container.child);
         self.camera_zoom = camera.zoom;
         self.camera_center = camera.center;
         self.surface_size = camera.surface_size;
     }
 
-    pub fn write_camera(&self, world: &World, camera: Handle<Camera>) {
-        let mut camera = world.fetch_mut(camera);
-        camera.zoom = self.camera_zoom;
-        camera.center = self.camera_center;
+    pub fn write_camera(&self, world: &World, container: Handle<Container>) {
+        let mut container = world.fetch_mut(container);
+        let parent = world.fetch(container.common.camera);
+        let camera = world.fetch(container.child);
+        let rect = world.fetch(container.rect).val;
+        let scale = (self.camera_zoom - parent.zoom).q32_as_f64().exp2();
+        container.attr.zoom = if container.attr.top {
+            self.camera_zoom
+        } else {
+            self.camera_zoom - parent.zoom
+        };
+        container.attr.center = self.camera_center
+            - I64Vec2::q32_from_f64(
+                (parent.center - rect.q32_anchor(container.attr.anchor)).q32_as_f64() / scale,
+            );
         world.queue_trigger(camera.handle(), SetCameraOutdated);
     }
 

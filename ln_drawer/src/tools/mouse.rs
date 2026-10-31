@@ -2,7 +2,9 @@ use glam::{DVec2, IVec2};
 use ln_world::{Element, Handle, World};
 use winit::event::{ButtonSource, ElementState, MouseButton, PointerSource, WindowEvent};
 
-use crate::{layer::wrapper::LayerPage, lnwin::Lnwindow, measures::FI64Ext, tools::collider::ToolControl};
+use crate::{
+    layer::wrapper::LayerPage, lnwin::Lnwindow, measures::FI64Ext, tools::collider::ToolControl,
+};
 
 /// Mouse-specific operations like right-click and middle-click.
 #[derive(Default)]
@@ -46,12 +48,14 @@ impl Element for MouseTool {
                 button: ButtonSource::Mouse(MouseButton::Middle),
                 ..
             } => {
+                let main = world.single_fetch::<LayerPage>().container;
                 let utils = world.single_fetch::<LayerPage>().camera_utils;
                 let lnwindow = world.single_fetch::<Lnwindow>();
                 let cursor = lnwindow.cursor_to_screen(*position);
                 middle = true;
 
                 let mut camera_utils = world.fetch_mut(utils);
+                camera_utils.read_camera(world, main);
                 camera_utils.anchor_cursor(DVec2::ZERO);
                 camera_utils.camera_cursor_by_anchor_center(cursor);
             }
@@ -61,15 +65,15 @@ impl Element for MouseTool {
                 source: PointerSource::Mouse,
                 ..
             } => {
-                let main = world.single_fetch::<LayerPage>().common.camera;
+                let main = world.single_fetch::<LayerPage>().container;
                 let utils = world.single_fetch::<LayerPage>().camera_utils;
                 let lnwindow = world.single_fetch::<Lnwindow>();
                 let cursor = lnwindow.cursor_to_screen(*position);
                 drop(lnwindow);
 
-                let mut camera_utils = world.fetch_mut(utils);
-                camera_utils.read_camera(world, main);
                 if middle {
+                    let mut camera_utils = world.fetch_mut(utils);
+                    camera_utils.read_camera(world, main);
                     camera_utils.camera_cursor_by_camera_center(cursor);
                     camera_utils.write_camera(world, main);
                 }

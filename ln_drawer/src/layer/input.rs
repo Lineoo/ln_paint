@@ -226,7 +226,7 @@ impl LayerInput {
         });
 
         world.observer(this, move |event: &PointerScroll, world| {
-            let main = world.single_fetch::<LayerPage>().common.camera;
+            let main = world.single_fetch::<LayerPage>().container;
             let utils = world.single_fetch::<LayerPage>().camera_utils;
             let mut camera_utils = world.fetch_mut(utils);
 
@@ -247,7 +247,7 @@ impl LayerInput {
 
         let mut state = LayerInputState::None;
         world.observer(this, move |event: &MultiTouchGroup, world| {
-            let page_camera = world.single_fetch::<LayerPage>().common.camera;
+            let page_camera = world.single_fetch::<LayerPage>().container;
             let utils = world.single_fetch::<LayerPage>().camera_utils;
             let mut this = world.fetch_mut(this);
             let lnwindow = world.fetch(lnwindow);
