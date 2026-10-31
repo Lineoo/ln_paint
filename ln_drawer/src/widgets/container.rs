@@ -23,8 +23,6 @@ use crate::{
 pub struct ContainerAttr {
     /// where is the zero point on outer rectangle
     pub anchor: DVec2,
-    /// offset insider rect
-    pub scroll: I64Vec2,
     /// whether scissor rect should be set
     pub clip: bool,
     /// whether to ignore parent camera's linear transform
@@ -35,7 +33,6 @@ impl Default for ContainerAttr {
     fn default() -> Self {
         Self {
             anchor: DVec2::new(0.0, 1.0),
-            scroll: I64Vec2::ZERO,
             clip: true,
             top: false,
         }
@@ -206,11 +203,10 @@ impl Container {
         }
         let scale = (child.global_zoom - parent.global_zoom).q32_as_f64().exp2();
         let offset = (parent.global_center - rect.q32_anchor(self.attr.anchor)).q32_as_f64();
-        child.global_center =
-            I64Vec2::q32_from_f64(offset / scale) + (child.center + self.attr.scroll);
+        child.global_center = I64Vec2::q32_from_f64(offset / scale) + child.center;
     }
 
-    fn clamp_scroll(&mut self, rect: IRect, restrict: IRect) {
+    fn clamp_scroll(&mut self, rect: IRect, restrict: IRect, scroll: I64Vec2) -> I64Vec2 {
         let min = I64Vec2::q32_from_i32(rect.left_down());
         let max = I64Vec2::q32_from_i32(rect.right_up());
         let center = rect.q32_anchor(self.attr.anchor);
@@ -220,7 +216,7 @@ impl Container {
             true => {
                 let min = i64::q32_from_i32(restrict.left()) - min.x;
                 let max = i64::q32_from_i32(restrict.right()) - max.x;
-                self.attr.scroll.x.clamp(min, max)
+                scroll.x.clamp(min, max)
             }
             false => 0,
         };
@@ -228,12 +224,12 @@ impl Container {
             true => {
                 let min = i64::q32_from_i32(restrict.down()) - min.y;
                 let max = i64::q32_from_i32(restrict.up()) - max.y;
-                self.attr.scroll.y.clamp(min, max)
+                scroll.y.clamp(min, max)
             }
             false => 0,
         };
 
-        self.attr.scroll = I64Vec2::new(x, y);
+        I64Vec2::new(x, y)
     }
 }
 
@@ -322,8 +318,8 @@ impl Element for ContainerDeco {
                     let delta =
                         parent_camera.screen_to_world_relative(event.pointer.screen - position);
 
-                    container.attr.scroll -= delta;
-                    container.clamp_scroll(rect, restriction);
+                    child_camera.center =
+                        container.clamp_scroll(rect, restriction, child_camera.center - delta);
                     container.update_camera(rect, &parent_camera, &mut child_camera);
                     world.queue_trigger(container.child, SetCameraOutdated);
                     Some(event.pointer.screen)
@@ -338,8 +334,8 @@ impl Element for ContainerDeco {
                     let delta =
                         parent_camera.screen_to_world_relative(event.pointer.screen - position);
 
-                    container.attr.scroll -= delta;
-                    container.clamp_scroll(rect, restriction);
+                    child_camera.center =
+                        container.clamp_scroll(rect, restriction, child_camera.center - delta);
                     container.update_camera(rect, &parent_camera, &mut child_camera);
                     world.queue_trigger(container.child, SetCameraOutdated);
                     None
@@ -356,8 +352,8 @@ impl Element for ContainerDeco {
             let restriction = world.fetch(this.restriction).val;
 
             let delta = I64Vec2::q32_from_f64(event.delta);
-            container.attr.scroll -= delta;
-            container.clamp_scroll(rect, restriction);
+            child_camera.center =
+                container.clamp_scroll(rect, restriction, child_camera.center - delta);
             container.update_camera(rect, &parent_camera, &mut child_camera);
             world.queue_trigger(child_camera.handle(), SetCameraOutdated);
         });
@@ -370,7 +366,7 @@ impl Element for ContainerDeco {
             let rect = world.fetch(container.rect).val;
             let restriction = world.fetch(this.restriction).val;
 
-            container.clamp_scroll(rect, restriction);
+            child_camera.center = container.clamp_scroll(rect, restriction, child_camera.center);
             container.update_camera(rect, &parent_camera, &mut child_camera);
             world.queue_trigger(child_camera.handle(), SetCameraOutdated);
         });
@@ -384,7 +380,7 @@ impl Element for ContainerDeco {
             let rect = world.fetch(container.rect).val;
             let restriction = world.fetch(this.restriction).val;
 
-            container.clamp_scroll(rect, restriction);
+            child_camera.center = container.clamp_scroll(rect, restriction, child_camera.center);
             container.update_camera(rect, &parent_camera, &mut child_camera);
             world.queue_trigger(child_camera.handle(), SetCameraOutdated);
         });
