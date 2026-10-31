@@ -4,7 +4,7 @@ use glam::{DVec2, I64Vec2, Mat3, UVec2};
 use ln_world::{Element, Handle, HandleGeneric, World};
 use winit::{
     cursor::{Cursor, CursorIcon},
-    event::{ElementState, PointerKind, WindowEvent},
+    event::{ButtonSource, ElementState, MouseButton, PointerKind, PointerSource, WindowEvent},
     keyboard::KeyCode,
 };
 
@@ -16,7 +16,7 @@ use crate::{
     layout::val::{Val, ValChanged},
     lnwin::Lnwindow,
     measures::{FI64Ext, IRect},
-    render::camera::UICamera,
+    render::{RenderPrepareControl, camera::UICamera},
     save::Save,
     theme::Theme,
     tools::{
@@ -30,8 +30,9 @@ use crate::{
 const DRAG_DISTANCE: f64 = 0.005;
 const ERASE_TIMER: f64 = 0.4;
 
-#[derive(Default)]
 pub struct LayerInput {
+    pub velocity: DVec2,
+    pub damping: f32,
     pub touch_draw: bool,
     pub space: bool,
     pub ctrl: bool,
@@ -41,6 +42,7 @@ pub struct LayerInput {
     pub input_offset_main: I64Vec2,
 }
 
+#[derive(Debug)]
 enum LayerInputState {
     None,
     Paint {
@@ -52,6 +54,9 @@ enum LayerInputState {
     Grab {
         start_position: DVec2,
         start_pinch: Option<f64>,
+        last_position: DVec2,
+        last_instant: Instant,
+        velocity: DVec2,
     },
     Scale {
         start_position: DVec2,
@@ -77,8 +82,24 @@ pub struct OffsetCorrection {
     landscape: Mat3,
 }
 
-impl LayerInput {
-    fn init(&mut self, world: &World, this: Handle<Self>) {
+impl Default for LayerInput {
+    fn default() -> Self {
+        Self {
+            velocity: DVec2::ZERO,
+            damping: 0.002,
+            touch_draw: false,
+            space: false,
+            ctrl: false,
+            shift: false,
+            pick: false,
+            hold_pick: false,
+            input_offset_main: I64Vec2::ZERO,
+        }
+    }
+}
+
+impl Element for LayerInput {
+    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
         world.scope("layer_input");
         world.set_autodeps(Some(this));
 
@@ -93,6 +114,28 @@ impl LayerInput {
             target: this.untyped(),
             rect,
             order: -100,
+        });
+
+        let mut timer = None;
+        world.insert(RenderPrepareControl {
+            prepare: Box::new(move |world| {
+                let this = &mut *world.fetch_mut(this);
+                let page = world.single_fetch::<LayerPage>();
+                if let Some(last_instant) = timer.replace(Instant::now()) {
+                    let dt = last_instant.elapsed().as_secs_f64();
+                    if this.velocity.length_squared() > 1e-3 {
+                        let mut utils = world.fetch_mut(page.camera_utils);
+                        utils.read_camera(world, page.container);
+                        utils.anchor_cursor(DVec2::ZERO);
+                        utils.camera_cursor_by_anchor_center(DVec2::ZERO);
+                        utils.camera_cursor_by_camera_center(this.velocity * dt);
+                        utils.write_camera(world, page.container);
+                        this.velocity *= (this.damping as f64).powf(dt).min(1.0);
+                        let lnwindow = world.single_fetch::<Lnwindow>();
+                        lnwindow.window.request_redraw();
+                    }
+                }
+            }),
         });
 
         world.observer(this, move |event: &PointerHover, world| {
@@ -225,6 +268,60 @@ impl LayerInput {
             update_icon(&this, &LayerInputState::None, &lnwindow);
         });
 
+        let mut middle = false;
+        world.observer(lnwindow, move |event: &WindowEvent, world| match event {
+            WindowEvent::PointerButton {
+                position,
+                state: ElementState::Pressed,
+                button: ButtonSource::Mouse(MouseButton::Middle),
+                ..
+            } => {
+                let mut this = world.fetch_mut(this);
+                let main = world.single_fetch::<LayerPage>().container;
+                let utils = world.single_fetch::<LayerPage>().camera_utils;
+                let lnwindow = world.single_fetch::<Lnwindow>();
+                let cursor = lnwindow.cursor_to_screen(*position);
+                middle = true;
+
+                this.velocity = DVec2::ZERO;
+                let mut camera_utils = world.fetch_mut(utils);
+                camera_utils.read_camera(world, main);
+                camera_utils.anchor_cursor(DVec2::ZERO);
+                camera_utils.camera_cursor_by_anchor_center(cursor);
+            }
+
+            WindowEvent::PointerMoved {
+                position,
+                source: PointerSource::Mouse,
+                ..
+            } => {
+                let mut this = world.fetch_mut(this);
+                let main = world.single_fetch::<LayerPage>().container;
+                let utils = world.single_fetch::<LayerPage>().camera_utils;
+                let lnwindow = world.single_fetch::<Lnwindow>();
+                let cursor = lnwindow.cursor_to_screen(*position);
+                drop(lnwindow);
+
+                if middle {
+                    this.velocity = DVec2::ZERO;
+                    let mut camera_utils = world.fetch_mut(utils);
+                    camera_utils.read_camera(world, main);
+                    camera_utils.camera_cursor_by_camera_center(cursor);
+                    camera_utils.write_camera(world, main);
+                }
+            }
+
+            WindowEvent::PointerButton {
+                state: ElementState::Released,
+                button: ButtonSource::Mouse(MouseButton::Middle),
+                ..
+            } => {
+                middle = false;
+            }
+
+            _ => {}
+        });
+
         world.observer(this, move |event: &PointerScroll, world| {
             let main = world.single_fetch::<LayerPage>().container;
             let utils = world.single_fetch::<LayerPage>().camera_utils;
@@ -264,7 +361,9 @@ impl LayerInput {
                         && matches!(event.active.data.kind, PointerKind::Touch(_)))
                         || this.space =>
                 {
+                    this.velocity = DVec2::ZERO;
                     camera_utils.read_camera(world, page_camera);
+                    camera_utils.anchor_cursor(DVec2::ZERO);
                     camera_utils.camera_cursor_by_anchor_center(center);
                     if let Some(distance) = pinch {
                         camera_utils.camera_distance_by_anchor_zoom_cursor(distance);
@@ -281,6 +380,9 @@ impl LayerInput {
                         LayerInputState::Grab {
                             start_position: center,
                             start_pinch: pinch,
+                            last_position: center,
+                            last_instant: Instant::now(),
+                            velocity: DVec2::ZERO,
                         }
                     }
                 }
@@ -291,11 +393,13 @@ impl LayerInput {
 
                 // Grab
                 (
-                    LayerInputState::Grab { .. },
+                    LayerInputState::Grab { velocity, .. },
                     MultiTouchStatus::Press | MultiTouchStatus::Release,
                 ) => {
                     if event.members.len() > 0 {
+                        this.velocity = DVec2::ZERO;
                         camera_utils.read_camera(world, page_camera);
+                        camera_utils.anchor_cursor(DVec2::ZERO);
                         camera_utils.camera_cursor_by_anchor_center(center);
                         if let Some(distance) = pinch {
                             camera_utils.camera_distance_by_anchor_zoom_cursor(distance);
@@ -305,8 +409,12 @@ impl LayerInput {
                         LayerInputState::Grab {
                             start_position: center,
                             start_pinch: pinch,
+                            last_position: center,
+                            last_instant: Instant::now(),
+                            velocity: DVec2::ZERO,
                         }
                     } else {
+                        this.velocity = velocity;
                         LayerInputState::None
                     }
                 }
@@ -314,10 +422,15 @@ impl LayerInput {
                     LayerInputState::Grab {
                         start_position,
                         start_pinch,
+                        last_position,
+                        last_instant,
+                        velocity,
                     },
                     MultiTouchStatus::Holding,
                 ) => {
+                    this.velocity = DVec2::ZERO;
                     camera_utils.read_camera(world, page_camera);
+                    camera_utils.anchor_cursor(DVec2::ZERO);
                     camera_utils.camera_cursor_by_camera_center(center);
                     if let Some(distance) = pinch {
                         camera_utils.camera_distance_by_camera_zoom_center(distance);
@@ -332,9 +445,23 @@ impl LayerInput {
                         }
                     } else {
                         camera_utils.write_camera(world, page_camera);
-                        LayerInputState::Grab {
-                            start_position,
-                            start_pinch,
+                        if last_position.distance_squared(center) < 1e-6 {
+                            LayerInputState::Grab {
+                                start_position,
+                                start_pinch,
+                                last_position,
+                                last_instant,
+                                velocity,
+                            }
+                        } else {
+                            LayerInputState::Grab {
+                                start_position,
+                                start_pinch,
+                                last_position: center,
+                                last_instant: Instant::now(),
+                                velocity: (center - last_position)
+                                    / (last_instant.elapsed().as_secs_f64()),
+                            }
                         }
                     }
                 }
@@ -383,6 +510,9 @@ impl LayerInput {
                         LayerInputState::Grab {
                             start_position: center,
                             start_pinch: pinch,
+                            last_position: center,
+                            last_instant: Instant::now(),
+                            velocity: DVec2::ZERO,
                         }
                     }
                 }
@@ -422,6 +552,9 @@ impl LayerInput {
                     LayerInputState::Grab {
                         start_position: center,
                         start_pinch: pinch,
+                        last_position: center,
+                        last_instant: Instant::now(),
+                        velocity: DVec2::ZERO,
                     }
                 }
                 (
@@ -609,10 +742,4 @@ fn is_portrait(world: &World) -> bool {
     let app = world.single_fetch::<Lnwindow>();
     let size = app.window.surface_size();
     size.height > size.width
-}
-
-impl Element for LayerInput {
-    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
-        self.init(world, this);
-    }
 }

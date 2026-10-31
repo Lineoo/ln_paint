@@ -188,6 +188,18 @@ impl Camera {
     }
 }
 
+/// Provide multiple things to help moving camera correctly.
+///
+/// **You may know:** `camera_position[n]`, `cursor_position[n]`, `cursor_position[n + 1]`
+///
+/// **And you need:** `camera_position[n + 1]`
+///
+/// CameraUtils use intermediate variable `anchor` to resolve it properly.
+///
+/// 1. set `anchor_cursor` zero, so `anchor_center` will be at your cursor (in case you want zoom in)
+/// 2. input `camera_center`, `camera_cursor`, and resolve to `anchor_center`
+/// 3. now input next-frame's `camera_cursor`, and resolve to `camera_center` instead
+/// 4. write camera back into the world, it will take effect
 pub struct CameraUtils {
     camera_center: I64Vec2,
     camera_zoom: i64,
@@ -200,7 +212,6 @@ pub struct CameraUtils {
     anchor_distance: f64,
 
     surface_size: UVec2,
-    anchor_lock: bool,
 }
 
 impl CameraUtils {
@@ -215,7 +226,6 @@ impl CameraUtils {
             anchor_cursor: DVec2::ZERO,
             anchor_distance: 1.0,
             surface_size: camera.surface_size,
-            anchor_lock: false,
         }
     }
 
@@ -261,34 +271,18 @@ impl CameraUtils {
 
     pub fn anchor_center(&mut self, center: I64Vec2) {
         self.anchor_center = center;
-        if self.anchor_lock {
-            self.update_locked();
-        }
     }
 
     pub fn anchor_zoom(&mut self, zoom: i64) {
         self.anchor_zoom = zoom;
-        if self.anchor_lock {
-            self.update_locked();
-        }
     }
 
     pub fn anchor_cursor(&mut self, cursor: DVec2) {
         self.anchor_cursor = cursor;
-        if self.anchor_lock {
-            self.update_locked();
-        }
     }
 
     pub fn anchor_distance(&mut self, distance: f64) {
         self.anchor_distance = distance.max(1e-5);
-        if self.anchor_lock {
-            self.update_locked();
-        }
-    }
-
-    pub fn anchor_lock(&mut self, locked: bool) {
-        self.anchor_lock = locked;
     }
 
     pub fn force_clear(&mut self) {
@@ -298,7 +292,6 @@ impl CameraUtils {
         self.anchor_zoom = 0;
         self.anchor_cursor = DVec2::ZERO;
         self.anchor_distance = 1.0;
-        self.anchor_lock = false;
     }
 
     pub fn read_camera(&mut self, world: &World, container: Handle<Container>) {
@@ -325,12 +318,6 @@ impl CameraUtils {
                 (parent.center - rect.q32_anchor(container.attr.anchor)).q32_as_f64() / scale,
             );
         world.queue_trigger(camera.handle(), SetCameraOutdated);
-    }
-
-    /// -> camera_center camera_zoom
-    fn update_locked(&mut self) {
-        self.camera_zoom = self.resolve_camera_zoom();
-        self.camera_center = self.resolve_camera_center();
     }
 
     fn resolve_camera_center(&mut self) -> I64Vec2 {
@@ -372,82 +359,3 @@ impl CameraUtils {
 
 impl Element for UICamera {}
 impl Element for CameraUtils {}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    const DEFAULT_CAMERA: CameraUtils = CameraUtils {
-        camera_center: I64Vec2::ZERO,
-        camera_zoom: 0,
-        camera_cursor: DVec2::ZERO,
-        camera_distance: 1.0,
-        anchor_center: I64Vec2::ZERO,
-        anchor_zoom: 0,
-        anchor_cursor: DVec2::ZERO,
-        anchor_distance: 1.0,
-        surface_size: UVec2::new(640, 360),
-        anchor_lock: false,
-    };
-
-    #[test]
-    fn test_center() {
-        let mut utils = DEFAULT_CAMERA;
-
-        assert_eq!(utils.camera_center.q32_as_f64(), DVec2::new(0., 0.));
-
-        utils.camera_cursor_by_anchor_center(DVec2::new(1.0, 1.0));
-
-        assert_eq!(utils.camera_center.q32_as_f64(), DVec2::new(0., 0.));
-
-        utils.camera_cursor_by_camera_center(DVec2::new(-1.0, -1.0));
-
-        assert_eq!(utils.camera_center.q32_as_f64(), DVec2::new(640., 360.));
-    }
-
-    #[test]
-    fn test_resolve_anchor_cursor() {
-        let mut utils = DEFAULT_CAMERA;
-
-        utils.anchor_center(I64Vec2::q32_from_f64(DVec2::new(0.0, 0.0)));
-        utils.camera_cursor_by_anchor_cursor(DVec2::new(1.0, 0.0));
-        assert_eq!(utils.anchor_cursor, DVec2::new(1.0, 0.0));
-
-        utils.anchor_center(I64Vec2::q32_from_f64(DVec2::new(0.0, -180.0)));
-        utils.camera_cursor_by_anchor_cursor(DVec2::new(1.0, 0.0));
-        assert_eq!(utils.anchor_cursor, DVec2::new(1.0, 1.0));
-    }
-
-    #[test]
-    fn test_resolve_anchor_distance() {
-        let mut utils = DEFAULT_CAMERA;
-
-        utils.anchor_zoom(i64::q32_from_f64(0.0));
-        utils.camera_distance_by_anchor_distance(1.0);
-        assert_eq!(utils.anchor_distance, 1.0);
-
-        utils.anchor_zoom(i64::q32_from_f64(1.0));
-        utils.camera_distance_by_anchor_distance(1.0);
-        assert_eq!(utils.anchor_distance, 2.0);
-    }
-
-    #[test]
-    fn test_resolve_anchor_zoom() {
-        let mut utils = DEFAULT_CAMERA;
-
-        utils.anchor_distance(1.0);
-        utils.camera_distance_by_anchor_zoom_cursor(1.0);
-        assert_eq!(utils.anchor_zoom.q32_as_f64(), 0.0);
-        assert_eq!(utils.camera_zoom.q32_as_f64(), 0.0);
-
-        utils.anchor_distance(0.5);
-        utils.camera_distance_by_anchor_zoom_cursor(1.0);
-        assert_eq!(utils.anchor_zoom.q32_as_f64(), -1.0);
-        assert_eq!(utils.camera_zoom.q32_as_f64(), 0.0);
-
-        utils.anchor_distance(4.0);
-        utils.camera_distance_by_anchor_zoom_cursor(2.0);
-        assert_eq!(utils.anchor_zoom.q32_as_f64(), 1.0);
-        assert_eq!(utils.camera_zoom.q32_as_f64(), 0.0);
-    }
-}

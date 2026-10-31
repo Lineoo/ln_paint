@@ -1,10 +1,8 @@
-use glam::{DVec2, IVec2};
+use glam::IVec2;
 use ln_world::{Element, Handle, World};
-use winit::event::{ButtonSource, ElementState, MouseButton, PointerSource, WindowEvent};
+use winit::event::{ButtonSource, ElementState, MouseButton, WindowEvent};
 
-use crate::{
-    layer::wrapper::LayerPage, lnwin::Lnwindow, measures::FI64Ext, tools::collider::ToolControl,
-};
+use crate::{lnwin::Lnwindow, measures::FI64Ext, tools::collider::ToolControl};
 
 /// Mouse-specific operations like right-click and middle-click.
 #[derive(Default)]
@@ -18,7 +16,6 @@ impl Element for MouseTool {
     fn when_insert(&mut self, world: &World, _this: Handle<Self>) {
         let lnwindow = world.single::<Lnwindow>();
 
-        let mut middle = false;
         world.observer(lnwindow, move |event: &WindowEvent, world| match event {
             // right-click //
             WindowEvent::PointerButton {
@@ -39,52 +36,6 @@ impl Element for MouseTool {
                 let position = camera.screen_to_world(screen);
 
                 world.queue_trigger(hit.handle, MouseMenu(position.q32_floor()));
-            }
-
-            // middle-click //
-            WindowEvent::PointerButton {
-                position,
-                state: ElementState::Pressed,
-                button: ButtonSource::Mouse(MouseButton::Middle),
-                ..
-            } => {
-                let main = world.single_fetch::<LayerPage>().container;
-                let utils = world.single_fetch::<LayerPage>().camera_utils;
-                let lnwindow = world.single_fetch::<Lnwindow>();
-                let cursor = lnwindow.cursor_to_screen(*position);
-                middle = true;
-
-                let mut camera_utils = world.fetch_mut(utils);
-                camera_utils.read_camera(world, main);
-                camera_utils.anchor_cursor(DVec2::ZERO);
-                camera_utils.camera_cursor_by_anchor_center(cursor);
-            }
-
-            WindowEvent::PointerMoved {
-                position,
-                source: PointerSource::Mouse,
-                ..
-            } => {
-                let main = world.single_fetch::<LayerPage>().container;
-                let utils = world.single_fetch::<LayerPage>().camera_utils;
-                let lnwindow = world.single_fetch::<Lnwindow>();
-                let cursor = lnwindow.cursor_to_screen(*position);
-                drop(lnwindow);
-
-                if middle {
-                    let mut camera_utils = world.fetch_mut(utils);
-                    camera_utils.read_camera(world, main);
-                    camera_utils.camera_cursor_by_camera_center(cursor);
-                    camera_utils.write_camera(world, main);
-                }
-            }
-
-            WindowEvent::PointerButton {
-                state: ElementState::Released,
-                button: ButtonSource::Mouse(MouseButton::Middle),
-                ..
-            } => {
-                middle = false;
             }
 
             _ => {}
