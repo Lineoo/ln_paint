@@ -20,6 +20,7 @@ use crate::{
     widgets::{common::WidgetCommon, renderer::rrect::RRect},
 };
 
+#[derive(Clone, Copy)]
 pub struct ContainerAttr {
     /// where is the zero point on outer rectangle
     pub anchor: DVec2,
@@ -57,18 +58,7 @@ impl Descriptor for ContainerWithCamera {
         let camera = world.insert_with(move |world| {
             let parent = world.fetch(self.common.camera);
             let rect = world.fetch(self.rect).val;
-
-            let zoom = if !self.attr.top {
-                parent.zoom + self.attr.zoom
-            } else {
-                self.attr.zoom
-            };
-
-            let scale = (zoom - parent.zoom).q32_as_f64().exp2();
-            let offset = (parent.center - rect.q32_anchor(self.attr.anchor)).q32_as_f64();
-            let center = I64Vec2::q32_from_f64(offset / scale) + self.attr.center;
-
-            world.build(CameraDescriptor { center, zoom })
+            world.build(self.attr.calc_camera(rect, &parent))
         });
 
         let container = world.insert(Container {
@@ -209,14 +199,9 @@ impl Element for Container {
 
 impl Container {
     pub fn update_camera(&self, rect: IRect, parent: &Camera, child: &mut Camera) {
-        if !self.attr.top {
-            child.zoom = parent.zoom + self.attr.zoom;
-        } else {
-            child.zoom = self.attr.zoom;
-        }
-        let scale = (child.zoom - parent.zoom).q32_as_f64().exp2();
-        let offset = (parent.center - rect.q32_anchor(self.attr.anchor)).q32_as_f64();
-        child.center = I64Vec2::q32_from_f64(offset / scale) + self.attr.center;
+        let desc = self.attr.calc_camera(rect, parent);
+        child.zoom = desc.zoom;
+        child.center = desc.center;
     }
 
     pub fn inner_rect(&self, rect: IRect, center: I64Vec2, zoom: i64) -> IRect {
@@ -254,6 +239,19 @@ impl Container {
         };
 
         self.attr.center = I64Vec2::new(x, y);
+    }
+}
+
+impl ContainerAttr {
+    pub fn calc_camera(&self, rect: IRect, parent: &Camera) -> CameraDescriptor {
+        let zoom = match !self.top {
+            true => parent.zoom + self.zoom,
+            false => self.zoom,
+        };
+        let scale = (zoom - parent.zoom).q32_as_f64().exp2();
+        let offset = (parent.center - rect.q32_anchor(self.anchor)).q32_as_f64();
+        let center = I64Vec2::q32_from_f64(offset / scale) + self.center;
+        CameraDescriptor { center, zoom }
     }
 }
 

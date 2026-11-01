@@ -35,7 +35,7 @@ use crate::{
     save::{Autosave, Save, object::Objects},
     widgets::{
         common::WidgetCommon,
-        container::{Container, ContainerAttr, ContainerWithCamera},
+        container::{Container, ContainerAttr},
         renderer::rrect::RRect,
     },
 };
@@ -163,17 +163,26 @@ impl LayerPage {
 
         let ui_camera = world.single_fetch::<UICamera>().0;
 
-        let (container, common) = world.build(ContainerWithCamera {
-            common,
-            rect,
-            attr: ContainerAttr {
-                center: save.sn().page_camera.center,
-                zoom: save.sn().page_camera.zoom,
-                anchor: DVec2::new(0.5, 0.5),
-                top: true,
-                ..Default::default()
-            },
+        let attr = ContainerAttr {
+            center: save.sn().page_camera.center,
+            zoom: save.sn().page_camera.zoom,
+            anchor: DVec2::new(0.5, 0.5),
+            top: true,
+            ..Default::default()
+        };
+        let camera = world.insert_with(move |world| {
+            let parent = world.fetch(common.camera);
+            let rect = world.fetch(rect).val;
+            world.build(attr.calc_camera(rect, &parent))
         });
+        let container = world.insert(Container {
+            common,
+            order: -100,
+            child: camera,
+            rect,
+            attr,
+        });
+        let common = WidgetCommon { camera, ..common };
         let camera_utils = world.insert_with(move |world| {
             let camera = world.fetch(common.camera);
             CameraUtils::new(&camera)
