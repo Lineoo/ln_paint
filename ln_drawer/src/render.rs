@@ -540,9 +540,9 @@ impl Render {
         // redraw
 
         let ui_camera = world.single_fetch::<UICamera>().0;
-        let camera = &mut *world.fetch_mut(ui_camera);
+        let camera = world.fetch(ui_camera);
         Render::draw(
-            camera,
+            &camera,
             world,
             &mut rpass,
             RenderExtra {
