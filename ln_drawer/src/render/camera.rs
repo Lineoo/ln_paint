@@ -229,12 +229,53 @@ impl CameraUtils {
         }
     }
 
-    pub fn force_camera_center(&mut self, center: I64Vec2) {
-        self.camera_center = center;
+    // accessor //
+
+    #[inline]
+    pub fn camera_center(&self) -> I64Vec2 {
+        self.camera_center
     }
 
-    pub fn force_camera_zoom(&mut self, zoom: i64) {
-        self.camera_zoom = zoom;
+    #[inline]
+    pub fn camera_zoom(&self) -> i64 {
+        self.camera_zoom
+    }
+
+    #[inline]
+    pub fn camera_cursor(&self) -> DVec2 {
+        self.camera_cursor
+    }
+
+    #[inline]
+    pub fn camera_distance(&self) -> f64 {
+        self.camera_distance
+    }
+
+    #[inline]
+    pub fn anchor_center(&self) -> I64Vec2 {
+        self.anchor_center
+    }
+
+    #[inline]
+    pub fn anchor_zoom(&self) -> i64 {
+        self.anchor_zoom
+    }
+
+    #[inline]
+    pub fn anchor_cursor(&self) -> DVec2 {
+        self.anchor_cursor
+    }
+
+    #[inline]
+    pub fn anchor_distance(&self) -> f64 {
+        self.anchor_distance
+    }
+
+    // move //
+
+    pub fn camera_center_by_camera_cursor(&mut self, center: I64Vec2) {
+        self.camera_center = center;
+        self.camera_cursor = self.resolve_camera_cursor();
     }
 
     pub fn camera_cursor_by_camera_center(&mut self, cursor: DVec2) {
@@ -245,6 +286,12 @@ impl CameraUtils {
     pub fn camera_distance_by_camera_zoom_center(&mut self, distance: f64) {
         self.camera_distance = distance.max(1e-5);
         self.camera_zoom = self.resolve_camera_zoom();
+        self.camera_center = self.resolve_camera_center();
+    }
+
+    pub fn camera_zoom_by_camera_distance_center(&mut self, zoom: i64) {
+        self.camera_zoom = zoom;
+        self.camera_distance = self.resolve_camera_distance();
         self.camera_center = self.resolve_camera_center();
     }
 
@@ -269,21 +316,22 @@ impl CameraUtils {
         self.anchor_distance = self.resolve_anchor_distance();
     }
 
-    pub fn anchor_center(&mut self, center: I64Vec2) {
-        self.anchor_center = center;
-    }
-
-    pub fn anchor_zoom(&mut self, zoom: i64) {
+    pub fn anchor_zoom_by_anchor_distance(&mut self, zoom: i64) {
         self.anchor_zoom = zoom;
+        self.anchor_distance = self.resolve_anchor_distance();
     }
 
-    pub fn anchor_cursor(&mut self, cursor: DVec2) {
+    pub fn anchor_cursor_by_anchor_center(&mut self, cursor: DVec2) {
         self.anchor_cursor = cursor;
+        self.anchor_center = self.resolve_anchor_center();
     }
 
-    pub fn anchor_distance(&mut self, distance: f64) {
+    pub fn anchor_distance_by_anchor_zoom(&mut self, distance: f64) {
         self.anchor_distance = distance.max(1e-5);
+        self.anchor_zoom = self.resolve_anchor_zoom();
     }
+
+    // camera forced //
 
     pub fn force_clear(&mut self) {
         self.camera_cursor = DVec2::ZERO;
@@ -293,6 +341,16 @@ impl CameraUtils {
         self.anchor_cursor = DVec2::ZERO;
         self.anchor_distance = 1.0;
     }
+
+    pub fn force_camera_center(&mut self, center: I64Vec2) {
+        self.camera_center = center;
+    }
+
+    pub fn force_camera_zoom(&mut self, zoom: i64) {
+        self.camera_zoom = zoom;
+    }
+
+    // read write //
 
     pub fn read_camera(&mut self, world: &World, container: Handle<Container>) {
         let container = world.fetch(container);
@@ -320,27 +378,37 @@ impl CameraUtils {
         world.queue_trigger(camera.handle(), SetCameraOutdated);
     }
 
-    fn resolve_camera_center(&mut self) -> I64Vec2 {
+    // resolve //
+
+    fn resolve_camera_center(&self) -> I64Vec2 {
         self.anchor_center + self.screen_to_world_relative(self.anchor_cursor - self.camera_cursor)
     }
 
-    fn resolve_camera_zoom(&mut self) -> i64 {
+    fn resolve_camera_zoom(&self) -> i64 {
         self.anchor_zoom + i64::q32_from_f64((self.camera_distance / self.anchor_distance).log2())
     }
 
-    fn resolve_anchor_cursor(&mut self) -> DVec2 {
+    fn resolve_camera_cursor(&self) -> DVec2 {
+        self.anchor_cursor - self.world_to_screen_relative(self.camera_center - self.anchor_center)
+    }
+
+    fn resolve_camera_distance(&self) -> f64 {
+        self.anchor_distance / (self.anchor_zoom - self.camera_zoom).q32_as_f64().exp2()
+    }
+
+    fn resolve_anchor_cursor(&self) -> DVec2 {
         self.camera_cursor + self.world_to_screen_relative(self.camera_center - self.anchor_center)
     }
 
-    fn resolve_anchor_distance(&mut self) -> f64 {
+    fn resolve_anchor_distance(&self) -> f64 {
         self.camera_distance * (self.anchor_zoom - self.camera_zoom).q32_as_f64().exp2()
     }
 
-    fn resolve_anchor_center(&mut self) -> I64Vec2 {
+    fn resolve_anchor_center(&self) -> I64Vec2 {
         self.camera_center + self.screen_to_world_relative(self.camera_cursor - self.anchor_cursor)
     }
 
-    fn resolve_anchor_zoom(&mut self) -> i64 {
+    fn resolve_anchor_zoom(&self) -> i64 {
         self.camera_zoom + i64::q32_from_f64((self.anchor_distance / self.camera_distance).log2())
     }
 

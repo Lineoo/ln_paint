@@ -32,7 +32,9 @@ const ERASE_TIMER: f64 = 0.4;
 
 pub struct LayerInput {
     pub velocity: DVec2,
+    pub zoom_velocity: f64,
     pub damping: f32,
+    pub zoom_damping: f32,
     pub touch_draw: bool,
     pub space: bool,
     pub ctrl: bool,
@@ -54,9 +56,11 @@ enum LayerInputState {
     Grab {
         start_position: DVec2,
         start_pinch: Option<f64>,
-        last_position: DVec2,
+        last_center: I64Vec2,
+        last_zoom: i64,
         last_instant: Instant,
         velocity: DVec2,
+        zoom_velocity: f64,
     },
     Scale {
         start_position: DVec2,
@@ -86,7 +90,9 @@ impl Default for LayerInput {
     fn default() -> Self {
         Self {
             velocity: DVec2::ZERO,
+            zoom_velocity: 0.0,
             damping: 0.002,
+            zoom_damping: 0.0001,
             touch_draw: false,
             space: false,
             ctrl: false,
@@ -123,14 +129,17 @@ impl Element for LayerInput {
                 let page = world.single_fetch::<LayerPage>();
                 if let Some(last_instant) = timer.replace(Instant::now()) {
                     let dt = last_instant.elapsed().as_secs_f64();
-                    if this.velocity.length_squared() > 1e-3 {
+                    if this.velocity.length_squared() > 1e-3 || this.zoom_velocity.abs() > 1e-3 {
                         let mut utils = world.fetch_mut(page.camera_utils);
                         utils.read_camera(world, page.container);
-                        utils.anchor_cursor(DVec2::ZERO);
-                        utils.camera_cursor_by_anchor_center(DVec2::ZERO);
-                        utils.camera_cursor_by_camera_center(this.velocity * dt);
-                        utils.write_camera(world, page.container);
                         this.velocity *= (this.damping as f64).powf(dt).min(1.0);
+                        this.zoom_velocity *= (this.zoom_damping as f64).powf(dt).min(1.0);
+                        let zoom = utils.camera_zoom() + i64::q32_from_f64(this.zoom_velocity * dt);
+                        let center =
+                            utils.camera_center() + I64Vec2::q32_from_f64(this.velocity * dt);
+                        utils.camera_center_by_camera_cursor(center);
+                        utils.camera_zoom_by_camera_distance_center(zoom);
+                        utils.write_camera(world, page.container);
                         let lnwindow = world.single_fetch::<Lnwindow>();
                         lnwindow.window.request_redraw();
                     }
@@ -284,9 +293,10 @@ impl Element for LayerInput {
                 middle = true;
 
                 this.velocity = DVec2::ZERO;
+                this.zoom_velocity = 0.0;
                 let mut camera_utils = world.fetch_mut(utils);
                 camera_utils.read_camera(world, main);
-                camera_utils.anchor_cursor(DVec2::ZERO);
+                camera_utils.anchor_cursor_by_anchor_center(DVec2::ZERO);
                 camera_utils.camera_cursor_by_anchor_center(cursor);
             }
 
@@ -304,6 +314,7 @@ impl Element for LayerInput {
 
                 if middle {
                     this.velocity = DVec2::ZERO;
+                    this.zoom_velocity = 0.0;
                     let mut camera_utils = world.fetch_mut(utils);
                     camera_utils.read_camera(world, main);
                     camera_utils.camera_cursor_by_camera_center(cursor);
@@ -329,9 +340,9 @@ impl Element for LayerInput {
 
             let zoom_delta = -event.delta.y;
             camera_utils.read_camera(world, main);
-            camera_utils.anchor_cursor(DVec2::ZERO);
+            camera_utils.anchor_cursor_by_anchor_center(DVec2::ZERO);
             camera_utils.camera_cursor_by_anchor_center(event.pointer.screen);
-            camera_utils.anchor_distance(200.0);
+            camera_utils.anchor_distance_by_anchor_zoom(200.0);
             if zoom_delta > 0.0 {
                 camera_utils.camera_distance_by_anchor_zoom_cursor(200.0);
                 camera_utils.camera_distance_by_camera_zoom_center(200.0 + zoom_delta);
@@ -363,7 +374,7 @@ impl Element for LayerInput {
                 {
                     this.velocity = DVec2::ZERO;
                     camera_utils.read_camera(world, page_camera);
-                    camera_utils.anchor_cursor(DVec2::ZERO);
+                    camera_utils.anchor_cursor_by_anchor_center(DVec2::ZERO);
                     camera_utils.camera_cursor_by_anchor_center(center);
                     if let Some(distance) = pinch {
                         camera_utils.camera_distance_by_anchor_zoom_cursor(distance);
@@ -380,9 +391,11 @@ impl Element for LayerInput {
                         LayerInputState::Grab {
                             start_position: center,
                             start_pinch: pinch,
-                            last_position: center,
+                            last_center: camera_utils.camera_center(),
+                            last_zoom: camera_utils.camera_zoom(),
                             last_instant: Instant::now(),
                             velocity: DVec2::ZERO,
+                            zoom_velocity: 0.0,
                         }
                     }
                 }
@@ -393,13 +406,45 @@ impl Element for LayerInput {
 
                 // Grab
                 (
-                    LayerInputState::Grab { velocity, .. },
+                    LayerInputState::Grab {
+                        last_center,
+                        last_zoom,
+                        last_instant,
+                        velocity,
+                        zoom_velocity,
+                        ..
+                    },
                     MultiTouchStatus::Press | MultiTouchStatus::Release,
                 ) => {
+                    let term_velocity;
+                    let term_zoom_velocity;
+                    // see evaluation below
+                    let dt = last_instant.elapsed().as_secs_f64();
+                    let prev_center = camera_utils.camera_center();
+                    let prev_zoom = camera_utils.camera_zoom();
+                    if dt > 1e-4 {
+                        let new_velocity = (prev_center - last_center).q32_as_f64() / dt;
+                        let new_zoom_velocity = (prev_zoom - last_zoom).q32_as_f64() / dt;
+                        let factor = 1.0 - 0.01f64.powf(dt * 10.0);
+                        term_velocity = velocity * (1. - factor) + new_velocity * factor;
+                        term_zoom_velocity =
+                            zoom_velocity * (1. - factor) + new_zoom_velocity * factor;
+                        log::debug!("release term: {term_velocity} velocity: {velocity} new_velocity: {new_velocity}, factor: {factor}");
+                    } else {
+                        term_velocity = velocity;
+                        term_zoom_velocity = zoom_velocity;
+                    }
+
                     if event.members.len() > 0 {
                         this.velocity = DVec2::ZERO;
+                        if event.members.len() > 1 {
+                            this.zoom_velocity = 0.0;
+                        } else {
+                            this.zoom_velocity = term_zoom_velocity;
+                        }
+
                         camera_utils.read_camera(world, page_camera);
-                        camera_utils.anchor_cursor(DVec2::ZERO);
+                        camera_utils.anchor_cursor_by_anchor_center(DVec2::ZERO);
                         camera_utils.camera_cursor_by_anchor_center(center);
                         if let Some(distance) = pinch {
                             camera_utils.camera_distance_by_anchor_zoom_cursor(distance);
@@ -409,12 +454,14 @@ impl Element for LayerInput {
                         LayerInputState::Grab {
                             start_position: center,
                             start_pinch: pinch,
-                            last_position: center,
+                            last_center: prev_center,
+                            last_zoom: prev_zoom,
                             last_instant: Instant::now(),
-                            velocity: DVec2::ZERO,
+                            velocity,
+                            zoom_velocity,
                         }
                     } else {
-                        this.velocity = velocity;
+                        this.velocity = term_velocity;
                         LayerInputState::None
                     }
                 }
@@ -422,15 +469,23 @@ impl Element for LayerInput {
                     LayerInputState::Grab {
                         start_position,
                         start_pinch,
-                        last_position,
+                        last_center,
+                        last_zoom,
                         last_instant,
                         velocity,
+                        zoom_velocity,
                     },
                     MultiTouchStatus::Holding,
                 ) => {
                     this.velocity = DVec2::ZERO;
+                    if event.members.len() > 1 {
+                        this.zoom_velocity = 0.0;
+                    }
+
+                    let prev_center = camera_utils.camera_center();
+                    let prev_zoom = camera_utils.camera_zoom();
+
                     camera_utils.read_camera(world, page_camera);
-                    camera_utils.anchor_cursor(DVec2::ZERO);
                     camera_utils.camera_cursor_by_camera_center(center);
                     if let Some(distance) = pinch {
                         camera_utils.camera_distance_by_camera_zoom_center(distance);
@@ -445,22 +500,35 @@ impl Element for LayerInput {
                         }
                     } else {
                         camera_utils.write_camera(world, page_camera);
-                        if last_position.distance_squared(center) < 1e-6 {
+                        let dt = last_instant.elapsed().as_secs_f64();
+
+                        // only the latest point in a MultiTouch event batch is valid
+                        // .. > (.. .. last) > (.. .. prev) > (now .. ..)
+                        // what we evaluate here is (prev - last)
+                        if dt > 1e-4 {
+                            let new_velocity = (prev_center - last_center).q32_as_f64() / dt;
+                            let new_zoom_velocity = (prev_zoom - last_zoom).q32_as_f64() / dt;
+                            let factor = 1.0 - 0.01f64.powf(dt * 10.0);
+                            log::debug!("hold term: {} velocity: {velocity} new_velocity: {new_velocity}, factor: {factor}", velocity * (1. - factor) + new_velocity * factor);
                             LayerInputState::Grab {
                                 start_position,
                                 start_pinch,
-                                last_position,
-                                last_instant,
-                                velocity,
+                                last_center: prev_center,
+                                last_zoom: prev_zoom,
+                                last_instant: Instant::now(),
+                                velocity: velocity * (1. - factor) + new_velocity * factor,
+                                zoom_velocity: zoom_velocity * (1. - factor)
+                                    + new_zoom_velocity * factor,
                             }
                         } else {
                             LayerInputState::Grab {
                                 start_position,
                                 start_pinch,
-                                last_position: center,
-                                last_instant: Instant::now(),
-                                velocity: (center - last_position)
-                                    / (last_instant.elapsed().as_secs_f64()),
+                                last_center,
+                                last_zoom,
+                                last_instant,
+                                velocity,
+                                zoom_velocity,
                             }
                         }
                     }
@@ -510,9 +578,11 @@ impl Element for LayerInput {
                         LayerInputState::Grab {
                             start_position: center,
                             start_pinch: pinch,
-                            last_position: center,
+                            last_center: camera_utils.camera_center(),
+                            last_zoom: camera_utils.camera_zoom(),
                             last_instant: Instant::now(),
                             velocity: DVec2::ZERO,
+                            zoom_velocity: 0.0,
                         }
                     }
                 }
@@ -552,9 +622,11 @@ impl Element for LayerInput {
                     LayerInputState::Grab {
                         start_position: center,
                         start_pinch: pinch,
-                        last_position: center,
+                        last_center: camera_utils.camera_center(),
+                        last_zoom: camera_utils.camera_zoom(),
                         last_instant: Instant::now(),
                         velocity: DVec2::ZERO,
+                        zoom_velocity: 0.0,
                     }
                 }
                 (
