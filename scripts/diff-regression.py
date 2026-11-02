@@ -7,9 +7,7 @@ root = Path(__file__).resolve().parent.parent
 baseline_dir = root / "ln_drawer" / "examples"
 regression_dir = root / "target" / "regression"
 actual_dir = regression_dir / "actual"
-diff_dir = actual_dir / "diff"
-
-subprocess.run([root / "scripts" / "gen-regression.sh", actual_dir])
+diff_dir = regression_dir / "diff"
 
 for stale in diff_dir.glob("*.png"):
     stale.unlink()
