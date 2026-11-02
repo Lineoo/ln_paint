@@ -17,10 +17,6 @@ sed -i 's/applicationId = "org\.linn\.lndrawer\.dev/applicationId = "org.linn.ln
 # app_name: LnDrawer Dev -> LnDrawer
 sed -i 's/>LnDrawer Dev</>LnDrawer</' ln_drawer/build/android/app/src/main/res/values/strings.xml
 
-# `ln_drawer/build/android/app/src/main/res/mipmap-xxxhdpi/icon.png`
-# icon.png: res/icon_hicolor_dev-512x.png -> res/icon_hicolor_lime-512x.png
-ln -sf ../../../../../../../res/icon_hicolor_lime-512x.png ln_drawer/build/android/app/src/main/res/mipmap-xxxhdpi/icon.png
-
 #### Rustc ####
 
 # `env!("LNDRAWER_RELEASE")`
@@ -28,3 +24,7 @@ ln -sf ../../../../../../../res/icon_hicolor_lime-512x.png ln_drawer/build/andro
 # `ln_drawer/src/save.rs::get_file_path`
 export LNDRAWER_RELEASE=1
 echo LNDRAWER_RELEASE=1
+
+#### Resources ####
+
+./scripts/icons.sh "icon_lime"

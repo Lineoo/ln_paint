@@ -21,8 +21,8 @@ if [[ -z "$VERSION" ]]; then
 fi
 
 case "$VERSION" in
-    *-dev) ICON="$ROOT/ln_drawer/res/icon_hicolor_dev-512x.png" ;;
-    *) ICON="$ROOT/ln_drawer/res/icon_hicolor_lime-512x.png" ;;
+    *-dev) ICON="$ROOT/ln_drawer/res/logos/icon_dev-512x.png" ;;
+    *) ICON="$ROOT/ln_drawer/res/logos/icon_lime-512x.png" ;;
 esac
 
 TARGET="${TARGET:-x86_64-unknown-linux-gnu}"

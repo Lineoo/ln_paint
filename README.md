@@ -1,10 +1,10 @@
-<p><img src="ln_drawer/res/banner.svg" alt="LnDrawer Banner" align="center"/></p>
+<p><img src="ln_drawer/res/logos/banner.svg" alt="LnDrawer Banner" align="center"/></p>
 
 **English** | [中文](./README.zh_CN.md)
 
 ----------
 
-<img src="ln_drawer/res/icon_hicolor_lime.svg" alt="LnDrawer Icon" align="right"/>
+<img src="ln_drawer/res/logos/icon_lime.svg" alt="LnDrawer Icon" align="right"/>
 
 **LnDrawer** is a simple, light-weight, GPU-accelerated drawing application written in Rust, driven by `winit` and `wgpu`.
 
