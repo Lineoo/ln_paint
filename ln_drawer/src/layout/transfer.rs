@@ -2,6 +2,9 @@ use ln_world::{Handle, World};
 
 use crate::layout::val::{Val, ValChanged};
 
+// XXX in general `Transfer` is less efficient, powerful yet more buggy than `Packer` (lifetime & autodeps), we
+// will deprecate it later.
+
 /// This is for single-to-single data-bind. See [`Packer`] for more complicated binding.
 pub struct Transfer<'w, T: Send + 'static, U: Send + 'static> {
     world: &'w World,

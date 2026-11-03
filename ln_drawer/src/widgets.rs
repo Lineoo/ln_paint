@@ -1,6 +1,7 @@
 pub mod brush_preview;
 pub mod button;
 pub mod common;
+pub mod components;
 pub mod container;
 pub mod object;
 pub mod palette;

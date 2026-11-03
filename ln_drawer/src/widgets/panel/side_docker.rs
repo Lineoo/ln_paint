@@ -3,7 +3,7 @@ use ln_world::{Element, Handle, World};
 use crate::{
     layer::{
         brush::param::BrushParamKey,
-        input::LayerInput,
+        input::{LayerInput, LayerInputMode},
         wrapper::{BrushConfigurationChanged, LayerPage},
     },
     layout::{
@@ -125,6 +125,11 @@ impl Element for SideDocker {
             rect: color_picker_rect,
         });
 
+        let selection = docker_button(
+            &mut luni,
+            include_bytes!("../../../res/interface/square-dashed.svg"),
+        );
+
         let undo = docker_button(
             &mut luni,
             include_bytes!("../../../res/interface/undo-2.svg"),
@@ -225,6 +230,13 @@ impl Element for SideDocker {
             let mut input = world.single_fetch_mut::<LayerInput>();
             input.hold_pick = val;
             world.queue_trigger(pipette, SetButtonSelected(val));
+        });
+
+        // TODO selection state is not synced yet, we wait util button's selection use Val as well
+        world.observer(selection, move |&ButtonSelected(val), world| {
+            let mut input = world.single_fetch_mut::<LayerInput>();
+            input.mode = LayerInputMode::Area;
+            world.queue_trigger(selection, SetButtonSelected(val));
         });
 
         world.observer(touch, move |&ButtonSelected(val), world| {

@@ -21,6 +21,8 @@ use crate::{
     },
 };
 
+// TODO move to components/
+
 pub struct ToggleButton {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,

@@ -35,7 +35,7 @@ use crate::{
         panel::{desktop_ui::DesktopUi, mobile_ui::MobileUi},
         renderer::{
             canvas::CanvasPipeline, quad::QuadMeshPipeline, rrect::RRectMaterial,
-            text::TextPipeline, vtor::VtorPipeline,
+            text::TextPipeline, vtor::VtorPipeline, wireframe::WireframePipeline,
         },
     },
 };
@@ -204,6 +204,7 @@ impl Element for Lnwindow {
             world.insert(QuadMeshPipeline::<OklabPolarMaterial>::from_world(world));
             world.insert(QuadMeshPipeline::<OklabBarMaterial>::from_world(world));
             world.insert(QuadMeshPipeline::<RRectMaterial>::from_world(world));
+            world.insert(WireframePipeline::from_world(world));
             world.insert(VtorPipeline::from_world(world));
             world.insert(TextPipeline::from_world(world));
             let save = world.single_fetch::<Save>();
@@ -217,6 +218,7 @@ impl Element for Lnwindow {
 
             world.flush();
 
+            world.insert(MouseTool::default());
             world.insert(PointerTool::default());
             world.insert(MultiTouchTool::default());
             world.insert(FocusTool::default());
@@ -276,9 +278,6 @@ impl Element for Lnwindow {
             if let Some(payload) = &this.payload {
                 payload(world, common);
             } else {
-                // TODO some should be for PageInput not MouseTool
-                world.insert(MouseTool::default());
-
                 let save = world.single_fetch::<Save>();
                 let use_desktop = std::env::var_os("LNDRAWER_DESKTOP_UI").is_some()
                     || save.sn().desktop_mode.is_some_and(|x| x);

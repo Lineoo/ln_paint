@@ -9,11 +9,13 @@ use ln_drawer::{
     widgets::{
         button::{ButtonImage, ToggleButton},
         common::WidgetCommon,
+        components::area::{Area, AreaMode},
         renderer::{
             rrect::RRect,
             svg::svg_render,
             text::{Text, TextAttr},
             vtor::{Vtor, logo},
+            wireframe::Wireframe,
         },
         slider::Slider,
     },
@@ -228,5 +230,45 @@ impl Element for WidgetShowcase {
             theme.gray4,
             100,
         ));
+
+        // Wireframe & Area: stroke variants and handle modes.
+        let stroke_card = card(24, 408, "Wireframe & Area");
+        for (i, (align, radius, color)) in [
+            (0.0, 4.0, theme.theme),
+            (0.5, 10.0, theme.distinct),
+            (1.0, 16.0, theme.gray4),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let left = 24 + i as i32 * 112;
+            let rect = local(stroke_card, left, 40, left + 64, 64);
+            world.insert(Wireframe {
+                common: self.common,
+                rect,
+                order: 10,
+                color,
+                radius,
+                width: 4.0 + i as f32 * 2.0,
+                align,
+            });
+        }
+        for (i, (mode, color)) in [
+            (AreaMode::None, theme.gray4),
+            (AreaMode::Four, theme.distinct),
+            (AreaMode::Eight, theme.theme),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let left = 24 + i as i32 * 112;
+            let rect = local(stroke_card, left, 82, left + 80, 114);
+            world.insert(Area {
+                common: self.common,
+                rect,
+                color,
+                mode: world.insert(Val::new(mode)),
+            });
+        }
     }
 }

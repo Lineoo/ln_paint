@@ -503,7 +503,7 @@ impl Element for VerbosePanel {
 
         let brush_rect = world.insert(Val::new(IRect::default()));
         let brush_visible = world.insert(Val::new(false));
-        let tab_brush_list = world.insert(BrushListPanel {
+        world.insert(BrushListPanel {
             common: WidgetCommon {
                 camera: self.common.camera,
                 visible: brush_visible,
@@ -513,7 +513,7 @@ impl Element for VerbosePanel {
 
         let settings_rect = world.insert(Val::new(IRect::default()));
         let settings_visible = world.insert(Val::new(false));
-        let tab_settings = world.insert(SettingPanel {
+        world.insert(SettingPanel {
             common: WidgetCommon {
                 camera: self.common.camera,
                 visible: settings_visible,
@@ -523,7 +523,7 @@ impl Element for VerbosePanel {
 
         let layer_rect = world.insert(Val::new(IRect::default()));
         let layer_visible = world.insert(Val::new(false));
-        let tab_layer_selection = world.insert(LayerSelectionPanel {
+        world.insert(LayerSelectionPanel {
             common: WidgetCommon {
                 camera: self.common.camera,
                 visible: layer_visible,
@@ -533,7 +533,7 @@ impl Element for VerbosePanel {
 
         let debug_rect = world.insert(Val::new(IRect::default()));
         let debug_visible = world.insert(Val::new(false));
-        let tab_debug = world.insert(DebugPanel {
+        world.insert(DebugPanel {
             common: WidgetCommon {
                 camera: self.common.camera,
                 visible: debug_visible,
@@ -584,7 +584,5 @@ impl Element for VerbosePanel {
             ],
             active: world.insert(Val::new(0)),
         });
-
-        let _ = (tab_brush_list, tab_settings, tab_layer_selection, tab_debug);
     }
 }

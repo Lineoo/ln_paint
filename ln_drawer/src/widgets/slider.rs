@@ -24,6 +24,8 @@ use crate::{
     },
 };
 
+// TODO move to components/
+
 pub struct SliderValue(pub f32);
 
 pub struct Slider {
