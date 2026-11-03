@@ -14,9 +14,7 @@ use crate::{
     theme::ThemeVal,
     widgets::{
         common::WidgetCommon,
-        components::button::{
-            ButtonClick, ButtonImage, ButtonSelected, SetButtonSelected, ToggleButton,
-        },
+        components::button::{Button, ButtonClick, ButtonImage, ButtonSelected, SetButtonSelected},
         container::{
             ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerEcho, ContainerWithCamera,
         },
@@ -99,7 +97,7 @@ impl Element for DebugPanel {
         );
 
         let docker_button = |rect: Handle<Val<IRect>>, image_bytes: &[u8]| {
-            world.insert(ToggleButton {
+            world.insert(Button {
                 common: WidgetCommon {
                     camera: common.camera,
                     visible: self.common.visible,

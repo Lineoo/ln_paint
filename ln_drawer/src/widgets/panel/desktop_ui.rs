@@ -23,9 +23,7 @@ use crate::{
     theme::ThemeVal,
     widgets::{
         common::WidgetCommon,
-        components::button::{
-            ButtonClick, ButtonImage, ButtonSelected, SetButtonSelected, ToggleButton,
-        },
+        components::button::{Button, ButtonClick, ButtonImage, ButtonSelected, SetButtonSelected},
         container::{ContainerAttr, ContainerEcho, ContainerWithCamera},
         panel::{
             Panel, PanelAttr, brush_panel::BrushListPanel, color_picker::LayerOklabPalette,
@@ -197,7 +195,7 @@ impl Element for ToolBar {
         });
 
         let docker_button = |rect: Handle<Val<IRect>>, image_bytes: &[u8]| {
-            world.insert(ToggleButton {
+            world.insert(Button {
                 common,
                 rect,
                 theme: theme.button(),

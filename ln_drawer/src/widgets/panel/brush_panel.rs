@@ -21,8 +21,8 @@ use crate::{
         brush_preview::BrushPreviewDescriptor,
         common::WidgetCommon,
         components::button::{
-            ButtonClick, ButtonDrag, ButtonDragStatus, ButtonImage, SetButtonSelected,
-            ToggleButton, ToggleButtonTheme,
+            Button, ButtonClick, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonTheme,
+            SetButtonSelected,
         },
         container::{ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerWithCamera},
         panel::settings::SettingPanel,
@@ -157,10 +157,10 @@ impl Element for BrushListPanel {
         for i in 0..count {
             let button_rect = world.build(luni.child(LuniChild::default()));
             let selected = world.insert(Val::new(i == active));
-            let button = world.insert(ToggleButton {
+            let button = world.insert(Button {
                 common,
                 rect: button_rect,
-                theme: ToggleButtonTheme {
+                theme: ButtonTheme {
                     idle_color: theme_val.gray2,
                     hover_color: theme_val.gray2,
                     press_color: theme_val.gray2,

@@ -16,9 +16,7 @@ use crate::{
     theme::ThemeVal,
     widgets::{
         common::WidgetCommon,
-        components::button::{
-            ButtonClick, ButtonImage, ButtonSelected, SetButtonSelected, ToggleButton,
-        },
+        components::button::{Button, ButtonClick, ButtonImage, ButtonSelected, SetButtonSelected},
         panel::{Panel, PanelAttr, brush_panel::BrushPanel, color_picker::ColorPickerButton},
         renderer::svg::svg_render,
         slider::{Slider, SliderLabel, SliderValue},
@@ -92,7 +90,7 @@ impl Element for SideDocker {
 
         let docker_button = |luni: &mut LuniFlex, image_bytes: &[u8]| {
             let rect = world.build(luni.child(LuniChild::default()));
-            world.insert(ToggleButton {
+            world.insert(Button {
                 common: self.common,
                 rect,
                 theme: theme.button(),
@@ -103,7 +101,7 @@ impl Element for SideDocker {
         };
 
         let brush_menu_rect = world.build(luni.child(LuniChild::default()));
-        let brush_menu = world.insert(ToggleButton {
+        let brush_menu = world.insert(Button {
             common: self.common,
             rect: brush_menu_rect,
             theme: theme.button(),

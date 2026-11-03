@@ -12,7 +12,7 @@ use crate::{
     theme::ThemeVal,
     widgets::{
         common::WidgetCommon,
-        components::button::{ButtonSelected, SetButtonSelected, ToggleButton},
+        components::button::{Button, ButtonSelected, SetButtonSelected},
         container::{
             ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerEcho, ContainerWithCamera,
         },
@@ -154,7 +154,7 @@ impl Element for LayerSelectionPanel {
                 },
                 local,
             ));
-            let layer0_button = world.insert(ToggleButton {
+            let layer0_button = world.insert(Button {
                 common: WidgetCommon {
                     camera: common.camera,
                     visible: self.common.visible,

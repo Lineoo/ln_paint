@@ -19,7 +19,7 @@ use crate::{
     },
     widgets::{
         common::WidgetCommon,
-        components::button::{ButtonClick, ButtonDrag, ButtonDragStatus, ToggleButton},
+        components::button::{Button, ButtonClick, ButtonDrag, ButtonDragStatus},
         renderer::rrect::RRect,
     },
 };
@@ -44,7 +44,7 @@ impl Element for ColorSnip {
         let theme = world.single_fetch::<ThemeVal>();
         let input = world.single::<LayerInput>();
 
-        let button = world.insert(ToggleButton {
+        let button = world.insert(Button {
             common: self.common,
             rect: self.rect,
             theme: theme.button(),

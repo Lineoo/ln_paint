@@ -19,8 +19,7 @@ use crate::{
     widgets::{
         common::WidgetCommon,
         components::button::{
-            ButtonDrag, ButtonDragStatus, ButtonImage, ButtonSelected, SetButtonSelected,
-            ToggleButton,
+            Button, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonSelected, SetButtonSelected,
         },
         container::{
             ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerEcho, ContainerWithCamera,
@@ -156,7 +155,7 @@ impl Element for ColorPickerButton {
 
         let theme = world.single_fetch::<ThemeVal>();
         let page = world.single_fetch::<LayerPage>();
-        let button = world.insert(ToggleButton {
+        let button = world.insert(Button {
             common: self.common,
             rect: self.rect,
             theme: theme.button(),

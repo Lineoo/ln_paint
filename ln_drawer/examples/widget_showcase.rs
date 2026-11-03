@@ -10,7 +10,7 @@ use ln_drawer::{
         common::WidgetCommon,
         components::{
             area::{Area, AreaMode},
-            button::{ButtonImage, ToggleButton},
+            button::{Button, ButtonImage},
         },
         renderer::{
             rrect::RRect,
@@ -211,7 +211,7 @@ impl Element for WidgetShowcase {
             pressed: false,
         });
         let button_rect = local(controls_card, 24, 78, 144, 118);
-        world.insert(ToggleButton {
+        world.insert(Button {
             common: self.common,
             rect: button_rect,
             theme: theme.button(),

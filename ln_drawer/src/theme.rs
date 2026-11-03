@@ -8,7 +8,7 @@ use crate::{
     },
     layout::val::{Val, ValChanged},
     measures::Axis,
-    widgets::components::button::ToggleButtonTheme,
+    widgets::components::button::ButtonTheme,
 };
 
 pub struct Theme {
@@ -127,8 +127,8 @@ impl Theme {
 }
 
 impl ThemeVal {
-    pub fn button(&self) -> ToggleButtonTheme {
-        ToggleButtonTheme {
+    pub fn button(&self) -> ButtonTheme {
+        ButtonTheme {
             idle_color: self.gray1,
             hover_color: self.gray2,
             press_color: self.gray3,
@@ -136,8 +136,8 @@ impl ThemeVal {
         }
     }
 
-    pub fn tab_button(&self) -> ToggleButtonTheme {
-        ToggleButtonTheme {
+    pub fn tab_button(&self) -> ButtonTheme {
+        ButtonTheme {
             idle_color: self.gray2,
             hover_color: self.gray3,
             press_color: self.gray0,

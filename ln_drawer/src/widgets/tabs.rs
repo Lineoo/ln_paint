@@ -17,7 +17,7 @@ use crate::{
     tools::collider::ToolRectCollider,
     widgets::{
         common::WidgetCommon,
-        components::button::{ButtonAction, ButtonImage, ToggleButton},
+        components::button::{Button, ButtonAction, ButtonImage},
         renderer::rrect::RRect,
     },
 };
@@ -122,7 +122,7 @@ impl Tabs {
 
             let button_rect = world.build(luni.child(LuniChild::default()));
             let button_selected = Transfer::derive(world, self.active).build(move |&x| x == i);
-            let button = world.insert(ToggleButton {
+            let button = world.insert(Button {
                 common: self.common,
                 rect: button_rect,
                 theme: theme_val.tab_button(),

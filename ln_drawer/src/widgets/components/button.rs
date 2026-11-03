@@ -21,18 +21,16 @@ use crate::{
     },
 };
 
-// TODO move to components/
-
-pub struct ToggleButton {
+pub struct Button {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,
-    pub theme: ToggleButtonTheme,
+    pub theme: ButtonTheme,
     pub image: Option<ButtonImage>,
     pub selected: Handle<Val<bool>>,
     pub hovering: Handle<Val<bool>>,
 }
 
-pub struct ToggleButtonTheme {
+pub struct ButtonTheme {
     pub idle_color: Handle<Val<Vec4>>,
     pub hover_color: Handle<Val<Vec4>>,
     pub press_color: Handle<Val<Vec4>>,
@@ -44,6 +42,10 @@ pub struct ButtonImage {
     pub transform: TransformValue,
     pub modulate: Handle<Val<Vec4>>,
     pub bmp: PixImage,
+}
+
+pub struct ButtonToggle {
+    pub source: Handle<Button>,
 }
 
 pub struct ButtonDrag {
@@ -59,15 +61,18 @@ pub enum ButtonAction {
     Release,
 }
 
-pub struct ButtonSelected(pub bool);
-pub struct SetButtonSelected(pub bool);
-
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum ButtonDragStatus {
     Start,
     Dragging,
     End,
 }
+
+#[deprecated]
+pub struct ButtonSelected(pub bool);
+
+#[deprecated]
+pub struct SetButtonSelected(pub bool);
 
 impl ButtonImage {
     pub fn new(bmp: PixImage, modulate: Handle<Val<Vec4>>, size: u32) -> Self {
@@ -82,12 +87,12 @@ impl ButtonImage {
     }
 }
 
-impl ToggleButton {
-    pub fn init(&self, world: &World, handle: Handle<Self>) {
+impl Element for Button {
+    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
         world.scope("toggle_button");
-        world.set_autodeps(Some(handle));
-        world.dependency(handle, self.rect);
-        world.dependency(handle, self.common.visible);
+        world.set_autodeps(Some(this));
+        world.dependency(this, self.rect);
+        world.dependency(this, self.common.visible);
 
         let theme = world.single_fetch::<Theme>();
 
@@ -134,7 +139,7 @@ impl ToggleButton {
 
         world.insert(ToolRectCollider {
             common: self.common,
-            target: handle.untyped(),
+            target: this.untyped(),
             rect: self.rect,
             order: 10,
         });
@@ -152,19 +157,19 @@ impl ToggleButton {
             });
         }
 
-        world.observer(handle, move |&SetButtonSelected(value), world| {
+        world.observer(this, move |&SetButtonSelected(value), world| {
             world.fetch_mut(selected).val = value;
             world.queue_trigger(selected, ValChanged);
         });
 
         let mut drag_start = None;
         let mut dragging = false;
-        world.observer(handle, move |event: &PointerHit, world| {
+        world.observer(this, move |event: &PointerHit, world| {
             const DRAG_DISTANCE: f64 = 30.0;
 
             match event.status {
                 PointerHitStatus::Press => {
-                    world.trigger(handle, &ButtonAction::Press);
+                    world.trigger(this, &ButtonAction::Press);
                     drag_start = Some(*event);
                     dragging = false;
                 }
@@ -175,7 +180,7 @@ impl ToggleButton {
                         {
                             dragging = true;
                             world.trigger(
-                                handle,
+                                this,
                                 &ButtonDrag {
                                     from: start,
                                     here: *event,
@@ -184,7 +189,7 @@ impl ToggleButton {
                             );
                         } else if dragging {
                             world.trigger(
-                                handle,
+                                this,
                                 &ButtonDrag {
                                     from: start,
                                     here: *event,
@@ -197,11 +202,11 @@ impl ToggleButton {
                 PointerHitStatus::Release => {
                     if !dragging {
                         let selected_val = world.fetch(selected).val;
-                        world.queue_trigger(handle, ButtonClick);
-                        world.queue_trigger(handle, ButtonSelected(!selected_val));
+                        world.queue_trigger(this, ButtonClick);
+                        world.queue_trigger(this, ButtonSelected(!selected_val));
                     } else if let Some(start) = drag_start {
                         world.trigger(
-                            handle,
+                            this,
                             &ButtonDrag {
                                 from: start,
                                 here: *event,
@@ -210,14 +215,14 @@ impl ToggleButton {
                         );
                     }
 
-                    world.trigger(handle, &ButtonAction::Release);
+                    world.trigger(this, &ButtonAction::Release);
                     drag_start = None;
                     dragging = false;
                 }
             }
         });
 
-        world.observer(handle, move |event: &PointerHover, world| {
+        world.observer(this, move |event: &PointerHover, world| {
             let hover = match event.status {
                 PointerHoverStatus::Enter => true,
                 PointerHoverStatus::Leave => false,
@@ -226,7 +231,7 @@ impl ToggleButton {
             world.fetch_mut(hovering).val = hover;
             world.queue_trigger(hovering, ValChanged);
             world.queue_trigger(
-                handle,
+                this,
                 match hover {
                     true => WidgetHover::Enter,
                     false => WidgetHover::Leave,
@@ -234,7 +239,7 @@ impl ToggleButton {
             );
         });
 
-        world.observer(handle, move |event: &ButtonAction, world| {
+        world.observer(this, move |event: &ButtonAction, world| {
             let press = matches!(event, ButtonAction::Press);
             world.fetch_mut(pressed).val = press;
             world.queue_trigger(pressed, ValChanged);
@@ -242,8 +247,17 @@ impl ToggleButton {
     }
 }
 
-impl Element for ToggleButton {
+impl Element for ButtonToggle {
     fn when_insert(&mut self, world: &World, this: Handle<Self>) {
-        self.init(world, this);
+        world.scope("button_toggle");
+        world.set_autodeps(Some(this));
+
+        world.observer(self.source, move |ButtonClick, world| {
+            let this = world.fetch(this);
+            let button = world.fetch(this.source);
+            let mut selected = world.fetch_mut(button.selected);
+            selected.val = !selected.val;
+            world.queue_trigger(selected.handle(), ValChanged);
+        });
     }
 }
