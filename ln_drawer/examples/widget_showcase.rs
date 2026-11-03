@@ -7,9 +7,11 @@ use ln_drawer::{
     measures::{Axis, IRect},
     theme::{Theme, ThemeVal},
     widgets::{
-        button::{ButtonImage, ToggleButton},
         common::WidgetCommon,
-        components::area::{Area, AreaMode},
+        components::{
+            area::{Area, AreaMode},
+            button::{ButtonImage, ToggleButton},
+        },
         renderer::{
             rrect::RRect,
             svg::svg_render,

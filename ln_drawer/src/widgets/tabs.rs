@@ -16,8 +16,8 @@ use crate::{
     theme::{Theme, ThemeVal},
     tools::collider::ToolRectCollider,
     widgets::{
-        button::{ButtonAction, ButtonImage, ToggleButton},
         common::WidgetCommon,
+        components::button::{ButtonAction, ButtonImage, ToggleButton},
         renderer::rrect::RRect,
     },
 };

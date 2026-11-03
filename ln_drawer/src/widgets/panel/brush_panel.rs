@@ -19,11 +19,11 @@ use crate::{
     tools::pointer::{PointerHit, PointerHover, PointerScroll},
     widgets::{
         brush_preview::BrushPreviewDescriptor,
-        button::{
+        common::WidgetCommon,
+        components::button::{
             ButtonClick, ButtonDrag, ButtonDragStatus, ButtonImage, SetButtonSelected,
             ToggleButton, ToggleButtonTheme,
         },
-        common::WidgetCommon,
         container::{ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerWithCamera},
         panel::settings::SettingPanel,
         renderer::{

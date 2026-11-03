@@ -15,8 +15,10 @@ use crate::{
     measures::{Axis, IRect},
     theme::ThemeVal,
     widgets::{
-        button::{ButtonClick, ButtonImage, ButtonSelected, SetButtonSelected, ToggleButton},
         common::WidgetCommon,
+        components::button::{
+            ButtonClick, ButtonImage, ButtonSelected, SetButtonSelected, ToggleButton,
+        },
         panel::{Panel, PanelAttr, brush_panel::BrushPanel, color_picker::ColorPickerButton},
         renderer::svg::svg_render,
         slider::{Slider, SliderLabel, SliderValue},

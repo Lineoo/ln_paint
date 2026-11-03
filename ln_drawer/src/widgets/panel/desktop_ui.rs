@@ -22,8 +22,10 @@ use crate::{
     measures::{Axis, IRect},
     theme::ThemeVal,
     widgets::{
-        button::{ButtonClick, ButtonImage, ButtonSelected, SetButtonSelected, ToggleButton},
         common::WidgetCommon,
+        components::button::{
+            ButtonClick, ButtonImage, ButtonSelected, SetButtonSelected, ToggleButton,
+        },
         container::{ContainerAttr, ContainerEcho, ContainerWithCamera},
         panel::{
             Panel, PanelAttr, brush_panel::BrushListPanel, color_picker::LayerOklabPalette,
