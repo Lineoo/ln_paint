@@ -18,9 +18,7 @@ use crate::{
     theme::ThemeVal,
     widgets::{
         common::WidgetCommon,
-        components::button::{
-            Button, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonSelected, SetButtonSelected,
-        },
+        components::button::{Button, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonToggle},
         container::{
             ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerEcho, ContainerWithCamera,
         },
@@ -144,6 +142,7 @@ impl Element for ColorPickerPanel {
 pub struct ColorPickerButton {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,
+    pub selected: Handle<Val<bool>>,
 }
 
 impl Element for ColorPickerButton {
@@ -160,9 +159,10 @@ impl Element for ColorPickerButton {
             rect: self.rect,
             theme: theme.button(),
             image: None,
-            selected: world.insert(Val::new(false)),
+            selected: self.selected,
             hovering: world.insert(Val::new(false)),
         });
+        world.insert(ButtonToggle { source: button });
 
         let icon_transform =
             TransformValue::anchor((0.5, 0.5), IRect::new_half(IVec2::ZERO, UVec2::splat(10)));
@@ -183,24 +183,12 @@ impl Element for ColorPickerButton {
             IRect::new_extend(20, -PANEL_HEIGHT, PANEL_WIDTH as u32, PANEL_HEIGHT as u32),
             self.rect,
         ));
-        let panel_visible = world.insert(Val::new(false));
         world.insert(ColorPickerPanel {
             common: WidgetCommon {
-                visible: panel_visible,
+                visible: self.selected,
                 ..self.common
             },
             rect: panel_rect,
-        });
-
-        world.observer(button, move |event: &ButtonSelected, world| {
-            world.queue_trigger(this, ButtonSelected(event.0));
-        });
-
-        world.observer(this, move |&SetButtonSelected(selected), world| {
-            world.queue_trigger(button, SetButtonSelected(selected));
-            let mut visible = world.fetch_mut(panel_visible);
-            visible.val = selected;
-            world.queue_trigger(visible.handle(), ValChanged);
         });
 
         world.observer(page.handle(), move |&BrushConfigurationChanged, world| {

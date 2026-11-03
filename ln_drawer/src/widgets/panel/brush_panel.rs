@@ -22,7 +22,6 @@ use crate::{
         common::WidgetCommon,
         components::button::{
             Button, ButtonClick, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonTheme,
-            SetButtonSelected,
         },
         container::{ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerWithCamera},
         panel::settings::SettingPanel,
@@ -114,7 +113,6 @@ impl Element for BrushListPanel {
         let page = world.single_fetch::<LayerPage>();
 
         let count = page.brushes.len();
-        let active = page.active_brush;
 
         let content_height =
             count as i32 * ITEM_HEIGHT + (count as i32 - 1).max(0) * ITEM_GAP + LIST_PADDING * 2;
@@ -156,7 +154,13 @@ impl Element for BrushListPanel {
 
         for i in 0..count {
             let button_rect = world.build(luni.child(LuniChild::default()));
-            let selected = world.insert(Val::new(i == active));
+            let selected = Packer::derive(world, move |world| {
+                world.single_fetch::<LayerPage>().active_brush == i
+            })
+            .observer(page.handle(), move |&BrushConfigurationChanged, world| {
+                world.single_fetch::<LayerPage>().active_brush == i
+            })
+            .finish();
             let button = world.insert(Button {
                 common,
                 rect: button_rect,
@@ -269,13 +273,6 @@ impl Element for BrushListPanel {
                 let mut page = world.single_fetch_mut::<LayerPage>();
                 page.select_brush(i);
                 world.queue_trigger(page.handle(), BrushConfigurationChanged);
-            });
-
-            world.observer(page.handle(), move |&BrushConfigurationChanged, world| {
-                let page = world.single_fetch::<LayerPage>();
-                let active = page.active_brush;
-                let selected = i == active;
-                world.queue_trigger(button, SetButtonSelected(selected));
             });
 
             world.observer(button, move |drag: &ButtonDrag, world| match drag.status {

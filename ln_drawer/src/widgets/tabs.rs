@@ -121,7 +121,10 @@ impl Tabs {
             let entry_icon_modulate = icon.modulate;
 
             let button_rect = world.build(luni.child(LuniChild::default()));
-            let button_selected = Transfer::derive(world, self.active).build(move |&x| x == i);
+            let active = self.active;
+            let button_selected = Packer::derive(world, move |world| world.fetch(active).val == i)
+                .listen(active)
+                .finish();
             let button = world.insert(Button {
                 common: self.common,
                 rect: button_rect,

@@ -8,6 +8,7 @@ use crate::{
     },
     layout::{
         luni::{LuniAlign, LuniAxis, LuniChild, LuniChildTemplate, LuniFlex, LuniParent, LuniRect},
+        packer::Packer,
         transfer::Transfer,
         transform::{Transform, TransformEdge, TransformValue},
         val::{Val, ValChanged},
@@ -16,7 +17,7 @@ use crate::{
     theme::ThemeVal,
     widgets::{
         common::WidgetCommon,
-        components::button::{Button, ButtonClick, ButtonImage, ButtonSelected, SetButtonSelected},
+        components::button::{Button, ButtonClick, ButtonImage, ButtonToggle},
         panel::{Panel, PanelAttr, brush_panel::BrushPanel, color_picker::ColorPickerButton},
         renderer::svg::svg_render,
         slider::{Slider, SliderLabel, SliderValue},
@@ -88,18 +89,40 @@ impl Element for SideDocker {
             },
         );
 
-        let docker_button = |luni: &mut LuniFlex, image_bytes: &[u8]| {
-            let rect = world.build(luni.child(LuniChild::default()));
-            world.insert(Button {
-                common: self.common,
-                rect,
-                theme: theme.button(),
-                image: Some(ButtonImage::new(svg_render(image_bytes), theme.distinct, 8)),
-                selected: world.insert(Val::new(false)),
-                hovering: world.insert(Val::new(false)),
-            })
-        };
+        let eraser_selected = Packer::derive(world, move |world| {
+            matches!(
+                world
+                    .single_fetch::<LayerPage>()
+                    .active()
+                    .toggle(BrushParamKey::Erase),
+                Some(true)
+            )
+        })
+        .observer(layer, move |&BrushConfigurationChanged, world| {
+            matches!(
+                world
+                    .single_fetch::<LayerPage>()
+                    .active()
+                    .toggle(BrushParamKey::Erase),
+                Some(true)
+            )
+        })
+        .finish();
 
+        let docker_button =
+            |luni: &mut LuniFlex, image_bytes: &[u8], selected: Handle<Val<bool>>| {
+                let rect = world.build(luni.child(LuniChild::default()));
+                world.insert(Button {
+                    common: self.common,
+                    rect,
+                    theme: theme.button(),
+                    image: Some(ButtonImage::new(svg_render(image_bytes), theme.distinct, 8)),
+                    selected,
+                    hovering: world.insert(Val::new(false)),
+                })
+            };
+
+        let brush_visible = world.insert(Val::new(false));
         let brush_menu_rect = world.build(luni.child(LuniChild::default()));
         let brush_menu = world.insert(Button {
             common: self.common,
@@ -110,34 +133,41 @@ impl Element for SideDocker {
                 theme.distinct,
                 8,
             )),
-            selected: world.insert(Val::new(false)),
+            selected: brush_visible,
             hovering: world.insert(Val::new(false)),
         });
+        world.insert(ButtonToggle { source: brush_menu });
 
         let eraser = docker_button(
             &mut luni,
             include_bytes!("../../../res/interface/eraser.svg"),
+            eraser_selected,
         );
 
+        let color_visible = world.insert(Val::new(false));
         let color_picker_rect = world.build(luni.child(LuniChild::default()));
-        let color_picker = world.insert(ColorPickerButton {
+        world.insert(ColorPickerButton {
             common: self.common,
             rect: color_picker_rect,
+            selected: color_visible,
         });
 
         let selection = docker_button(
             &mut luni,
             include_bytes!("../../../res/interface/square-dashed.svg"),
+            world.insert(Val::new(false)),
         );
 
         let undo = docker_button(
             &mut luni,
             include_bytes!("../../../res/interface/undo-2.svg"),
+            world.insert(Val::new(false)),
         );
 
         let redo = docker_button(
             &mut luni,
             include_bytes!("../../../res/interface/redo-2.svg"),
+            world.insert(Val::new(false)),
         );
 
         world.build(luni.child(LuniChild {
@@ -161,11 +191,13 @@ impl Element for SideDocker {
         let touch = docker_button(
             &mut luni,
             include_bytes!("../../../res/interface/pointer.svg"),
+            world.insert(Val::new(false)),
         );
 
         let pipette = docker_button(
             &mut luni,
             include_bytes!("../../../res/interface/pipette.svg"),
+            world.insert(Val::new(false)),
         );
 
         let brush_panel_rect = world.build(Transform::anchor(
@@ -174,7 +206,6 @@ impl Element for SideDocker {
             brush_menu_rect,
         ));
 
-        let brush_visible = world.insert(Val::new(false));
         world.insert(BrushPanel {
             common: WidgetCommon {
                 camera: self.common.camera,
@@ -204,53 +235,46 @@ impl Element for SideDocker {
             common: self.common,
         });
 
-        world.observer(brush_menu, move |&ButtonSelected(selected), world| {
-            world.queue_trigger(brush_menu, SetButtonSelected(selected));
-            world.queue_trigger(color_picker, SetButtonSelected(false));
+        world.observer(brush_visible, move |&ValChanged, world| {
+            if world.fetch(brush_visible).val {
+                world.fetch_mut(color_visible).val = false;
+                world.queue_trigger(color_visible, ValChanged);
+            }
         });
 
-        world.observer(brush_menu, move |&SetButtonSelected(selected), world| {
-            let mut visible = world.fetch_mut(brush_visible);
-            visible.val = selected;
-            world.queue_trigger(visible.handle(), ValChanged);
+        world.observer(color_visible, move |&ValChanged, world| {
+            if world.fetch(color_visible).val {
+                world.fetch_mut(brush_visible).val = false;
+                world.queue_trigger(brush_visible, ValChanged);
+            }
         });
 
-        world.observer(color_picker, move |&ButtonSelected(selected), world| {
-            world.queue_trigger(brush_menu, SetButtonSelected(false));
-            world.queue_trigger(color_picker, SetButtonSelected(selected));
-        });
-
-        world.observer(eraser, move |&ButtonSelected(val), world| {
+        world.observer(eraser, move |&ButtonClick, world| {
             let mut layer = world.fetch_mut(layer);
-            layer.active_mut().set_toggle(BrushParamKey::Erase, val);
+            let is_erase = matches!(layer.active().toggle(BrushParamKey::Erase), Some(true));
+            layer
+                .active_mut()
+                .set_toggle(BrushParamKey::Erase, !is_erase);
             world.queue_trigger(layer.handle(), BrushConfigurationChanged);
         });
 
-        world.observer(pipette, move |&ButtonSelected(val), world| {
+        world.insert(ButtonToggle { source: pipette });
+        world.observer(pipette, move |&ButtonClick, world| {
             let mut input = world.single_fetch_mut::<LayerInput>();
-            input.hold_pick = val;
-            world.queue_trigger(pipette, SetButtonSelected(val));
+            input.hold_pick = !input.hold_pick;
         });
 
-        // TODO selection state is not synced yet, we wait util button's selection use Val as well
-        world.observer(selection, move |&ButtonSelected(val), world| {
+        world.insert(ButtonToggle { source: selection });
+        // TODO selection state is not synced with LayerInput mode
+        world.observer(selection, move |&ButtonClick, world| {
             let mut input = world.single_fetch_mut::<LayerInput>();
             input.mode = LayerInputMode::Area;
-            world.queue_trigger(selection, SetButtonSelected(val));
         });
 
-        world.observer(touch, move |&ButtonSelected(val), world| {
+        world.insert(ButtonToggle { source: touch });
+        world.observer(touch, move |&ButtonClick, world| {
             let mut input = world.single_fetch_mut::<LayerInput>();
-            input.touch_draw = val;
-            world.queue_trigger(touch, SetButtonSelected(val));
-        });
-
-        world.observer(layer, move |&BrushConfigurationChanged, world| {
-            let is_eraser = {
-                let layer = world.fetch(layer);
-                layer.active().toggle(BrushParamKey::Erase).unwrap_or(false)
-            };
-            world.trigger(eraser, &SetButtonSelected(is_eraser));
+            input.touch_draw = !input.touch_draw;
         });
 
         world.observer(undo, move |&ButtonClick, world| {

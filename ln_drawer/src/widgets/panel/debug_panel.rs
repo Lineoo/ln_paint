@@ -14,7 +14,7 @@ use crate::{
     theme::ThemeVal,
     widgets::{
         common::WidgetCommon,
-        components::button::{Button, ButtonClick, ButtonImage, ButtonSelected, SetButtonSelected},
+        components::button::{Button, ButtonClick, ButtonImage, ButtonToggle},
         container::{
             ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerEcho, ContainerWithCamera,
         },
@@ -136,10 +136,10 @@ impl Element for DebugPanel {
             page_debug_rect,
             include_bytes!("../../../res/interface/bug.svg"),
         );
-        world.observer(page_debug, move |&ButtonSelected(val), world| {
+        world.insert(ButtonToggle { source: page_debug });
+        world.observer(page_debug, move |&ButtonClick, world| {
             let mut layer = world.single_fetch_mut::<LayerPage>();
-            layer.debug = val;
-            world.queue_trigger(page_debug, SetButtonSelected(val));
+            layer.debug = !layer.debug;
         });
 
         let render_profile_rect = world.build(Transform::new(
@@ -150,10 +150,12 @@ impl Element for DebugPanel {
             render_profile_rect,
             include_bytes!("../../../res/interface/timer.svg"),
         );
-        world.observer(render_profile, move |&ButtonSelected(val), world| {
+        world.insert(ButtonToggle {
+            source: render_profile,
+        });
+        world.observer(render_profile, move |&ButtonClick, world| {
             let mut render = world.single_fetch_mut::<Render>();
-            render.timestamp_poll = val;
-            world.queue_trigger(render_profile, SetButtonSelected(val));
+            render.timestamp_poll = !render.timestamp_poll;
         });
 
         let compact_rect = world.build(Transform::new(

@@ -68,12 +68,6 @@ pub enum ButtonDragStatus {
     End,
 }
 
-#[deprecated]
-pub struct ButtonSelected(pub bool);
-
-#[deprecated]
-pub struct SetButtonSelected(pub bool);
-
 impl ButtonImage {
     pub fn new(bmp: PixImage, modulate: Handle<Val<Vec4>>, size: u32) -> Self {
         ButtonImage {
@@ -89,7 +83,7 @@ impl ButtonImage {
 
 impl Element for Button {
     fn when_insert(&mut self, world: &World, this: Handle<Self>) {
-        world.scope("toggle_button");
+        world.scope("button");
         world.set_autodeps(Some(this));
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
@@ -157,11 +151,6 @@ impl Element for Button {
             });
         }
 
-        world.observer(this, move |&SetButtonSelected(value), world| {
-            world.fetch_mut(selected).val = value;
-            world.queue_trigger(selected, ValChanged);
-        });
-
         let mut drag_start = None;
         let mut dragging = false;
         world.observer(this, move |event: &PointerHit, world| {
@@ -201,9 +190,7 @@ impl Element for Button {
                 }
                 PointerHitStatus::Release => {
                     if !dragging {
-                        let selected_val = world.fetch(selected).val;
                         world.queue_trigger(this, ButtonClick);
-                        world.queue_trigger(this, ButtonSelected(!selected_val));
                     } else if let Some(start) = drag_start {
                         world.trigger(
                             this,

@@ -5,14 +5,15 @@ use crate::{
     i18n::{tr, trp},
     layer::wrapper::LayerPage,
     layout::{
+        packer::Packer,
         transform::{Transform, TransformEdge, TransformValue},
-        val::Val,
+        val::{Val, ValChanged},
     },
     measures::IRect,
     theme::ThemeVal,
     widgets::{
         common::WidgetCommon,
-        components::button::{Button, ButtonSelected, SetButtonSelected},
+        components::button::{Button, ButtonClick},
         container::{
             ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerEcho, ContainerWithCamera,
         },
@@ -22,8 +23,6 @@ use crate::{
         },
     },
 };
-
-struct LayerChosen(u64);
 
 pub struct LayerSelectionPanel {
     pub common: WidgetCommon,
@@ -131,7 +130,7 @@ impl Element for LayerSelectionPanel {
             outdated: false,
         });
 
-        let layers_node = world.insert(());
+        let active = world.insert(Val::new(0u64));
         for i in 0..3i32 {
             let button_rect = world.build(Transform::new(
                 TransformValue {
@@ -154,6 +153,9 @@ impl Element for LayerSelectionPanel {
                 },
                 local,
             ));
+            let selected = Packer::derive(world, move |world| world.fetch(active).val == i as u64)
+                .listen(active)
+                .finish();
             let layer0_button = world.insert(Button {
                 common: WidgetCommon {
                     camera: common.camera,
@@ -162,7 +164,7 @@ impl Element for LayerSelectionPanel {
                 rect: button_rect,
                 theme: theme.button(),
                 image: None,
-                selected: world.insert(Val::new(i == 0)),
+                selected,
                 hovering: world.insert(Val::new(false)),
             });
 
@@ -207,16 +209,11 @@ impl Element for LayerSelectionPanel {
                 outdated: false,
             });
 
-            world.observer(layer0_button, move |&ButtonSelected(val), world| {
-                if val {
-                    let mut wrapper = world.single_fetch_mut::<LayerPage>();
-                    wrapper.set_page(i as u64);
-                    world.queue_trigger(layers_node, LayerChosen(i as u64));
-                }
-            });
-
-            world.observer(layers_node, move |&LayerChosen(j), world| {
-                world.queue_trigger(layer0_button, SetButtonSelected(i as u64 == j));
+            world.observer(layer0_button, move |&ButtonClick, world| {
+                let mut current = world.fetch_mut(active);
+                current.val = i as u64;
+                world.queue_trigger(active, ValChanged);
+                world.single_fetch_mut::<LayerPage>().set_page(i as u64);
             });
         }
     }
