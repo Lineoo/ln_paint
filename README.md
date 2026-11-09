@@ -6,8 +6,16 @@
 
 <img src="ln_paint/res/logos/icon_lime.svg" alt="LnPaint Icon" align="right"/>
 
-**LnPaint** is a simple, light-weight, GPU-accelerated drawing application written in Rust, driven by `winit` and `wgpu`.
+**LnPaint** is a simple, light-weight, GPU-accelerated, cross-platform painting application written in Rust, driven by `winit` and `wgpu`.
 
+[/laɪn'peɪnt/](https://itinerarium.github.io/phoneme-synthesis/?w=/laɪn'peɪnt/)
+
+## Features ##
+
+- Infinite-sized lossless canvas
+- Smooth at any zoom level
+- Efficient and reliable canvas storage
+- Mobile support
 
 ## Build ##
 

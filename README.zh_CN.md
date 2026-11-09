@@ -6,8 +6,14 @@
 
 <img src="ln_paint/res/logos/icon_lime.svg" alt="LnPaint 图标" align="right"/>
 
-**LnPaint** 是一款简单、轻量、GPU 加速的绘图应用，使用 Rust 编写，由 `winit` 和 `wgpu` 驱动。
+**绘限（LnPaint）** 是一个简单轻量、GPU 加速、跨平台的绘画应用，使用 Rust 编写，由 `winit` 和 `wgpu` 驱动。
 
+## 特点 ##
+
+- 无限大小的无损画布
+- 任意缩放并保持流畅
+- 高效可靠的画布存储
+- 移动端支持
 
 ## 从源码构建 ##
 
