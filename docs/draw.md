@@ -138,4 +138,4 @@ SwapChunk 是一个特殊的“仅写入”操作，会覆盖所有以前的内�
 
 ## swap 设备兼容
 
-调试：debug build 下设置 `LNDRAWER_NO_READ_WRITE=1` 可以在支持原地写入的硬件上强制走 swap 路径。
+调试：debug build 下设置 `LNPAINT_NO_READ_WRITE=1` 可以在支持原地写入的硬件上强制走 swap 路径。

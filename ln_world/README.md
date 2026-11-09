@@ -1,5 +1,5 @@
 # LnWorld
-A simple element module for LnDrawer.
+A simple element module for LnPaint.
 
 ## License
 

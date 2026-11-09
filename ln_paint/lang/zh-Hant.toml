@@ -1,0 +1,36 @@
+title = "LnPaint v{version}"
+
+[settings.brush]
+title = "筆刷設定"
+flow.label = "流量"
+flow.desc = "筆畫流量"
+sigma.label = "模糊標準差"
+sigma.desc = "卷積核套用標準差 σ"
+softness.label = "硬度"
+softness.desc = "筆刷遮罩形狀"
+spacing.label = "間距"
+spacing.desc = "筆觸點間距"
+color_ratio.label = "乾色"
+color_ratio.desc = "前景色所佔比例"
+sample_radius.label = "採樣半徑"
+sample_radius.desc = "採樣畫布的相對半徑"
+sample_rate.label = "濕色"
+sample_rate.desc = "畫布採樣色所佔比例"
+
+[settings.layer_selection]
+doc_label = "文件"
+layer_label = "分頁"
+layer_name = "頁 {index}"
+
+[settings.page]
+title = "畫布設定"
+zoom.label = "縮放偏移"
+zoom.desc = "畫布細節層級的偏移"
+
+[brush]
+pen = "壓感硬圓"
+soft = "無壓感軟圓"
+pixel = "像素"
+blur = "模糊"
+smudge = "混色"
+tint = "著色"

@@ -1,0 +1,36 @@
+title = "LnPaint v{version}"
+
+[settings.brush]
+title = "Brush Configuration"
+flow.label = "Flow"
+flow.desc = "Stroke flow"
+sigma.label = "Blur Standard Deviation"
+sigma.desc = "Standard deviation σ applied to the convolution kernel"
+softness.label = "Hardness"
+softness.desc = "Brush mask shape"
+spacing.label = "Spacing"
+spacing.desc = "Dab spacing"
+color_ratio.label = "Dry Color"
+color_ratio.desc = "Foreground color share"
+sample_radius.label = "Sample Radius"
+sample_radius.desc = "Relative radius of the sampled canvas"
+sample_rate.label = "Wet Color"
+sample_rate.desc = "Sampled canvas color share"
+
+[settings.layer_selection]
+doc_label = "Document"
+layer_label = "Pages"
+layer_name = "Page {index}"
+
+[settings.page]
+title = "Canvas Settings"
+zoom.label = "Zoom Offset"
+zoom.desc = "Canvas detail level offset"
+
+[brush]
+pen = "Pressure Hard Round"
+soft = "No-Pressure Soft Round"
+pixel = "Pixel"
+blur = "Blur"
+smudge = "Smudge"
+tint = "Tint"

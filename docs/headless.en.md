@@ -9,8 +9,8 @@ Headless rendering and frame export are controlled independently:
 
 A virtual Wayland compositor is usually enough. Weston's headless backend with the pixman renderer does not need a GPU or `/dev/dri`:
 
-- `LNDRAWER_HEADLESS`: If present, do not create a `wgpu::Surface`; render into an offscreen texture.
-- `LNDRAWER_WINDOW_SIZE`: If present, request the surface size in physical pixels, formatted as `WIDTHxHEIGHT`. This keeps exports independent of the compositor's scale factor and default window size.
+- `LNPAINT_HEADLESS`: If present, do not create a `wgpu::Surface`; render into an offscreen texture.
+- `LNPAINT_WINDOW_SIZE`: If present, request the surface size in physical pixels, formatted as `WIDTHxHEIGHT`. This keeps exports independent of the compositor's scale factor and default window size.
 
 ```bash
 export XDG_RUNTIME_DIR=$PWD/target/headless/rt
@@ -33,29 +33,29 @@ unset DISPLAY
 
 Hardware rendering may not be available. `vulkan-swrast` is more recommended.
 
-- `LNDRAWER_FORCE_FALLBACK_ADAPTER` enable wgpu `force_fallback_adapter` field to access Adapter
+- `LNPAINT_FORCE_FALLBACK_ADAPTER` enable wgpu `force_fallback_adapter` field to access Adapter
 
 ## 3. Save Permission
 
 Use temporary save first, especially when you don't have write access to the save file location.
 
-- `LNDRAWER_TMP_SAVE`: If present, use in-memory save & database.
+- `LNPAINT_TMP_SAVE`: If present, use in-memory save & database.
 
 ## 4. Headless Export
 
 Exporting needs headless environment.
 
-- `LNDRAWER_EXPORT_PATH`: If present, export a frame to this path. Relative paths are resolved from the current directory. Parent directories are created.
-- `LNDRAWER_EXPORT_FRAME`: Frame number to export, starting at `1`. Defaults to `1`.
+- `LNPAINT_EXPORT_PATH`: If present, export a frame to this path. Relative paths are resolved from the current directory. Parent directories are created.
+- `LNPAINT_EXPORT_FRAME`: Frame number to export, starting at `1`. Defaults to `1`.
 
 Example:
 
 ```bash
-LNDRAWER_HEADLESS=1 \
-LNDRAWER_TMP_SAVE=1 \
-LNDRAWER_FORCE_FALLBACK_ADAPTER=1 \
-LNDRAWER_EXPORT_PATH=$PWD/target/headless/shot.png \
-./target/debug/ln_drawer
+LNPAINT_HEADLESS=1 \
+LNPAINT_TMP_SAVE=1 \
+LNPAINT_FORCE_FALLBACK_ADAPTER=1 \
+LNPAINT_EXPORT_PATH=$PWD/target/headless/shot.png \
+./target/debug/ln_paint
 ```
 
 The exporter requests redraws until the requested frame is rendered, then writes the PNG once and marks the export as done. The application logs the output path when the file has been written:

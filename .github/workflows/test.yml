@@ -65,7 +65,7 @@ jobs:
           fonts-noto-color-emoji
 
         mkdir -p "$HOME/.local/share/fonts"
-        cp ln_drawer/fonts/*.otf "$HOME/.local/share/fonts/"
+        cp ln_paint/fonts/*.otf "$HOME/.local/share/fonts/"
 
     - name: '[Test] Headless Regression'
       run: |
@@ -95,7 +95,7 @@ jobs:
     - name: '[Test] Compare Pixels'
       run: |
         failed=0
-        for baseline in ln_drawer/examples/*.png; do
+        for baseline in ln_paint/examples/*.png; do
           name=$(basename "$baseline")
           actual="$RUNNER_TEMP/regression/$name"
 

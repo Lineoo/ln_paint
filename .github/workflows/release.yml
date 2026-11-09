@@ -93,14 +93,14 @@ jobs:
 
     - name: '[Build] Compile Binary'
       if: ${{ matrix.platform == 'desktop' }}
-      run: cargo build --verbose --release --package=ln_drawer --bin=ln_drawer --target ${{ matrix.target }}
+      run: cargo build --verbose --release --package=ln_paint --bin=ln_paint --target ${{ matrix.target }}
 
     - name: '[Build] Compile Library and Package (Apk)'
       if: ${{ matrix.platform == 'android' }}
       env:
         RELEASE_KEYSTORE: ${{ vars.CARGO_APK_RELEASE_KEYSTORE }}
         RELEASE_KEYSTORE_PASSWORD: ${{ secrets.CARGO_APK_RELEASE_KEYSTORE_PASSWORD }}
-      working-directory: ./ln_drawer/build/android
+      working-directory: ./ln_paint/build/android
       run: |
         export JAVA_HOME="$JAVA_HOME_21_X64"
         export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/29.0.14206865"
@@ -109,32 +109,32 @@ jobs:
         "$ANDROID_HOME/build-tools/34.0.0/apksigner" sign \
           --ks "$RELEASE_KEYSTORE" \
           --ks-pass "env:RELEASE_KEYSTORE_PASSWORD" \
-          --out "$RUNNER_TEMP/ln_drawer.apk" \
+          --out "$RUNNER_TEMP/ln_paint.apk" \
           app/build/outputs/apk/release/app-release-unsigned.apk
-        echo "ARTIFACT=$(readlink -f "$RUNNER_TEMP/ln_drawer.apk")" >> $GITHUB_ENV
+        echo "ARTIFACT=$(readlink -f "$RUNNER_TEMP/ln_paint.apk")" >> $GITHUB_ENV
 
     - name: '[Build] Package for Windows (Zip)'
       if: ${{ matrix.package == 'windows-zip' }}
       working-directory: target/${{ matrix.target }}/release/
       run: | 
-        zip -v ln_drawer.zip ln_drawer.exe
-        echo "ARTIFACT=$(readlink -f ln_drawer.zip)" > $GITHUB_ENV
+        zip -v ln_paint.zip ln_paint.exe
+        echo "ARTIFACT=$(readlink -f ln_paint.zip)" > $GITHUB_ENV
 
     - name: '[Build] Package for Linux (Tar + Gzip)'
       if: ${{ matrix.package == 'linux-tar' }}
       working-directory: target/${{ matrix.target }}/release/
       run: |
-        tar -czvf ln_drawer.tar.gz ln_drawer
-        echo "ARTIFACT=$(readlink -f ln_drawer.tar.gz)" > $GITHUB_ENV
+        tar -czvf ln_paint.tar.gz ln_paint
+        echo "ARTIFACT=$(readlink -f ln_paint.tar.gz)" > $GITHUB_ENV
 
     - name: '[Build] Package for Linux (AppImage)'
       if: ${{ matrix.package == 'linux-tar' }}
       env:
         APPIMAGETOOL: ${{ runner.temp }}/appimagetool
-        BIN: target/${{ matrix.target }}/release/ln_drawer
+        BIN: target/${{ matrix.target }}/release/ln_paint
       run: |
-        ln_drawer/build/appimage/build.sh
-        echo "APPIMAGE=$(readlink -f target/appimage/ln_drawer.AppImage)" >> $GITHUB_ENV
+        ln_paint/build/appimage/build.sh
+        echo "APPIMAGE=$(readlink -f target/appimage/ln_paint.AppImage)" >> $GITHUB_ENV
 
     - name: '[Actions] Upload Artifacts'
       uses: actions/upload-artifact@v7
@@ -178,7 +178,7 @@ jobs:
 
         PAYLOAD=$(jq -n \
           --arg tag "v$VER" \
-          --arg name "LnDrawer v$VER" \
+          --arg name "LnPaint v$VER" \
           --arg body "This release is auto-generated." \
           --arg commit "$SHA" \
           '{tag_name: $tag, target_commitish: $commit, name: $name, body: $body, draft: true, prerelease: false}')
@@ -204,10 +204,10 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         REPO: ${{ github.repository }}
         ASSETS: |
-          artifact-x86_64-unknown-linux-gnu-linux-tar/ln_drawer.tar.gz|ln_drawer-v${{ inputs.version }}-linux-x86_64.tar.gz
-          artifact-x86_64-unknown-linux-gnu-linux-appimage/ln_drawer.AppImage|ln_drawer-v${{ inputs.version }}-linux-x86_64.AppImage
-          artifact-x86_64-pc-windows-gnu-windows-zip/ln_drawer.zip|ln_drawer-v${{ inputs.version }}-windows-x86_64.zip
-          artifact-aarch64-linux-android-android-apk/ln_drawer.apk|ln_drawer-v${{ inputs.version }}-android-aarch64.apk
+          artifact-x86_64-unknown-linux-gnu-linux-tar/ln_paint.tar.gz|ln_paint-v${{ inputs.version }}-linux-x86_64.tar.gz
+          artifact-x86_64-unknown-linux-gnu-linux-appimage/ln_paint.AppImage|ln_paint-v${{ inputs.version }}-linux-x86_64.AppImage
+          artifact-x86_64-pc-windows-gnu-windows-zip/ln_paint.zip|ln_paint-v${{ inputs.version }}-windows-x86_64.zip
+          artifact-aarch64-linux-android-android-apk/ln_paint.apk|ln_paint-v${{ inputs.version }}-android-aarch64.apk
       run: |
         set -e
 

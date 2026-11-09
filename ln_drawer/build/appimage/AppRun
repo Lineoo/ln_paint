@@ -1,3 +1,0 @@
-#!/bin/bash
-HERE="${APPDIR:-$(dirname "$(readlink -f "$0")")}"
-exec "$HERE/usr/bin/ln_drawer" "$@"

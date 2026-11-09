@@ -5,14 +5,14 @@
 
 set -e
 
-OUT=${1:-ln_drawer/examples}
+OUT=${1:-ln_paint/examples}
 
-export LNDRAWER_HEADLESS=1
-export LNDRAWER_TMP_SAVE=1
-export LNDRAWER_FORCE_FALLBACK_ADAPTER=1
-export LNDRAWER_DESKTOP_UI=1
-export LNDRAWER_SCALE_FACTOR=1.5
-export LNDRAWER_WINDOW_SIZE=1200x900
+export LNPAINT_HEADLESS=1
+export LNPAINT_TMP_SAVE=1
+export LNPAINT_FORCE_FALLBACK_ADAPTER=1
+export LNPAINT_DESKTOP_UI=1
+export LNPAINT_SCALE_FACTOR=1.5
+export LNPAINT_WINDOW_SIZE=1200x900
 
-LNDRAWER_EXPORT_PATH=$OUT/text_preview.png cargo run --example text_preview
-LNDRAWER_EXPORT_PATH=$OUT/widget_showcase.png cargo run --example widget_showcase
+LNPAINT_EXPORT_PATH=$OUT/text_preview.png cargo run --example text_preview
+LNPAINT_EXPORT_PATH=$OUT/widget_showcase.png cargo run --example widget_showcase

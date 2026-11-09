@@ -4,7 +4,7 @@ import subprocess
 from PIL import Image, ImageChops
 
 root = Path(__file__).resolve().parent.parent
-baseline_dir = root / "ln_drawer" / "examples"
+baseline_dir = root / "ln_paint" / "examples"
 regression_dir = root / "target" / "regression"
 actual_dir = regression_dir / "actual"
 diff_dir = regression_dir / "diff"

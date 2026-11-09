@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Build an AppImage from an already compiled ln_paint binary.
+#
+# Usage: ln_paint/build/appimage/build.sh [output]
+#
+# Environment:
+#   BIN          path to the compiled ln_paint binary
+#   APPIMAGETOOL path to appimagetool (default: appimagetool in PATH)
+
+set -euo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$HERE/../../.." && pwd)"
+OUT="${1:-$ROOT/target/appimage/ln_paint.AppImage}"
+APPDIR="$(dirname "$OUT")/AppDir"
+
+VERSION="$(sed -n 's/^version = "\(.*\)"$/\1/p' "$ROOT/ln_paint/Cargo.toml" | head -n1)"
+if [[ -z "$VERSION" ]]; then
+    echo "cannot read version from ln_paint/Cargo.toml" >&2
+    exit 1
+fi
+
+case "$VERSION" in
+    *-dev) ICON="$ROOT/ln_paint/res/logos/icon_dev-512x.png" ;;
+    *) ICON="$ROOT/ln_paint/res/logos/icon_lime-512x.png" ;;
+esac
+
+TARGET="${TARGET:-x86_64-unknown-linux-gnu}"
+BIN="${BIN:-$ROOT/target/$TARGET/release/ln_paint}"
+[[ -x "$BIN" ]] || BIN="$ROOT/target/release/ln_paint"
+if [[ ! -x "$BIN" ]]; then
+    echo "missing ln_paint binary; build it first or set BIN" >&2
+    exit 1
+fi
+
+APPIMAGETOOL="${APPIMAGETOOL:-appimagetool}"
+if ! command -v "$APPIMAGETOOL" >/dev/null 2>&1; then
+    echo "appimagetool not found; install it or set APPIMAGETOOL" >&2
+    exit 1
+fi
+
+rm -rf "$APPDIR"
+install -Dm755 "$BIN" "$APPDIR/usr/bin/ln_paint"
+install -Dm755 "$HERE/AppRun" "$APPDIR/AppRun"
+install -Dm644 "$ICON" "$APPDIR/usr/share/icons/hicolor/512x512/apps/ln_paint.png"
+ln -s usr/share/icons/hicolor/512x512/apps/ln_paint.png "$APPDIR/ln_paint.png"
+ln -s ln_paint.png "$APPDIR/.DirIcon"
+
+sed "s|@VERSION@|$VERSION|" "$HERE/ln_paint.desktop" > "$APPDIR/ln_paint.desktop"
+install -Dm644 "$APPDIR/ln_paint.desktop" "$APPDIR/usr/share/applications/ln_paint.desktop"
+
+mkdir -p "$(dirname "$OUT")"
+rm -f "$OUT"
+APPIMAGE_EXTRACT_AND_RUN=1 ARCH=x86_64 "$APPIMAGETOOL" --no-appstream "$APPDIR" "$OUT"
+
+echo "$OUT"

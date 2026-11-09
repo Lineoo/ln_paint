@@ -38,8 +38,8 @@ version_code=$(((1 << 24) | (major << 16) | (minor << 8) | patch))
 # `Cargo.toml`
 sed -i "/^\[package\]/,/^\[/ s/^version = \".*\"$/version = \"$version\"/" Cargo.toml
 
-# `ln_drawer/build/android/app/build.gradle.kts`
-gradle=ln_drawer/build/android/app/build.gradle.kts
+# `ln_paint/build/android/app/build.gradle.kts`
+gradle=ln_paint/build/android/app/build.gradle.kts
 sed -i "s/^\( *\)versionName = \".*\"$/\1versionName = \"$version\"/" "$gradle"
 sed -i "s/^\( *\)versionCode = .*$/\1versionCode = $version_code/" "$gradle"
 
