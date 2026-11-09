@@ -9,7 +9,7 @@ use wgpu::{
 };
 
 use crate::{
-    layer::{
+    paint::{
         CHUNK_TEXTURE_FORMAT, CacheLayers, ChunkPool, LayerPipeline, RawLayer, RawLayerChunk,
         brush::Stroke, chunks_key_to_rect, rect_chunks_iter,
     },

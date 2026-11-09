@@ -3,7 +3,7 @@ use ln_world::{Element, Handle, World};
 
 use crate::{
     i18n::{tr, trp},
-    layer::wrapper::LayerPage,
+    paint::wrapper::LayerPage,
     layout::{
         packer::Packer,
         transform::{Transform, TransformEdge, TransformValue},

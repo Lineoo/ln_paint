@@ -1,7 +1,7 @@
 use ln_world::{Element, Handle, World};
 
 use crate::{
-    layer::{
+    paint::{
         brush::param::BrushParamKey,
         input::{LayerInput, LayerInputMode},
         wrapper::{BrushConfigurationChanged, LayerPage},

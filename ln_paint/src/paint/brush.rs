@@ -12,7 +12,7 @@ use glam::{I64Vec2, UVec2, Vec4};
 use wgpu::{BindGroup, CommandEncoderDescriptor, ComputePass, ComputePassDescriptor};
 
 use crate::{
-    layer::{
+    paint::{
         CacheLayerChunk, CacheLayers, ChunkPool, DRAWS_ARRAY_CAPACITY, LayerPipeline, PlainLayer,
         RawLayer, RawLayerChunk, Standalone, WriteMode,
         brush::param::{BrushParam, BrushParamKey, BrushValue, BrushValueMut},
@@ -825,22 +825,22 @@ trait DrawsProcessor {
 #[macro_export]
 macro_rules! brush_params {
     ($ty:ty, { $( $key:ident => $variant:ident($field:ident) ),* $(,)? }) => {
-        impl $crate::layer::brush::BrushParams for $ty {
-            fn dup(&self) -> Box<dyn $crate::layer::brush::BrushParams> {
+        impl $crate::paint::brush::BrushParams for $ty {
+            fn dup(&self) -> Box<dyn $crate::paint::brush::BrushParams> {
                 Box::new(self.clone())
             }
 
-            fn list_params(&self) -> &'static [$crate::layer::brush::param::BrushParamKey] {
-                const KEYS: &[$crate::layer::brush::param::BrushParamKey] =
-                    &[$( $crate::layer::brush::param::BrushParamKey::$key ),*];
+            fn list_params(&self) -> &'static [$crate::paint::brush::param::BrushParamKey] {
+                const KEYS: &[$crate::paint::brush::param::BrushParamKey] =
+                    &[$( $crate::paint::brush::param::BrushParamKey::$key ),*];
                 KEYS
             }
 
             fn param(
                 &self,
-                key: $crate::layer::brush::param::BrushParamKey,
-            ) -> Option<$crate::layer::brush::param::BrushValue<'_>> {
-                use $crate::layer::brush::param::{BrushParamKey, BrushValue};
+                key: $crate::paint::brush::param::BrushParamKey,
+            ) -> Option<$crate::paint::brush::param::BrushValue<'_>> {
+                use $crate::paint::brush::param::{BrushParamKey, BrushValue};
                 match key {
                     $( BrushParamKey::$key => Some(BrushValue::$variant(&self.$field)), )*
                     _ => None,
@@ -849,9 +849,9 @@ macro_rules! brush_params {
 
             fn param_mut(
                 &mut self,
-                key: $crate::layer::brush::param::BrushParamKey,
-            ) -> Option<$crate::layer::brush::param::BrushValueMut<'_>> {
-                use $crate::layer::brush::param::{BrushParamKey, BrushValueMut};
+                key: $crate::paint::brush::param::BrushParamKey,
+            ) -> Option<$crate::paint::brush::param::BrushValueMut<'_>> {
+                use $crate::paint::brush::param::{BrushParamKey, BrushValueMut};
                 match key {
                     $( BrushParamKey::$key => Some(BrushValueMut::$variant(&mut self.$field)), )*
                     _ => None,

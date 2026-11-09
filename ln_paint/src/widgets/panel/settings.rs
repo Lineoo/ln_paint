@@ -3,7 +3,7 @@ use ln_world::{Element, Handle, World};
 
 use crate::{
     i18n::tr,
-    layer::{
+    paint::{
         brush::{
             BrushParams,
             param::{BrushParamKey, BrushValue, BrushValueMut},

@@ -33,7 +33,7 @@ use wgpu::{
 
 use crate::{
     color::srgb::{demul_alpha, mul_alpha, srgb_gamma_encode},
-    layer::{brush::Brush, stream::ThreadInput},
+    paint::{brush::Brush, stream::ThreadInput},
     measures::{FI64Ext, IRect},
     render::camera::Camera,
     widgets::shaders::shader_compile,
@@ -1663,13 +1663,13 @@ impl BrushKind {
         use BrushStage::*;
 
         match (self, stage) {
-            (Blur, Draw) => include_str!("layer/brush/blur.wgsl"),
-            (Pixel, Draw) => include_str!("layer/brush/pixel.wgsl"),
-            (Round, Draw) => include_str!("layer/brush/round.wgsl"),
-            (Smudge, Draw) => include_str!("layer/brush/smudge.wgsl"),
-            (Smudge, PrepareDraw) => include_str!("layer/brush/smudge_prepare_draw.wgsl"),
-            (Smudge, PrepareStroke) => include_str!("layer/brush/smudge_prepare_stroke.wgsl"),
-            (Tint, Draw) => include_str!("layer/brush/tint.wgsl"),
+            (Blur, Draw) => include_str!("paint/brush/blur.wgsl"),
+            (Pixel, Draw) => include_str!("paint/brush/pixel.wgsl"),
+            (Round, Draw) => include_str!("paint/brush/round.wgsl"),
+            (Smudge, Draw) => include_str!("paint/brush/smudge.wgsl"),
+            (Smudge, PrepareDraw) => include_str!("paint/brush/smudge_prepare_draw.wgsl"),
+            (Smudge, PrepareStroke) => include_str!("paint/brush/smudge_prepare_stroke.wgsl"),
+            (Tint, Draw) => include_str!("paint/brush/tint.wgsl"),
             it => panic!("brush pipeline unavailable {it:?}"),
         }
     }
@@ -1756,7 +1756,7 @@ fn render_pipelines(
 ) -> RenderPipelines {
     let render_shader = device.create_shader_module(ShaderModuleDescriptor {
         label: Some("layer_chunk"),
-        source: ShaderSource::Wgsl(shader_compile(include_str!("layer/render.wgsl"), &[]).into()),
+        source: ShaderSource::Wgsl(shader_compile(include_str!("paint/render.wgsl"), &[]).into()),
     });
 
     let render_pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
@@ -1813,7 +1813,7 @@ fn mipmap_pipeline(
 ) -> ComputePipeline {
     let shader = device.create_shader_module(ShaderModuleDescriptor {
         label: Some("layer_mipmap"),
-        source: ShaderSource::Wgsl(shader_compile(include_str!("layer/mipmap.wgsl"), &[]).into()),
+        source: ShaderSource::Wgsl(shader_compile(include_str!("paint/mipmap.wgsl"), &[]).into()),
     });
 
     let layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
@@ -1930,7 +1930,7 @@ fn merge_pipeline(
         ("write", write.write()),
         ("composite", composite.formula()),
     ];
-    let wgsl = shader_compile(include_str!("layer/merge.wgsl"), maps);
+    let wgsl = shader_compile(include_str!("paint/merge.wgsl"), maps);
     let shader = device.create_shader_module(ShaderModuleDescriptor {
         label: Some(&label),
         source: ShaderSource::Wgsl(wgsl.into()),
@@ -1952,7 +1952,7 @@ fn copy_pipeline(
 ) -> ComputePipeline {
     let shader = device.create_shader_module(ShaderModuleDescriptor {
         label: Some("layer_copy"),
-        source: ShaderSource::Wgsl(shader_compile(include_str!("layer/copy.wgsl"), &[]).into()),
+        source: ShaderSource::Wgsl(shader_compile(include_str!("paint/copy.wgsl"), &[]).into()),
     });
 
     let layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
@@ -1983,7 +1983,7 @@ fn readback_pipeline(
 ) -> ComputePipeline {
     let shader = device.create_shader_module(ShaderModuleDescriptor {
         label: Some("color_readback"),
-        source: ShaderSource::Wgsl(shader_compile(include_str!("layer/readback.wgsl"), &[]).into()),
+        source: ShaderSource::Wgsl(shader_compile(include_str!("paint/readback.wgsl"), &[]).into()),
     });
 
     let layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
@@ -2009,7 +2009,7 @@ fn clear_pipeline(
 ) -> ComputePipeline {
     let shader = device.create_shader_module(ShaderModuleDescriptor {
         label: Some("layer_clear"),
-        source: ShaderSource::Wgsl(shader_compile(include_str!("layer/clear.wgsl"), &[]).into()),
+        source: ShaderSource::Wgsl(shader_compile(include_str!("paint/clear.wgsl"), &[]).into()),
     });
 
     let layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {

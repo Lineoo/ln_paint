@@ -5,7 +5,7 @@ use ln_world::Element;
 
 use crate::{
     brush_params,
-    layer::{
+    paint::{
         BrushKind, BrushStage, CompositeMode, DRAWS_ARRAY_CAPACITY, LayerPipeline, WriteMode,
         brush::{Brush, Draw, DrawsProcessor, param::BrushParam},
     },

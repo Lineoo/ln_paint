@@ -9,7 +9,7 @@ use winit::{
 };
 
 use crate::{
-    layer::{
+    paint::{
         brush::{Draw, param::BrushParamKey},
         wrapper::{BrushConfigurationChanged, LayerPage},
     },

@@ -15,7 +15,7 @@ use toml_edit::{DocumentMut, Item, Value};
 #[cfg(target_os = "android")]
 use crate::lnwin::LnAndroid;
 use crate::{
-    layer::{
+    paint::{
         input::{OffsetCorrection, TiltCorrection},
         wrapper::PageContainerArchive,
     },

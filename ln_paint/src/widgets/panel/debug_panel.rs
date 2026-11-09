@@ -3,7 +3,7 @@ use glam::I64Vec2;
 use ln_world::{Element, Handle, World};
 
 use crate::{
-    layer::wrapper::{LayerDebugMessage, LayerPage},
+    paint::wrapper::{LayerDebugMessage, LayerPage},
     layout::{
         transform::{Transform, TransformValue},
         val::{Val, ValChanged},

@@ -7,7 +7,7 @@ use wgpu::{
 
 use crate::{
     color::srgb::{mul_alpha, srgb_gamma_decode, srgb_gamma_encode},
-    layer::{
+    paint::{
         LayerPipeline, LayerRenderer, Standalone,
         brush::{BrushParams, Draw, DrawsBatch, Stroke},
         wrapper::LayerPage,

@@ -1,6 +1,6 @@
 use glam::Vec4;
 
-use crate::layer::brush::Draw;
+use crate::paint::brush::Draw;
 
 #[derive(Clone)]
 pub struct BrushParam<T> {

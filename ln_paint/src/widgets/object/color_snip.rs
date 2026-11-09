@@ -3,7 +3,7 @@ use ln_world::{Element, Handle, World};
 
 use crate::{
     color::srgb::{mul_alpha, srgb_gamma_decode},
-    layer::{
+    paint::{
         input::LayerInput,
         wrapper::{BrushConfigurationChanged, LayerPage},
     },

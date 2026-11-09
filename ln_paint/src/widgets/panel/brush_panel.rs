@@ -3,7 +3,7 @@ use ln_world::{Element, Handle, World};
 
 use crate::{
     i18n::tr,
-    layer::wrapper::{BrushConfigurationChanged, LayerPage},
+    paint::wrapper::{BrushConfigurationChanged, LayerPage},
     layout::{
         anim::Animator,
         luni::{

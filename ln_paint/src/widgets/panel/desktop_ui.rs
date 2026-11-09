@@ -4,7 +4,7 @@ use ln_world::{Element, Handle, World};
 
 use crate::{
     i18n::trp,
-    layer::{
+    paint::{
         brush::param::BrushParamKey,
         input::LayerInput,
         wrapper::{BrushConfigurationChanged, LayerPage},

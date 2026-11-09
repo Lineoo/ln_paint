@@ -1,7 +1,7 @@
 use ln_world::{Element, Handle, World};
 
 use crate::{
-    layer::wrapper::{BrushConfigurationChanged, LayerPage},
+    paint::wrapper::{BrushConfigurationChanged, LayerPage},
     lnwin::LnwindowRect,
     widgets::{common::WidgetCommon, panel::side_docker::SideDocker},
 };

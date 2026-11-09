@@ -3,7 +3,7 @@ use ln_world::Element;
 
 use crate::{
     brush_params,
-    layer::{
+    paint::{
         BrushKind, BrushStage, CompositeMode, LayerPipeline, WriteMode,
         brush::{
             Brush, Draw, DrawsProcessor,

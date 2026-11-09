@@ -12,7 +12,7 @@ use ln_world::{Element, Handle, World};
 use wgpu::{CommandEncoderDescriptor, ComputePassDescriptor};
 
 use crate::{
-    layer::{
+    paint::{
         CacheLayerChunk, CacheLayers, ChunkPool, DEFAULT_CHUNK_SIZE, DEFAULT_MIPMAP_CAP,
         LayerPipeline, LayerRenderer, PlainLayer, RawLayer, Standalone,
         brush::{

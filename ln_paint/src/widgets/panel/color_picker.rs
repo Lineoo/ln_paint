@@ -9,7 +9,7 @@ use crate::{
         oklab::{linear_srgb_to_oklab, oklab_to_linear_srgb},
         srgb::{mul_alpha, srgb_gamma_decode, srgb_gamma_encode},
     },
-    layer::wrapper::{BrushConfigurationChanged, LayerPage},
+    paint::wrapper::{BrushConfigurationChanged, LayerPage},
     layout::{
         transform::{Transform, TransformValue},
         val::{Val, ValChanged},

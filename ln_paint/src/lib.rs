@@ -1,6 +1,6 @@
 pub mod color;
 pub mod i18n;
-pub mod layer;
+pub mod paint;
 pub mod layout;
 pub mod lnwin;
 pub mod measures;

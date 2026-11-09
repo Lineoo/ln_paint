@@ -4,7 +4,7 @@ use wgpu::{BindGroup, ComputePass};
 
 use crate::{
     brush_params,
-    layer::{
+    paint::{
         BrushKind, BrushStage, CompositeMode, LayerPipeline, WriteMode,
         brush::{
             Brush, Draw, DrawsProcessor,
