@@ -5,7 +5,8 @@
 
 set -e
 
-OUT=${1:-ln_paint/examples}
+OUT=${1:-target/regression/actual}
+echo "Exporting regression images to \"$OUT\""
 
 export LNPAINT_HEADLESS=1
 export LNPAINT_TMP_SAVE=1
