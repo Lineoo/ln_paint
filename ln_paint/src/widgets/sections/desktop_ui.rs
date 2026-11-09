@@ -4,11 +4,6 @@ use ln_world::{Element, Handle, World};
 
 use crate::{
     i18n::trp,
-    paint::{
-        brush::param::BrushParamKey,
-        input::LayerInput,
-        wrapper::{BrushConfigurationChanged, LayerPage},
-    },
     layout::{
         luni::{
             LuniAlign, LuniAxis, LuniChild, LuniChildTemplate, LuniDistribution, LuniFlex,
@@ -21,18 +16,26 @@ use crate::{
     },
     lnwin::LnwindowRect,
     measures::{Axis, IRect},
+    paint::{
+        brush::param::BrushParamKey,
+        input::LayerInput,
+        wrapper::{BrushConfigurationChanged, LayerPage},
+    },
     theme::ThemeVal,
     widgets::{
         common::WidgetCommon,
-        components::button::{Button, ButtonClick, ButtonImage, ButtonToggle},
-        container::{ContainerAttr, ContainerEcho, ContainerWithCamera},
-        panel::{
-            Panel, PanelAttr, brush_panel::BrushListPanel, color_picker::LayerOklabPalette,
-            debug_panel::DebugPanel, layer_selection::LayerSelectionPanel, settings::SettingPanel,
+        components::{
+            button::{Button, ButtonClick, ButtonImage, ButtonToggle},
+            panel::{Panel, PanelAttr},
         },
+        container::{ContainerAttr, ContainerEcho, ContainerWithCamera},
         renderer::{
             svg::svg_render,
             text::{Text, TextAttr},
+        },
+        sections::{
+            brush_panel::BrushListPanel, color_picker::LayerOklabPalette, debug_panel::DebugPanel,
+            layer_selection::LayerSelectionPanel, settings::SettingPanel,
         },
         slider::{Slider, SliderLabel, SliderValue},
         tabs::{TabEntry, Tabs},

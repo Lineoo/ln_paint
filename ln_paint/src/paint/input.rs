@@ -9,13 +9,13 @@ use winit::{
 };
 
 use crate::{
-    paint::{
-        brush::{Draw, param::BrushParamKey},
-        wrapper::{BrushConfigurationChanged, LayerPage},
-    },
     layout::val::{Val, ValChanged},
     lnwin::Lnwindow,
     measures::{FI64Ext, IRect},
+    paint::{
+        brush::{Dab, param::BrushParamKey},
+        wrapper::{BrushConfigurationChanged, LayerPage},
+    },
     render::{RenderPrepareControl, camera::UICamera},
     save::Save,
     theme::Theme,
@@ -413,7 +413,7 @@ impl Element for LayerInput {
                         LayerInputState::PickColor
                     }
                     (LayerInputMode::Normal, false) => {
-                        let draw = Draw {
+                        let draw = Dab {
                             position: event.active.position + this.input_offset_main,
                             force: event.active.data.force.unwrap_or(1.0),
                         };
@@ -663,7 +663,7 @@ impl Element for LayerInput {
                     },
                     MultiTouchStatus::Holding,
                 ) => {
-                    let draw = Draw {
+                    let draw = Dab {
                         position: event.active.position + this.input_offset_main,
                         force: event.active.data.force.unwrap_or(1.0),
                     };
@@ -688,7 +688,7 @@ impl Element for LayerInput {
                     }
                 }
                 (LayerInputState::PaintNoErase, MultiTouchStatus::Holding) => {
-                    let draw = Draw {
+                    let draw = Dab {
                         position: event.active.position + this.input_offset_main,
                         force: event.active.data.force.unwrap_or(1.0),
                     };
@@ -699,7 +699,7 @@ impl Element for LayerInput {
                     LayerInputState::PaintNoErase
                 }
                 (LayerInputState::PaintErase, MultiTouchStatus::Holding) => {
-                    let draw = Draw {
+                    let draw = Dab {
                         position: event.active.position + this.input_offset_main,
                         force: event.active.data.force.unwrap_or(1.0),
                     };

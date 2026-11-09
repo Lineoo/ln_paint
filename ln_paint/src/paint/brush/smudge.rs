@@ -4,14 +4,14 @@ use wgpu::{BindGroup, ComputePass};
 
 use crate::{
     brush_params,
+    measures::{FI64Ext, IRect},
     paint::{
-        BrushKind, BrushStage, CompositeMode, LayerPipeline, WriteMode,
+        BrushKind, BrushStage, CompositeMode, PaintPipeline, WriteMode,
         brush::{
-            Brush, Draw, DrawsProcessor,
+            Brush, Dab, DrawsProcessor,
             param::{BrushParam, overlap, rate_coeff, step_of},
         },
     },
-    measures::{FI64Ext, IRect},
 };
 
 #[derive(Clone)]
@@ -42,17 +42,17 @@ pub struct SmudgeDraw {
 }
 
 impl Brush for SmudgeBrush {
-    fn processor(&self, from: Option<Draw>, to: Draw, out: &mut Vec<u8>) -> (Draw, IRect, u32) {
+    fn processor(&self, from: Option<Dab>, to: Dab, out: &mut Vec<u8>) -> (Dab, IRect, u32) {
         self.processor_output(from, to, out)
     }
 
-    fn prepare_stroke(&self, cpass: &mut ComputePass, pipeline: &LayerPipeline) {
+    fn prepare_stroke(&self, cpass: &mut ComputePass, pipeline: &PaintPipeline) {
         cpass.set_pipeline(&pipeline.brush_pipelines.smudge_prepare_stroke);
         cpass.set_bind_group(0, Some(&pipeline.draws_dispatch_group), &[]);
         cpass.dispatch_workgroups(1, 1, 1);
     }
 
-    fn prepare_draw(&self, cpass: &mut ComputePass, pipeline: &LayerPipeline, dst: &BindGroup) {
+    fn prepare_draw(&self, cpass: &mut ComputePass, pipeline: &PaintPipeline, dst: &BindGroup) {
         cpass.set_pipeline(&pipeline.brush_pipelines.smudge_prepare_draw);
         cpass.set_bind_group(0, Some(&pipeline.draws_dispatch_group), &[]);
         cpass.set_bind_group(1, Some(dst), &[]);
@@ -67,7 +67,7 @@ impl Brush for SmudgeBrush {
         true
     }
 
-    fn set_pipeline(&self, cpass: &mut ComputePass, pipeline: &LayerPipeline, write: WriteMode) {
+    fn set_pipeline(&self, cpass: &mut ComputePass, pipeline: &PaintPipeline, write: WriteMode) {
         cpass.set_pipeline(pipeline.brush_pipelines.get(
             BrushKind::Smudge,
             BrushStage::Draw,
@@ -80,7 +80,7 @@ impl Brush for SmudgeBrush {
 impl DrawsProcessor for SmudgeBrush {
     type Draw = SmudgeDraw;
 
-    fn process(&self, draw: Draw) -> Self::Draw {
+    fn process(&self, draw: Dab) -> Self::Draw {
         let size = self.size.get(draw);
         let step = step_of(size, self.spacing.get(draw));
         let overlap = overlap(size, step);
@@ -100,7 +100,7 @@ impl DrawsProcessor for SmudgeBrush {
         }
     }
 
-    fn step(&self, draw: Draw) -> f32 {
+    fn step(&self, draw: Dab) -> f32 {
         step_of(self.size.get(draw), self.spacing.get(draw))
     }
 

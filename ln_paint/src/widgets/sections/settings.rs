@@ -3,13 +3,6 @@ use ln_world::{Element, Handle, World};
 
 use crate::{
     i18n::tr,
-    paint::{
-        brush::{
-            BrushParams,
-            param::{BrushParamKey, BrushValue, BrushValueMut},
-        },
-        wrapper::{BrushConfigurationChanged, LayerPage},
-    },
     layout::{
         luni::{
             LuniAxis, LuniChild, LuniChildTemplate, LuniDistribution, LuniFlex, LuniParent,
@@ -21,6 +14,13 @@ use crate::{
         val::{Val, ValChanged},
     },
     measures::{Axis, IRect},
+    paint::{
+        brush::{
+            BrushParams,
+            param::{BrushParamKey, BrushValue, BrushValueMut},
+        },
+        wrapper::{BrushConfigurationChanged, LayerPage},
+    },
     theme::ThemeVal,
     widgets::{
         brush_preview::BrushPreviewDescriptor,

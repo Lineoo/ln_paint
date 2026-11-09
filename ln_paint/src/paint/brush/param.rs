@@ -1,6 +1,6 @@
 use glam::Vec4;
 
-use crate::paint::brush::Draw;
+use crate::paint::brush::Dab;
 
 #[derive(Clone)]
 pub struct BrushParam<T> {
@@ -67,7 +67,7 @@ impl BrushParam<f32> {
         }
     }
 
-    pub fn get(&self, draw: Draw) -> f32 {
+    pub fn get(&self, draw: Dab) -> f32 {
         let raw = match self.inner {
             ParamCurve::Constant { val: value } => value,
             ParamCurve::ForceIndex { min, max, idx } => min + (max - min) * draw.force.powf(idx),

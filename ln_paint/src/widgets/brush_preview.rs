@@ -7,16 +7,16 @@ use wgpu::{
 
 use crate::{
     color::srgb::{mul_alpha, srgb_gamma_decode, srgb_gamma_encode},
-    paint::{
-        LayerPipeline, LayerRenderer, Standalone,
-        brush::{BrushParams, Draw, DrawsBatch, Stroke},
-        wrapper::LayerPage,
-    },
     layout::{
         transfer::Transfer,
         val::{Val, ValChanged},
     },
     measures::{FI64Ext, IRect},
+    paint::{
+        ChunkRenderer, PaintPipeline, Standalone,
+        brush::{BrushParams, Dab, DabBatch, Stroke},
+        wrapper::LayerPage,
+    },
     render::{RenderDrawControl, RenderPrepareControl, camera::SetCameraOutdated},
     tools::collider::ToolRectCollider,
     widgets::{
@@ -50,7 +50,7 @@ pub struct BrushPreview {
     pub bc: Handle<Val<Vec4>>,
     pub brush: Box<dyn BrushParams>,
     pub canvas: Handle<Val<Standalone>>,
-    pub renderer: LayerRenderer,
+    pub renderer: ChunkRenderer,
     pub outdated: bool,
 }
 
@@ -177,7 +177,7 @@ impl Element for BrushPreview {
 impl BrushPreview {
     /// Redraw `brush` over a fixed seed into `canvas`.
     pub fn generate_preview(
-        lp: &LayerPipeline,
+        lp: &PaintPipeline,
         canvas: &Standalone,
         brush: &mut dyn BrushParams,
         c0: Vec4,
@@ -213,11 +213,11 @@ impl BrushPreview {
     }
 
     fn submit_batch(
-        lp: &LayerPipeline,
+        lp: &PaintPipeline,
         canvas: &Standalone,
         swap: &Option<Standalone>,
         brush: &dyn BrushParams,
-        batch: &DrawsBatch,
+        batch: &DabBatch,
     ) {
         batch.upload_dispatch(lp);
 
@@ -237,7 +237,7 @@ impl BrushPreview {
     }
 
     /// Two differently colored halves, left and right, as the preview background.
-    fn draw_background(lp: &LayerPipeline, canvas: &Standalone, c0: Vec4, c1: Vec4) {
+    fn draw_background(lp: &PaintPipeline, canvas: &Standalone, c0: Vec4, c1: Vec4) {
         let size = canvas.rect.extend;
         if size.x == 0 || size.y == 0 {
             return;
@@ -291,7 +291,7 @@ impl BrushPreview {
 
     /// A gentle S-curve with a pressure ramp, drawn with the previewed brush.
     fn draw_stroke(
-        lp: &LayerPipeline,
+        lp: &PaintPipeline,
         canvas: &Standalone,
         swap: &Option<Standalone>,
         brush: &dyn BrushParams,
@@ -306,7 +306,7 @@ impl BrushPreview {
             let x = canvas.rect.width() as f32 * 0.5 - 125. + 250. * t;
             let y = canvas.rect.height() as f32 * 0.5 + 10. * (t * std::f32::consts::TAU).sin();
             let f = 4. * t * (1. - t);
-            let draw = Draw {
+            let draw = Dab {
                 position: I64Vec2::q32_from_f64(DVec2::new(x as f64, y as f64)),
                 force: 0.25 + 0.75 * f,
             };

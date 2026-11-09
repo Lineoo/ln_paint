@@ -3,14 +3,14 @@ use ln_world::Element;
 
 use crate::{
     brush_params,
+    measures::{FI64Ext, IRect},
     paint::{
-        BrushKind, BrushStage, CompositeMode, LayerPipeline, WriteMode,
+        BrushKind, BrushStage, CompositeMode, PaintPipeline, WriteMode,
         brush::{
-            Brush, Draw, DrawsProcessor,
+            Brush, Dab, DrawsProcessor,
             param::{BrushParam, overlap, rate_coeff, step_of},
         },
     },
-    measures::{FI64Ext, IRect},
 };
 
 #[derive(Clone)]
@@ -35,7 +35,7 @@ pub struct TintDraw {
 }
 
 impl Brush for TintBrush {
-    fn processor(&self, from: Option<Draw>, to: Draw, out: &mut Vec<u8>) -> (Draw, IRect, u32) {
+    fn processor(&self, from: Option<Dab>, to: Dab, out: &mut Vec<u8>) -> (Dab, IRect, u32) {
         self.processor_output(from, to, out)
     }
 
@@ -50,7 +50,7 @@ impl Brush for TintBrush {
     fn set_pipeline(
         &self,
         cpass: &mut wgpu::ComputePass,
-        pipeline: &LayerPipeline,
+        pipeline: &PaintPipeline,
         write: WriteMode,
     ) {
         cpass.set_pipeline(pipeline.brush_pipelines.get(
@@ -65,7 +65,7 @@ impl Brush for TintBrush {
 impl DrawsProcessor for TintBrush {
     type Draw = TintDraw;
 
-    fn process(&self, draw: Draw) -> Self::Draw {
+    fn process(&self, draw: Dab) -> Self::Draw {
         let size = self.size.get(draw);
         let step = step_of(size, self.spacing.get(draw));
         let overlap = overlap(size, step);
@@ -90,7 +90,7 @@ impl DrawsProcessor for TintBrush {
         }
     }
 
-    fn step(&self, draw: Draw) -> f32 {
+    fn step(&self, draw: Dab) -> f32 {
         step_of(self.size.get(draw), self.spacing.get(draw))
     }
 

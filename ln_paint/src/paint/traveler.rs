@@ -9,11 +9,11 @@ use wgpu::{
 };
 
 use crate::{
+    measures::IRect,
     paint::{
-        CHUNK_TEXTURE_FORMAT, CacheLayers, ChunkPool, LayerPipeline, RawLayer, RawLayerChunk,
+        CHUNK_TEXTURE_FORMAT, CacheLayers, ChunkPool, PaintPipeline, RawLayer, RawLayerChunk,
         brush::Stroke, chunks_key_to_rect, rect_chunks_iter,
     },
-    measures::IRect,
 };
 
 const UNDO_SNAPSHOTS_LIMIT: usize = 64;
@@ -22,7 +22,7 @@ const ATLAS_TEXTURE_SIZE: UVec2 = UVec2::splat(2048);
 
 /// The undo/redo system
 pub struct Traveler {
-    lp: Arc<LayerPipeline>,
+    lp: Arc<PaintPipeline>,
     undos: VecDeque<Snapshot>,
     redos: Vec<Snapshot>,
     atlas: Vec<AtlasTexture>,
@@ -51,7 +51,7 @@ struct AtlasTexture {
 }
 
 impl Traveler {
-    pub fn new(lp: Arc<LayerPipeline>) -> Traveler {
+    pub fn new(lp: Arc<PaintPipeline>) -> Traveler {
         Traveler {
             lp,
             undos: VecDeque::new(),

@@ -33,8 +33,8 @@ use wgpu::{
 
 use crate::{
     color::srgb::{demul_alpha, mul_alpha, srgb_gamma_encode},
-    paint::{brush::Brush, stream::ThreadInput},
     measures::{FI64Ext, IRect},
+    paint::{brush::Brush, stream::ThreadInput},
     render::camera::Camera,
     widgets::shaders::shader_compile,
 };
@@ -50,7 +50,7 @@ const DRAWS_STATE_CAPACITY: u64 = 0x2000;
 const WORKGROUP_SIZE: UVec2 = UVec2::new(16, 16);
 
 // function: render, merge, mipmap, clear & chunk recycle
-pub struct LayerPipeline {
+pub struct PaintPipeline {
     pub _adapter: Adapter,
     pub device: Device,
     pub queue: Queue,
@@ -80,8 +80,8 @@ pub struct LayerPipeline {
     clear_pipeline: ComputePipeline,
 }
 
-pub struct LayerRenderer {
-    pub lp: Arc<LayerPipeline>,
+pub struct ChunkRenderer {
+    pub lp: Arc<PaintPipeline>,
 
     render_background: Buffer,
     render_group_unfiltered: BindGroup,
@@ -109,7 +109,7 @@ struct ChunkLayout {
     read_write: Option<BindGroupLayout>,
 }
 
-impl LayerPipeline {
+impl PaintPipeline {
     pub fn new(
         _adapter: Adapter,
         device: Device,
@@ -168,7 +168,7 @@ impl LayerPipeline {
             readback_pipeline(&device, cache, &color_readback_layout, &chunk_layout);
         let clear_pipeline = clear_pipeline(&device, cache, &chunk_layout);
 
-        LayerPipeline {
+        PaintPipeline {
             _adapter,
             device,
             queue,
@@ -212,7 +212,7 @@ impl LayerPipeline {
         Standalone { chunk, rect }
     }
 
-    pub fn create_render(self: &Arc<LayerPipeline>, background: Vec4) -> LayerRenderer {
+    pub fn create_render(self: &Arc<PaintPipeline>, background: Vec4) -> ChunkRenderer {
         let render_layout = self.device.create_bind_group_layout(&LAYOUT_RENDER);
         let (render_background, render_group_unfiltered, render_group_filtered) =
             render_groups(&self.device, &render_layout);
@@ -221,7 +221,7 @@ impl LayerPipeline {
             0,
             bytes_of(&mul_alpha(srgb_gamma_encode(demul_alpha(background)))),
         );
-        LayerRenderer {
+        ChunkRenderer {
             lp: self.clone(),
             render_background,
             render_group_unfiltered,
@@ -655,7 +655,7 @@ impl LayerPipeline {
     }
 }
 
-impl LayerRenderer {
+impl ChunkRenderer {
     pub fn write_background(&self, color: Vec4) {
         self.lp.queue.write_buffer(
             &self.render_background,
@@ -745,7 +745,7 @@ pub struct ChunkPool {
 }
 
 impl ChunkPool {
-    fn create_empty_chunk(&mut self, lp: &LayerPipeline, chunk_size: UVec2, rect: IRect) -> Chunk {
+    fn create_empty_chunk(&mut self, lp: &PaintPipeline, chunk_size: UVec2, rect: IRect) -> Chunk {
         if chunk_size != self.chunk_size {
             log::warn!(
                 "wrong chunk pool (size {}) are being called (expect size {})",
@@ -786,7 +786,7 @@ pub struct DirtyChunkPool {
 }
 
 impl DirtyChunkPool {
-    fn create_dirty_chunk(&mut self, lp: &LayerPipeline, chunk_size: UVec2, rect: IRect) -> Chunk {
+    fn create_dirty_chunk(&mut self, lp: &PaintPipeline, chunk_size: UVec2, rect: IRect) -> Chunk {
         if chunk_size != self.chunk_size {
             log::warn!(
                 "wrong chunk pool (size {}) are being called (expect size {})",

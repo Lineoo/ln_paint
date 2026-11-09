@@ -9,12 +9,12 @@ use crate::{
         oklab::{linear_srgb_to_oklab, oklab_to_linear_srgb},
         srgb::{mul_alpha, srgb_gamma_decode, srgb_gamma_encode},
     },
-    paint::wrapper::{BrushConfigurationChanged, LayerPage},
     layout::{
         transform::{Transform, TransformValue},
         val::{Val, ValChanged},
     },
     measures::{FI64Ext, IRect},
+    paint::wrapper::{BrushConfigurationChanged, LayerPage},
     theme::ThemeVal,
     widgets::{
         common::WidgetCommon,
@@ -27,8 +27,8 @@ use crate::{
             hsl::{ColorHsla, HslRing, HslSquare, INNER_RADIUS, SetColorHsla},
             oklab::{ColorOklab, OklabBar, OklabPolar, SetColorOklab},
         },
-        panel::{debug_panel::DebugPanel, layer_selection::LayerSelectionPanel},
         renderer::{rrect::RRect, svg::svg_render},
+        sections::{debug_panel::DebugPanel, layer_selection::LayerSelectionPanel},
         tabs::{TabEntry, Tabs},
     },
 };

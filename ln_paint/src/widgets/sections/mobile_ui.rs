@@ -1,9 +1,9 @@
 use ln_world::{Element, Handle, World};
 
 use crate::{
-    paint::wrapper::{BrushConfigurationChanged, LayerPage},
     lnwin::LnwindowRect,
-    widgets::{common::WidgetCommon, panel::side_docker::SideDocker},
+    paint::wrapper::{BrushConfigurationChanged, LayerPage},
+    widgets::{common::WidgetCommon, sections::side_docker::SideDocker},
 };
 
 pub struct MobileUi {

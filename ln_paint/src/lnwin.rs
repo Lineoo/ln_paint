@@ -32,11 +32,11 @@ use crate::{
             hsl::{HslRingMaterial, HslSquareMaterial},
             oklab::{OklabBarMaterial, OklabPolarMaterial},
         },
-        panel::{desktop_ui::DesktopUi, mobile_ui::MobileUi},
         renderer::{
             canvas::CanvasPipeline, quad::QuadMeshPipeline, rrect::RRectMaterial,
             text::TextPipeline, vtor::VtorPipeline, wireframe::WireframePipeline,
         },
+        sections::{desktop_ui::DesktopUi, mobile_ui::MobileUi},
     },
 };
 

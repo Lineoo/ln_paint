@@ -12,25 +12,35 @@ use glam::{I64Vec2, UVec2, Vec4};
 use wgpu::{BindGroup, CommandEncoderDescriptor, ComputePass, ComputePassDescriptor};
 
 use crate::{
+    measures::{FI64Ext, IRect},
     paint::{
-        CacheLayerChunk, CacheLayers, ChunkPool, DRAWS_ARRAY_CAPACITY, LayerPipeline, PlainLayer,
+        CacheLayerChunk, CacheLayers, ChunkPool, DRAWS_ARRAY_CAPACITY, PaintPipeline, PlainLayer,
         RawLayer, RawLayerChunk, Standalone, WriteMode,
         brush::param::{BrushParam, BrushParamKey, BrushValue, BrushValueMut},
         chunks_key_to_rect, rect_chunks_iter, rect_chunks_stack_iter,
         stream::ThreadInput,
         write_dispatch,
     },
-    measures::{FI64Ext, IRect},
 };
 
 #[derive(Clone, Copy, PartialEq)]
-pub struct Draw {
+pub struct Dab {
     pub position: I64Vec2,
     pub force: f32,
 }
 
+pub struct DabBatch {
+    pub prev: Option<Dab>,
+    pub next: Dab,
+    pub draws_cnt: u32,
+    pub draws: Vec<u8>,
+    pub dirty: IRect,
+    pub replace: bool,
+    pub bridge: bool,
+}
+
 pub struct Stroke {
-    pub prev: Option<Draw>,
+    pub prev: Option<Dab>,
     pub dirty: IRect,
     pub replace: bool,
     pub bridge: bool,
@@ -46,9 +56,9 @@ impl Stroke {
         }
     }
 
-    pub fn batch<T: Brush + ?Sized>(&self, brush: &T, target: Draw) -> Option<DrawsBatch> {
+    pub fn batch<T: Brush + ?Sized>(&self, brush: &T, target: Dab) -> Option<DabBatch> {
         // pre-process
-        let target = Draw {
+        let target = Dab {
             position: target.position,
             force: target.force.clamp(0.0, 1.0),
         };
@@ -59,7 +69,7 @@ impl Stroke {
         if dirty.extend.x == 0 || dirty.extend.y == 0 {
             None
         } else {
-            Some(DrawsBatch {
+            Some(DabBatch {
                 prev: self.prev,
                 next,
                 draws_cnt,
@@ -73,7 +83,7 @@ impl Stroke {
 
     /// Confirm that the generated batch will be used, and stroke will respond to related dirty
     /// rectangle changes and previous draw updates, etc.
-    pub fn confirm_batch(&mut self, batch: &DrawsBatch) {
+    pub fn confirm_batch(&mut self, batch: &DabBatch) {
         self.prev = Some(batch.next);
         if batch.prev.is_none() {
             self.dirty = batch.dirty;
@@ -82,7 +92,7 @@ impl Stroke {
         }
     }
 
-    pub fn upload(&self, lp: &LayerPipeline) {
+    pub fn upload(&self, lp: &PaintPipeline) {
         write_dispatch(&lp.queue, &lp.work_rect, 0, self.dirty);
     }
 
@@ -90,7 +100,7 @@ impl Stroke {
 
     pub fn submit(
         &self,
-        lp: &LayerPipeline,
+        lp: &PaintPipeline,
         scratch: &mut PlainLayer,
         swap: Option<&mut PlainLayer>,
         raw: &mut RawLayer,
@@ -130,7 +140,7 @@ impl Stroke {
 
     pub fn discard(
         &self,
-        lp: &LayerPipeline,
+        lp: &PaintPipeline,
         scratch: &mut PlainLayer,
         swap: Option<&mut PlainLayer>,
         raw: &mut RawLayer,
@@ -171,7 +181,7 @@ impl Stroke {
     /// XXX specificated version, we simply set it the same as cache
     pub fn merge(
         &self,
-        lp: &LayerPipeline,
+        lp: &PaintPipeline,
         cpass: &mut ComputePass,
         raw: &mut RawLayer,
         cache: &CacheLayers,
@@ -224,7 +234,7 @@ impl Stroke {
 
     fn cleanup(
         &self,
-        lp: &LayerPipeline,
+        lp: &PaintPipeline,
         cpass: &mut ComputePass,
         scratch: &mut PlainLayer,
         pool: &mut ChunkPool,
@@ -248,7 +258,7 @@ impl Stroke {
     /// associated to filled kind.
     pub fn cache_generate_without_scratch(
         &self,
-        lp: &LayerPipeline,
+        lp: &PaintPipeline,
         cpass: &mut ComputePass,
         raw: &mut RawLayer,
         cache: &mut CacheLayers,
@@ -335,19 +345,9 @@ impl Stroke {
     }
 }
 
-pub struct DrawsBatch {
-    pub prev: Option<Draw>,
-    pub next: Draw,
-    pub draws_cnt: u32,
-    pub draws: Vec<u8>,
-    pub dirty: IRect,
-    pub replace: bool,
-    pub bridge: bool,
-}
-
-impl DrawsBatch {
+impl DabBatch {
     // TODO overflowing merge
-    pub fn merge(self, next: DrawsBatch) -> (DrawsBatch, Option<DrawsBatch>) {
+    pub fn merge(self, next: DabBatch) -> (DabBatch, Option<DabBatch>) {
         let overflowing = self.draws.len() + next.draws.len() > DRAWS_ARRAY_CAPACITY as usize;
         let compatible = next.prev == Some(self.next)
             && self.replace == next.replace
@@ -361,7 +361,7 @@ impl DrawsBatch {
         draws.extend_from_slice(&next.draws);
 
         (
-            DrawsBatch {
+            DabBatch {
                 prev: self.prev,
                 next: next.next,
                 draws_cnt: self.draws_cnt + next.draws_cnt,
@@ -376,7 +376,7 @@ impl DrawsBatch {
 
     pub fn draw<T: Brush + ?Sized>(
         &self,
-        lp: &LayerPipeline,
+        lp: &PaintPipeline,
         scratch: &mut PlainLayer,
         swap: &mut Option<PlainLayer>,
         raw: &mut RawLayer,
@@ -411,14 +411,14 @@ impl DrawsBatch {
         lp.queue.submit([encoder.finish()]);
     }
 
-    pub fn upload(&self, lp: &LayerPipeline, bridge: &mut Standalone) {
+    pub fn upload(&self, lp: &PaintPipeline, bridge: &mut Standalone) {
         self.upload_dispatch(lp);
         if self.bridge {
             self.upload_bridge(lp, bridge);
         }
     }
 
-    pub fn upload_bridge(&self, lp: &LayerPipeline, bridge: &mut Standalone) {
+    pub fn upload_bridge(&self, lp: &PaintPipeline, bridge: &mut Standalone) {
         bridge.rect = IRect::new_extend(
             self.dirty.horizontal_center() - bridge.rect.extend.x as i32 / 2,
             self.dirty.vertical_center() - bridge.rect.extend.y as i32 / 2,
@@ -429,7 +429,7 @@ impl DrawsBatch {
         write_dispatch(&lp.queue, &bridge.chunk.rectangle, 0, bridge.rect);
     }
 
-    pub fn upload_dispatch(&self, lp: &LayerPipeline) {
+    pub fn upload_dispatch(&self, lp: &PaintPipeline) {
         write_dispatch(&lp.queue, &lp.work_rect, 0, self.dirty);
         write_dispatch(&lp.queue, &lp.draws_rect, 0, self.dirty);
         (lp.queue).write_buffer(&lp.draws_length, 0, bytes_of(&self.draws_cnt));
@@ -454,7 +454,7 @@ impl DrawsBatch {
 
     pub fn draw_prepare_scratch(
         &self,
-        lp: &LayerPipeline,
+        lp: &PaintPipeline,
         cpass: &mut ComputePass,
         raw: &RawLayer,
         cache: &CacheLayers,
@@ -498,7 +498,7 @@ impl DrawsBatch {
     /// must `upload` before draw
     pub fn draw_into_scratch<T: Brush + ?Sized>(
         &self,
-        lp: &LayerPipeline,
+        lp: &PaintPipeline,
         cpass: &mut ComputePass,
         scratch: &PlainLayer,
         swap: &Option<PlainLayer>,
@@ -567,7 +567,7 @@ impl DrawsBatch {
     /// must `upload` before draw
     pub fn draw_into_standalone<T: Brush + ?Sized>(
         &self,
-        lp: &LayerPipeline,
+        lp: &PaintPipeline,
         cpass: &mut ComputePass,
         canvas: &Standalone,
         swap: &Option<Standalone>,
@@ -593,7 +593,7 @@ impl DrawsBatch {
     /// associated to filled kind.
     pub fn cache_generate_with_scratch(
         &self,
-        lp: &LayerPipeline,
+        lp: &PaintPipeline,
         cpass: &mut ComputePass,
         scratch: &PlainLayer,
         raw: &mut RawLayer,
@@ -726,13 +726,13 @@ impl DrawsBatch {
 }
 
 pub trait Brush {
-    fn processor(&self, from: Option<Draw>, to: Draw, out: &mut Vec<u8>) -> (Draw, IRect, u32);
+    fn processor(&self, from: Option<Dab>, to: Dab, out: &mut Vec<u8>) -> (Dab, IRect, u32);
 
-    fn prepare_stroke(&self, cpass: &mut ComputePass, pipeline: &LayerPipeline) {
+    fn prepare_stroke(&self, cpass: &mut ComputePass, pipeline: &PaintPipeline) {
         let _ = (cpass, pipeline);
     }
 
-    fn prepare_draw(&self, cpass: &mut ComputePass, pipeline: &LayerPipeline, dst: &BindGroup) {
+    fn prepare_draw(&self, cpass: &mut ComputePass, pipeline: &PaintPipeline, dst: &BindGroup) {
         let _ = (cpass, pipeline, dst);
     }
 
@@ -755,7 +755,7 @@ pub trait Brush {
     ///     - Copy back on scratch layer
     fn bridge_mode(&self) -> bool;
 
-    fn set_pipeline(&self, cpass: &mut ComputePass, pipeline: &LayerPipeline, write: WriteMode);
+    fn set_pipeline(&self, cpass: &mut ComputePass, pipeline: &PaintPipeline, write: WriteMode);
 }
 
 pub trait BrushParams: Brush + Send {
@@ -771,16 +771,11 @@ pub trait BrushParams: Brush + Send {
 trait DrawsProcessor {
     type Draw: Clone + Copy + Pod + Zeroable;
 
-    fn process(&self, draw: Draw) -> Self::Draw;
-    fn step(&self, draw: Draw) -> f32;
+    fn process(&self, draw: Dab) -> Self::Draw;
+    fn step(&self, draw: Dab) -> f32;
     fn dirty(&self, draw: Self::Draw) -> IRect;
 
-    fn processor_output(
-        &self,
-        from: Option<Draw>,
-        to: Draw,
-        out: &mut Vec<u8>,
-    ) -> (Draw, IRect, u32) {
+    fn processor_output(&self, from: Option<Dab>, to: Dab, out: &mut Vec<u8>) -> (Dab, IRect, u32) {
         let Some(from) = from else {
             let processed = self.process(to);
             let dirty = self.dirty(processed);

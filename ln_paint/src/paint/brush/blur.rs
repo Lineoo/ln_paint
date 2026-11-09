@@ -4,14 +4,14 @@ use wgpu::ComputePass;
 
 use crate::{
     brush_params,
+    measures::{FI64Ext, IRect},
     paint::{
-        BrushKind, BrushStage, CompositeMode, LayerPipeline, WriteMode,
+        BrushKind, BrushStage, CompositeMode, PaintPipeline, WriteMode,
         brush::{
-            Brush, Draw, DrawsProcessor,
+            Brush, Dab, DrawsProcessor,
             param::{BrushParam, mask_sq_integral, step_of},
         },
     },
-    measures::{FI64Ext, IRect},
 };
 
 #[derive(Clone)]
@@ -34,7 +34,7 @@ pub struct BlurDraw {
 }
 
 impl Brush for BlurBrush {
-    fn processor(&self, from: Option<Draw>, to: Draw, out: &mut Vec<u8>) -> (Draw, IRect, u32) {
+    fn processor(&self, from: Option<Dab>, to: Dab, out: &mut Vec<u8>) -> (Dab, IRect, u32) {
         self.processor_output(from, to, out)
     }
 
@@ -46,7 +46,7 @@ impl Brush for BlurBrush {
         true
     }
 
-    fn set_pipeline(&self, cpass: &mut ComputePass, pipeline: &LayerPipeline, write: WriteMode) {
+    fn set_pipeline(&self, cpass: &mut ComputePass, pipeline: &PaintPipeline, write: WriteMode) {
         cpass.set_pipeline(pipeline.brush_pipelines.get(
             BrushKind::Blur,
             BrushStage::Draw,
@@ -59,7 +59,7 @@ impl Brush for BlurBrush {
 impl DrawsProcessor for BlurBrush {
     type Draw = BlurDraw;
 
-    fn process(&self, draw: Draw) -> Self::Draw {
+    fn process(&self, draw: Dab) -> Self::Draw {
         let size = self.size.get(draw);
         let softness = self.softness.get(draw).max(1e-6);
         let step = step_of(size, self.spacing.get(draw));
@@ -78,7 +78,7 @@ impl DrawsProcessor for BlurBrush {
         }
     }
 
-    fn step(&self, draw: Draw) -> f32 {
+    fn step(&self, draw: Dab) -> f32 {
         step_of(self.size.get(draw), self.spacing.get(draw))
     }
 

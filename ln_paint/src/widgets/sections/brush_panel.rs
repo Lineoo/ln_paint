@@ -3,7 +3,6 @@ use ln_world::{Element, Handle, World};
 
 use crate::{
     i18n::tr,
-    paint::wrapper::{BrushConfigurationChanged, LayerPage},
     layout::{
         anim::Animator,
         luni::{
@@ -15,6 +14,7 @@ use crate::{
         val::Val,
     },
     measures::IRect,
+    paint::wrapper::{BrushConfigurationChanged, LayerPage},
     theme::{Theme, ThemeVal},
     tools::pointer::{PointerHit, PointerHover, PointerScroll},
     widgets::{
@@ -24,12 +24,12 @@ use crate::{
             Button, ButtonClick, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonTheme,
         },
         container::{ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerWithCamera},
-        panel::settings::SettingPanel,
         renderer::{
             rrect::RRect,
             svg::svg_render,
             text::{Text, TextAttr},
         },
+        sections::settings::SettingPanel,
         tabs::{TabEntry, Tabs},
     },
 };

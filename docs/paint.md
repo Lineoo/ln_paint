@@ -4,7 +4,7 @@
 
 过程分组，并标记了优化过的步骤。
 
-### batch-draw: draw + cache
+### batch-dab: draw + cache
 
 draw:
 

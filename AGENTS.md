@@ -28,12 +28,12 @@ GPU-accelerated drawing app featured infinite canvas in Rust (winit + wgpu). Car
 
 ## Documents
 
-Documents are in Chinese if not specially marked with language suffix. Sort by recommendation level.
+Documents are in Chinese if not specially marked with language suffix. Sort by importance.
 
 - `docs/codebase.en.md` - The coding style instructions, list in format `### <tags,> - <title>`. Recommended.
 - `docs/world.md` - about how to use `ln_world`. Recommended.
 - `docs/composite.md` - Color-space notation for rendering and drawing. Important when treating color conventions.
-- `docs/draw.md` - Draw call pipeline: batch-draw, stroke-submit, stroke-discard, undo/redo, failure paths, stream-thread synchronization.
+- `docs/paint.md` - Draw call pipeline: batch-draw, stroke-submit, stroke-discard, undo/redo, failure paths, stream-thread synchronization.
 - `docs/render.md` - Rendering architecture: render camera, controls, pipeline, instances, redraw rules.
 - `docs/redb.md` - `redb` database tables and chunk binary formats.
 - `docs/env.md` - Available environment variables.

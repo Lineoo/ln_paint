@@ -5,11 +5,11 @@ use ln_world::Element;
 
 use crate::{
     brush_params,
-    paint::{
-        BrushKind, BrushStage, CompositeMode, DRAWS_ARRAY_CAPACITY, LayerPipeline, WriteMode,
-        brush::{Brush, Draw, DrawsProcessor, param::BrushParam},
-    },
     measures::{FI64Ext, IRect},
+    paint::{
+        BrushKind, BrushStage, CompositeMode, DRAWS_ARRAY_CAPACITY, PaintPipeline, WriteMode,
+        brush::{Brush, Dab, DrawsProcessor, param::BrushParam},
+    },
 };
 
 #[derive(Clone)]
@@ -29,7 +29,7 @@ pub struct PixelDraw {
 }
 
 impl Brush for PixelBrush {
-    fn processor(&self, from: Option<Draw>, to: Draw, out: &mut Vec<u8>) -> (Draw, IRect, u32) {
+    fn processor(&self, from: Option<Dab>, to: Dab, out: &mut Vec<u8>) -> (Dab, IRect, u32) {
         self.processor_output(from, to, out)
     }
 
@@ -44,7 +44,7 @@ impl Brush for PixelBrush {
     fn set_pipeline(
         &self,
         cpass: &mut wgpu::ComputePass,
-        pipeline: &LayerPipeline,
+        pipeline: &PaintPipeline,
         write: WriteMode,
     ) {
         let composite = match self.erase {
@@ -63,7 +63,7 @@ impl Brush for PixelBrush {
 impl DrawsProcessor for PixelBrush {
     type Draw = PixelDraw;
 
-    fn process(&self, draw: Draw) -> Self::Draw {
+    fn process(&self, draw: Dab) -> Self::Draw {
         PixelDraw {
             color: self.color,
             position: draw.position.q32_floor(),
@@ -72,7 +72,7 @@ impl DrawsProcessor for PixelBrush {
         }
     }
 
-    fn step(&self, _draw: Draw) -> f32 {
+    fn step(&self, _draw: Dab) -> f32 {
         1.0
     }
 
@@ -81,12 +81,7 @@ impl DrawsProcessor for PixelBrush {
         IRect::new_half(draw.position, UVec2::splat(half))
     }
 
-    fn processor_output(
-        &self,
-        from: Option<Draw>,
-        to: Draw,
-        out: &mut Vec<u8>,
-    ) -> (Draw, IRect, u32) {
+    fn processor_output(&self, from: Option<Dab>, to: Dab, out: &mut Vec<u8>) -> (Dab, IRect, u32) {
         let Some(from) = from else {
             let processed = self.process(to);
             let dirty = self.dirty(processed);

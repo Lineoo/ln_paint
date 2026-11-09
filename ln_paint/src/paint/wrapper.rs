@@ -12,11 +12,14 @@ use ln_world::{Element, Handle, World};
 use wgpu::{CommandEncoderDescriptor, ComputePassDescriptor};
 
 use crate::{
+    layout::val::Val,
+    lnwin::Lnwindow,
+    measures::{FI64Ext, IRect},
     paint::{
-        CacheLayerChunk, CacheLayers, ChunkPool, DEFAULT_CHUNK_SIZE, DEFAULT_MIPMAP_CAP,
-        LayerPipeline, LayerRenderer, PlainLayer, RawLayer, Standalone,
+        CacheLayerChunk, CacheLayers, ChunkPool, ChunkRenderer, DEFAULT_CHUNK_SIZE,
+        DEFAULT_MIPMAP_CAP, PaintPipeline, PlainLayer, RawLayer, Standalone,
         brush::{
-            BrushParams, Draw, Stroke, blur::BlurBrush, param::BrushParam, pixel::PixelBrush,
+            BrushParams, Dab, Stroke, blur::BlurBrush, param::BrushParam, pixel::PixelBrush,
             round::RoundBrush, smudge::SmudgeBrush, tint::TintBrush,
         },
         input::LayerInput,
@@ -25,9 +28,6 @@ use crate::{
         traveler::Traveler,
         zoom_to_mipmap,
     },
-    layout::val::Val,
-    lnwin::Lnwindow,
-    measures::{FI64Ext, IRect},
     render::{
         Render, RenderDrawControl, RenderPrepareControl,
         camera::{CameraBind, CameraUtils, SetCameraOutdated, UICamera},
@@ -82,8 +82,8 @@ pub struct PageContainerArchive {
 /// - undo/redo traveler
 pub struct LayerPage {
     // TODO: move to ECS after world-multithread support
-    pub lp: Arc<LayerPipeline>,
-    rd: LayerRenderer,
+    pub lp: Arc<PaintPipeline>,
+    rd: ChunkRenderer,
 
     pub common: WidgetCommon,
     pub container: Handle<Container>,
@@ -127,7 +127,7 @@ impl LayerPage {
         let camera_bind = world.single_fetch::<CameraBind>();
         let save = world.single_fetch::<Save>();
 
-        let lp = Arc::new(LayerPipeline::new(
+        let lp = Arc::new(PaintPipeline::new(
             render.adapter.clone(),
             render.device.clone(),
             render.queue.clone(),
@@ -360,7 +360,7 @@ impl LayerPage {
         self.active.as_mut()
     }
 
-    pub fn draw_active(&mut self, draw: Draw) {
+    pub fn draw_active(&mut self, draw: Dab) {
         Self::draw_brush(
             &self.lp,
             &mut self.scratch,
@@ -375,7 +375,7 @@ impl LayerPage {
         )
     }
 
-    pub fn draw_erase(&mut self, draw: Draw) {
+    pub fn draw_erase(&mut self, draw: Dab) {
         Self::draw_brush(
             &self.lp,
             &mut self.scratch,
@@ -391,7 +391,7 @@ impl LayerPage {
     }
 
     fn draw_brush<T: BrushParams + ?Sized>(
-        lp: &LayerPipeline,
+        lp: &PaintPipeline,
         scratch: &mut PlainLayer,
         swap: &mut Option<PlainLayer>,
         raw: &mut RawLayer,
@@ -400,7 +400,7 @@ impl LayerPage {
         pool: &mut ChunkPool,
         brush: &T,
         stroke: &mut Option<Stroke>,
-        draw: Draw,
+        draw: Dab,
     ) {
         let stroke = stroke.get_or_insert_with(|| Stroke::new(brush));
 

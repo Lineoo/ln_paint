@@ -1,11 +1,6 @@
 use ln_world::{Element, Handle, World};
 
 use crate::{
-    paint::{
-        brush::param::BrushParamKey,
-        input::{LayerInput, LayerInputMode},
-        wrapper::{BrushConfigurationChanged, LayerPage},
-    },
     layout::{
         luni::{LuniAlign, LuniAxis, LuniChild, LuniChildTemplate, LuniFlex, LuniParent, LuniRect},
         packer::Packer,
@@ -14,12 +9,20 @@ use crate::{
         val::{Val, ValChanged},
     },
     measures::{Axis, IRect},
+    paint::{
+        brush::param::BrushParamKey,
+        input::{LayerInput, LayerInputMode},
+        wrapper::{BrushConfigurationChanged, LayerPage},
+    },
     theme::ThemeVal,
     widgets::{
         common::WidgetCommon,
-        components::button::{Button, ButtonClick, ButtonImage, ButtonToggle},
-        panel::{Panel, PanelAttr, brush_panel::BrushPanel, color_picker::ColorPickerButton},
+        components::{
+            button::{Button, ButtonClick, ButtonImage, ButtonToggle},
+            panel::{Panel, PanelAttr},
+        },
         renderer::svg::svg_render,
+        sections::{brush_panel::BrushPanel, color_picker::ColorPickerButton},
         slider::{Slider, SliderLabel, SliderValue},
     },
 };

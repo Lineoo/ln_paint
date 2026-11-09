@@ -20,12 +20,12 @@ use wgpu::{
 use winit::window::Window;
 
 use crate::{
+    measures::{FI64Ext, IRect},
     paint::{
-        CacheLayerChunk, DirtyChunkPool, LayerPipeline, RawLayerChunk, chunks_key_to_rect,
+        CacheLayerChunk, DirtyChunkPool, PaintPipeline, RawLayerChunk, chunks_key_to_rect,
         chunks_stack_key_to_rect, point_zoom_to_chunks_stack, rect_chunks_iter,
         rect_chunks_stack_layer_iter, rect_chunks_stack_layer_range,
     },
-    measures::{FI64Ext, IRect},
     save::chunk::{ChunkLoad, ChunkLoadResult, ChunkSave},
 };
 
@@ -61,7 +61,7 @@ pub enum ThreadOutput {
 
 pub struct StreamConfig {
     pub database: Arc<Database>,
-    pub lp: Arc<LayerPipeline>,
+    pub lp: Arc<PaintPipeline>,
     pub window: Arc<dyn Window>,
     pub page: u64,
     pub chunk_size: UVec2,

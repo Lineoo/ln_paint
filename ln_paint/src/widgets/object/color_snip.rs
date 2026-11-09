@@ -3,15 +3,15 @@ use ln_world::{Element, Handle, World};
 
 use crate::{
     color::srgb::{mul_alpha, srgb_gamma_decode},
-    paint::{
-        input::LayerInput,
-        wrapper::{BrushConfigurationChanged, LayerPage},
-    },
     layout::{
         transform::{Transform, TransformValue},
         val::{Val, ValChanged},
     },
     measures::{FI64Ext, IRect},
+    paint::{
+        input::LayerInput,
+        wrapper::{BrushConfigurationChanged, LayerPage},
+    },
     theme::ThemeVal,
     tools::{
         mouse::MouseMenu,
