@@ -109,10 +109,6 @@ impl Save {
     }
 
     pub fn sn_write(&self, sn_doc: &SceneDocument) {
-        if !sn_doc.safe {
-            return;
-        }
-
         if let Some(path) = &self.path {
             sn_doc.write(&path.sn, &path.sn_tmp);
         }
@@ -138,14 +134,15 @@ impl Save {
         db: &mut Database,
         db_file: Option<&Path>,
     ) -> Result<(), redb::Error> {
-        if sn.database_version > DATABASE_VERSION {
-            panic!(
-                "cannot open database from newer version {}",
-                sn.database_version
-            );
-        } else if sn.database_version < DATABASE_VERSION {
-            Self::create_backup(db_file, "migration", false, 256);
-            Self::migrate_format(db, sn.database_version)?;
+        if let Some(version) = sn.database_version {
+            if version > DATABASE_VERSION {
+                panic!("cannot open database from newer version {version}",);
+            } else if version < DATABASE_VERSION {
+                Self::create_backup(db_file, "migration", false, 256);
+                Self::migrate_format(db, version)?;
+                sn_doc.set_database_version(DATABASE_VERSION);
+            }
+        } else {
             sn_doc.set_database_version(DATABASE_VERSION);
         }
 
@@ -262,7 +259,7 @@ impl Save {
 /// read-only deserialized copy from origin scene file
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct SceneFile {
-    pub database_version: u32,
+    pub database_version: Option<u32>,
     #[serde(default)]
     pub compact_on_startup: bool,
     pub desktop_mode: Option<bool>,
@@ -300,7 +297,7 @@ impl SceneFile {
 impl Default for SceneFile {
     fn default() -> Self {
         SceneFile {
-            database_version: DATABASE_VERSION,
+            database_version: Some(DATABASE_VERSION),
             compact_on_startup: false,
             desktop_mode: None,
             dark_mode: None,
@@ -342,6 +339,11 @@ impl SceneDocument {
     }
 
     fn write(&self, sn_file: &Path, sn_tmp_file: &Path) {
+        if !self.safe {
+            // malformed, don't corrupt user's data
+            return;
+        }
+
         std::fs::write(&sn_tmp_file, self.doc.to_string()).unwrap();
         std::fs::rename(&sn_tmp_file, &sn_file).unwrap();
     }
