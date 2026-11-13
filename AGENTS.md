@@ -3,7 +3,7 @@
 GPU-accelerated drawing app featured infinite canvas in Rust (winit + wgpu). Cargo workspace with two crates:
 
 - `ln_paint/` - The main app. Desktop (binary) entry: `src/bin/ln_paint.rs` -> `lib.rs::desktop_main`; Android (C ABI library) entry: `lib.rs::android_main`.
-- `ln_world/` - An in-house, single-file ECS (`src/lib.rs`). The entire app is built on it (`World`, `Element`, `Handle`, `Observer`, `Descriptor`).
+- `ln_world/` - The management system. The entire app is built on it (`World`, `Element`, `Handle`, `Observer`, `Descriptor`).
 - `docs/` - Documents. Most are in Chinese, read some first.
 
 ## Tasks
@@ -28,14 +28,15 @@ GPU-accelerated drawing app featured infinite canvas in Rust (winit + wgpu). Car
 
 ## Documents
 
-Documents are in Chinese if not specially marked with language suffix. Sort by importance.
+Documents in `docs/`. Most of them are in Chinese if not specially marked with language suffix. Sort by importance.
 
-- `docs/codebase.en.md` - The coding style instructions, list in format `### <tags,> - <title>`. Recommended.
-- `docs/world.md` - about how to use `ln_world`. Recommended.
-- `docs/composite.md` - Color-space notation for rendering and drawing. Important when treating color conventions.
-- `docs/paint.md` - Draw call pipeline: batch-draw, stroke-submit, stroke-discard, undo/redo, failure paths, stream-thread synchronization.
-- `docs/render.md` - Rendering architecture: render camera, controls, pipeline, instances, redraw rules.
-- `docs/redb.md` - `redb` database tables and chunk binary formats.
-- `docs/env.md` - Available environment variables.
-- `docs/headless.en.md` - How to use experimental headless rendering.
-- `docs/ndk.md` - Android `cargo ndk` usage and `cargo-ndk-env` fingerprint pitfalls. Not very useful for agents environment.
+- `index.md` - The overall codebase architecture.
+- `style.en.md` - The coding style instructions, list in format `### <tags,> - <title>`.
+- `world.md` - About how to use `ln_world`.
+- `composite.md` - Color-space notation for rendering and drawing. Important when treating color conventions.
+- `paint.md` - Draw call pipeline: batch-draw, stroke-submit, stroke-discard, undo/redo, failure paths, stream-thread synchronization.
+- `render.md` - Rendering architecture: render camera, controls, pipeline, instances, redraw rules.
+- `redb.md` - `redb` database tables and chunk binary formats.
+- `env.md` - Available environment variables.
+- `headless.en.md` - How to use headless rendering.
+- `ndk.md` - Android `cargo ndk` usage and `cargo ndk-env` fingerprint pitfalls. Not very useful for agents environment.

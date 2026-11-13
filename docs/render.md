@@ -10,21 +10,13 @@
 4. **管线 ComponentPipeline** - 包含绑定组布局，管线布局，Shader 等，用于创建实例
 5. **组件 Component ComponentInstance** - 包含绑定组和缓冲区
 
-## 2. 相机控制
+## 2. 嵌套
 
-有两个不同职能的相机控制器 `Container` 和 `CameraUtils`
+`Nest` 用于嵌套功能，也就是能够传播渲染指令，控制渲染裁切矩形
 
-前者包括了堆叠功能，也就是能够自动转发交互，自动传播渲染指令，控制渲染裁切矩形
-
-后者主用于控制相机相对移动缩放，功能丰富
-
-*注意目前 `container.scroll` 也控制了一部分相机移动，以后会修改*
+实际应使用包装过的 `Container`，会转发交互，并添加矩形背景
 
 ## 3. 重绘
 
-重绘由 OS 发出的 `WindowEvent::RedrawRequest` 事件控制，且发出后 Render 将*不可逆*地开始重绘（跳跃绘制除外）。
-
-- 若渲染实现需要**实时动画**，应在自己的 `RenderPrepareControl` 在 `prepare` 调用中返回积极重绘为 `true`。
-    - 当然最好是使用 `animation` 模块打包好的功能
-- 不应在上一帧的渲染过程中触发下一帧的重绘，这会导致渲染不受控制无限进行下去。
+重绘由 OS 发出的 `WindowEvent::RedrawRequest` 事件控制。
 

@@ -1,5 +1,6 @@
-# LnWorld
-A simple element module for LnPaint.
+# LnWorld #
+
+A simple managing system designed for LnPaint.
 
 ## License
 

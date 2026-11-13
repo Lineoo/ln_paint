@@ -1,5 +1,6 @@
-# LnPaint
-The infinite LnPaint.
+# LnPaint #
+
+The main LnPaint application. See the workspace README for more information.
 
 ## License
 
