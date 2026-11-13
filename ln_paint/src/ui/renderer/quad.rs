@@ -8,12 +8,12 @@ use wgpu::{
 };
 
 use crate::{
-    layout::val::{Val, ValChanged},
     lnwin::Lnwindow,
     render::{MSAA_STATE, Render, RenderDrawControl, camera::CameraBind},
     shaders::shader_compile,
     ui::common::WidgetCommon,
     unit::IRect,
+    val::{Val, ValChanged},
 };
 
 pub trait QuadMaterial: Clone + Copy + bytemuck::Pod + bytemuck::Zeroable + Send {

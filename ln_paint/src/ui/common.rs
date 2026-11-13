@@ -1,6 +1,6 @@
 use ln_world::Handle;
 
-use crate::{layout::val::Val, render::camera::Camera};
+use crate::{render::camera::Camera, val::Val};
 
 #[derive(Debug, Clone, Copy)]
 pub struct WidgetCommon {

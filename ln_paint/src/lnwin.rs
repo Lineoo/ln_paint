@@ -18,7 +18,6 @@ use winit::{
 
 use crate::{
     input::{focus::FocusTool, mouse::MouseTool, pointer::PointerTool, touch::MultiTouchTool},
-    layout::val::{Val, ValChanged},
     render::{
         Render,
         camera::{Camera, CameraDescriptor, CameraOutdated, SetCameraOutdated, UICamera},
@@ -38,6 +37,7 @@ use crate::{
         },
     },
     unit::{FI64Ext, IRect, URect},
+    val::{Val, ValChanged},
 };
 
 #[derive(Default)]

@@ -1,6 +1,19 @@
-use ln_world::{Handle, HandleGeneric, World};
+use ln_world::{Element, Handle, HandleGeneric, World};
 
-use crate::layout::val::{Val, ValChanged};
+pub struct Val<T> {
+    pub val: T,
+}
+
+/// maybe change, maybe not
+pub struct ValChanged;
+
+impl<T: Send + 'static> Element for Val<T> {}
+
+impl<T> Val<T> {
+    pub const fn new(val: T) -> Self {
+        Val { val }
+    }
+}
 
 type F<T> = dyn Fn(&World) -> T + Send + 'static;
 

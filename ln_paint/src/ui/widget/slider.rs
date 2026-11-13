@@ -7,14 +7,10 @@ use crate::{
         collider::ToolRectCollider,
         pointer::{PointerHit, PointerHitStatus, PointerHover, PointerHoverStatus},
     },
-    layout::{
-        anim::{Animator, AnimatorSnap},
-        packer::Packer,
-        val::{Val, ValChanged},
-    },
     ui::{
         WidgetHover,
         common::WidgetCommon,
+        layout::anim::{Animator, AnimatorSnap},
         renderer::{
             rrect::RRect,
             text::{Text, TextAttr},
@@ -22,6 +18,7 @@ use crate::{
         theme::{Theme, ThemeVal},
     },
     unit::{Axis, FI64Ext, IRect},
+    val::{Packer, Val, ValChanged},
 };
 
 pub struct SliderValue(pub f32);

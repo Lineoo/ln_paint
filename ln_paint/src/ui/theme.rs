@@ -6,9 +6,9 @@ use crate::{
         oklab::oklab_to_linear_srgb,
         srgb::{hex_to_srgb, srgb_gamma_decode},
     },
-    layout::val::{Val, ValChanged},
     ui::widget::button::ButtonTheme,
     unit::Axis,
+    val::{Val, ValChanged},
 };
 
 pub struct Theme {

@@ -16,12 +16,12 @@ use wgpu::{
 
 use crate::{
     color::srgb::srgb_gamma_decode_f32,
-    layout::val::{Val, ValChanged},
     lnwin::Lnwindow,
     render::{MSAA_STATE, Render, RenderDrawControl, RenderPrepareControl, camera::CameraBind},
     shaders::shader_compile,
     ui::common::WidgetCommon,
     unit::{FI64Ext, IRect, MinMax},
+    val::{Val, ValChanged},
 };
 
 const GLYPH_ATLAS_SIZE: u32 = 2048;

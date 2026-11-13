@@ -12,7 +12,6 @@ use ln_world::{Element, Handle, World};
 use wgpu::{CommandEncoderDescriptor, ComputePassDescriptor};
 
 use crate::{
-    layout::val::Val,
     lnwin::Lnwindow,
     paint::{
         CacheLayerChunk, CacheLayers, ChunkPool, ChunkRenderer, DEFAULT_CHUNK_SIZE,
@@ -38,6 +37,7 @@ use crate::{
         renderer::rrect::RRect,
     },
     unit::{FI64Ext, IRect},
+    val::Val,
 };
 
 const BRIDGE_CHUNK_SIZE: UVec2 = UVec2::splat(1024);

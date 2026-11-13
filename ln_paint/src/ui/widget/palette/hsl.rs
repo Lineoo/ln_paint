@@ -12,10 +12,6 @@ use crate::{
         collider::{ToolRectCollider, ToolRingCollider},
         pointer::PointerHit,
     },
-    layout::{
-        packer::Packer,
-        val::{Val, ValChanged},
-    },
     shaders::shader_compile,
     ui::{
         common::WidgetCommon,
@@ -25,6 +21,7 @@ use crate::{
         },
     },
     unit::{FI64Ext, IRect},
+    val::{Packer, Val, ValChanged},
 };
 
 /// Inner radius of the hue ring, normalized so that the outer radius is

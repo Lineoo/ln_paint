@@ -9,16 +9,13 @@ use crate::{
         oklab::{linear_srgb_to_oklab, oklab_to_linear_srgb},
         srgb::{mul_alpha, srgb_gamma_decode, srgb_gamma_encode},
     },
-    layout::{
-        transform::{Transform, TransformValue},
-        val::{Val, ValChanged},
-    },
     paint::wrapper::{BrushConfigurationChanged, LayerPage},
     ui::{
         common::WidgetCommon,
         container::{
             ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerEcho, ContainerWithCamera,
         },
+        layout::transform::{Transform, TransformValue},
         object::color_snip::{ColorSnip, ColorSnipAttr},
         renderer::{rrect::RRect, svg::svg_render},
         sections::{debug_panel::DebugPanel, layer_selection::LayerSelectionPanel},
@@ -33,6 +30,7 @@ use crate::{
         },
     },
     unit::{FI64Ext, IRect},
+    val::{Val, ValChanged},
 };
 
 const PANEL_WIDTH: i32 = 384;

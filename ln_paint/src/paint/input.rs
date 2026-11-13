@@ -14,7 +14,6 @@ use crate::{
         pointer::{PointerHover, PointerHoverStatus, PointerScroll},
         touch::{MultiTouchGroup, MultiTouchStatus},
     },
-    layout::val::{Val, ValChanged},
     lnwin::Lnwindow,
     paint::{
         brush::{Dab, param::BrushParamKey},
@@ -27,6 +26,7 @@ use crate::{
         widget::area::{Area, AreaMode},
     },
     unit::{FI64Ext, IRect},
+    val::{Val, ValChanged},
 };
 
 const DRAG_DISTANCE: f64 = 0.005;

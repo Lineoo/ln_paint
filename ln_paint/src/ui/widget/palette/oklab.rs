@@ -11,10 +11,6 @@ use crate::{
         srgb::mul_alpha,
     },
     input::{collider::ToolRectCollider, pointer::PointerHit},
-    layout::{
-        packer::Packer,
-        val::{Val, ValChanged},
-    },
     shaders::shader_compile,
     ui::{
         common::WidgetCommon,
@@ -25,6 +21,7 @@ use crate::{
         },
     },
     unit::{FI64Ext, IRect},
+    val::{Packer, Val, ValChanged},
 };
 
 const THUMB_RADIUS: f32 = 5.0;

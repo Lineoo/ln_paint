@@ -8,10 +8,6 @@ use wgpu::{
 use crate::{
     color::srgb::{mul_alpha, srgb_gamma_decode, srgb_gamma_encode},
     input::collider::ToolRectCollider,
-    layout::{
-        packer::Packer,
-        val::{Val, ValChanged},
-    },
     paint::{
         ChunkRenderer, PaintPipeline, Standalone,
         brush::{BrushParams, Dab, DabBatch, Stroke},
@@ -23,6 +19,7 @@ use crate::{
         container::{ContainerAttr, ContainerEcho, ContainerWithCamera},
     },
     unit::{FI64Ext, IRect},
+    val::{Packer, Val, ValChanged},
 };
 
 pub struct BrushPreviewDescriptor {

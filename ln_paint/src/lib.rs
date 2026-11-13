@@ -1,7 +1,6 @@
 pub mod color;
 pub mod i18n;
 pub mod input;
-pub mod layout;
 pub mod lnwin;
 pub mod paint;
 pub mod render;
@@ -9,6 +8,7 @@ pub mod save;
 pub mod shaders;
 pub mod ui;
 pub mod unit;
+pub mod val;
 
 pub fn desktop_main() {
     use winit::event_loop::EventLoop;

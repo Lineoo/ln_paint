@@ -3,10 +3,6 @@ use glam::I64Vec2;
 use ln_world::{Element, Handle, World};
 
 use crate::{
-    layout::{
-        transform::{Transform, TransformValue},
-        val::{Val, ValChanged},
-    },
     paint::wrapper::{LayerDebugMessage, LayerPage},
     render::Render,
     save::Save,
@@ -15,6 +11,7 @@ use crate::{
         container::{
             ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerEcho, ContainerWithCamera,
         },
+        layout::transform::{Transform, TransformValue},
         renderer::{
             svg::svg_render,
             text::{Text, TextAttr},
@@ -23,6 +20,7 @@ use crate::{
         widget::button::{Button, ButtonClick, ButtonImage, ButtonToggle},
     },
     unit::IRect,
+    val::{Val, ValChanged},
 };
 
 pub struct DebugPanel {

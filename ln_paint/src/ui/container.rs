@@ -6,10 +6,6 @@ use crate::{
         collider::{ToolControl, ToolHitResult},
         pointer::{PointerHit, PointerHitStatus, PointerScroll},
     },
-    layout::{
-        packer::Packer,
-        val::{Val, ValChanged},
-    },
     lnwin::Lnwindow,
     render::{
         Render, RenderDrawControl, RenderExtra,
@@ -21,6 +17,7 @@ use crate::{
         theme::{Theme, ThemeVal},
     },
     unit::{FI64Ext, IRect},
+    val::{Packer, Val, ValChanged},
 };
 
 #[derive(Clone, Copy)]

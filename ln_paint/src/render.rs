@@ -16,7 +16,6 @@ use wgpu::*;
 use winit::{dpi::PhysicalSize, event::WindowEvent};
 
 use crate::{
-    layout::val::ValChanged,
     lnwin::Lnwindow,
     render::{
         camera::{Camera, UICamera},
@@ -24,6 +23,7 @@ use crate::{
     },
     ui::common::WidgetCommon,
     unit::URect,
+    val::ValChanged,
 };
 
 pub const MSAA_SAMPLE_COUNT: u32 = 1;

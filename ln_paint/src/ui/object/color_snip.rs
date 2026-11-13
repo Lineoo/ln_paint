@@ -7,21 +7,19 @@ use crate::{
         mouse::MouseMenu,
         pointer::{PointerHover, PointerScroll},
     },
-    layout::{
-        transform::{Transform, TransformValue},
-        val::{Val, ValChanged},
-    },
     paint::{
         input::LayerInput,
         wrapper::{BrushConfigurationChanged, LayerPage},
     },
     ui::{
         common::WidgetCommon,
+        layout::transform::{Transform, TransformValue},
         renderer::rrect::RRect,
         theme::ThemeVal,
         widget::button::{Button, ButtonClick, ButtonDrag, ButtonDragStatus},
     },
     unit::{FI64Ext, IRect},
+    val::{Val, ValChanged},
 };
 
 pub struct ColorSnip {

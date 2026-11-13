@@ -4,13 +4,13 @@ use redb::{ReadableDatabase, ReadableTable, TableDefinition};
 use uuid::Uuid;
 
 use crate::{
-    layout::val::Val,
     save::{Autosave, Save},
     ui::{
         common::WidgetCommon,
         object::color_snip::{ColorSnip, ColorSnipAttr},
     },
     unit::IRect,
+    val::Val,
 };
 
 pub const TABLE_LAYER_OBJECT: TableDefinition<(u64, u128), &[u8]> =
