@@ -9,7 +9,6 @@ use crate::{
         val::{Val, ValChanged},
     },
     measures::{FI64Ext, IRect},
-    theme::Theme,
     tools::{
         collider::ToolRectCollider,
         pointer::{PointerHit, PointerHitStatus, PointerHover, PointerHoverStatus},
@@ -18,6 +17,7 @@ use crate::{
         WidgetHover,
         common::WidgetCommon,
         renderer::{canvas::Canvas, rrect::RRect, svg::PixImage},
+        theme::Theme,
     },
 };
 

@@ -18,13 +18,15 @@ use crate::{
     },
     render::{RenderPrepareControl, camera::UICamera},
     save::Save,
-    theme::Theme,
     tools::{
         collider::ToolRectCollider,
         pointer::{PointerHover, PointerHoverStatus, PointerScroll},
         touch::{MultiTouchGroup, MultiTouchStatus},
     },
-    ui::widget::area::{Area, AreaMode},
+    ui::{
+        theme::Theme,
+        widget::area::{Area, AreaMode},
+    },
 };
 
 const DRAG_DISTANCE: f64 = 0.005;

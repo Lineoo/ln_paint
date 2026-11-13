@@ -7,6 +7,7 @@ pub mod object;
 pub mod renderer;
 pub mod sections;
 pub mod shaders;
+pub mod theme;
 pub mod widget;
 
 pub enum WidgetHover {

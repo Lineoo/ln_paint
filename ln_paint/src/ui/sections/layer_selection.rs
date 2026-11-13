@@ -10,7 +10,6 @@ use crate::{
     },
     measures::IRect,
     paint::wrapper::LayerPage,
-    theme::ThemeVal,
     ui::{
         common::WidgetCommon,
         container::{
@@ -20,6 +19,7 @@ use crate::{
             rrect::RRect,
             text::{Text, TextAttr},
         },
+        theme::ThemeVal,
         widget::button::{Button, ButtonClick},
     },
 };

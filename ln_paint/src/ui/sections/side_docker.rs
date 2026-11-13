@@ -14,11 +14,11 @@ use crate::{
         input::{LayerInput, LayerInputMode},
         wrapper::{BrushConfigurationChanged, LayerPage},
     },
-    theme::ThemeVal,
     ui::{
         common::WidgetCommon,
         renderer::svg::svg_render,
         sections::{brush_panel::BrushPanel, color_picker::ColorPickerButton},
+        theme::ThemeVal,
         widget::{
             button::{Button, ButtonClick, ButtonImage, ButtonToggle},
             panel::{Panel, PanelAttr},

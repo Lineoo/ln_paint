@@ -6,7 +6,6 @@ pub mod measures;
 pub mod paint;
 pub mod render;
 pub mod save;
-pub mod theme;
 pub mod tools;
 pub mod ui;
 

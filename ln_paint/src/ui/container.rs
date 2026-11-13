@@ -12,12 +12,15 @@ use crate::{
         Render, RenderDrawControl, RenderExtra,
         camera::{Camera, CameraDescriptor, CameraOutdated, SetCameraOutdated},
     },
-    theme::{Theme, ThemeVal},
     tools::{
         collider::{ToolControl, ToolHitResult},
         pointer::{PointerHit, PointerHitStatus, PointerScroll},
     },
-    ui::{common::WidgetCommon, renderer::rrect::RRect},
+    ui::{
+        common::WidgetCommon,
+        renderer::rrect::RRect,
+        theme::{Theme, ThemeVal},
+    },
 };
 
 #[derive(Clone, Copy)]

@@ -24,7 +24,6 @@ use crate::{
         camera::{Camera, CameraDescriptor, CameraOutdated, SetCameraOutdated, UICamera},
     },
     save::{Autosave, AutosaveScheduler, Save},
-    theme::Theme,
     tools::{focus::FocusTool, mouse::MouseTool, pointer::PointerTool, touch::MultiTouchTool},
     ui::{
         common::WidgetCommon,
@@ -33,6 +32,7 @@ use crate::{
             text::TextPipeline, vtor::VtorPipeline, wireframe::WireframePipeline,
         },
         sections::{desktop_ui::DesktopUi, mobile_ui::MobileUi},
+        theme::Theme,
         widget::palette::{
             hsl::{HslRingMaterial, HslSquareMaterial},
             oklab::{OklabBarMaterial, OklabPolarMaterial},

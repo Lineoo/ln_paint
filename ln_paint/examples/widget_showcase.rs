@@ -5,7 +5,6 @@ use ln_paint::{
     layout::{transform::Transform, val::Val},
     lnwin::{Lnwin, LnwindowRect},
     measures::{Axis, IRect},
-    theme::{Theme, ThemeVal},
     ui::{
         common::WidgetCommon,
         renderer::{
@@ -15,6 +14,7 @@ use ln_paint::{
             vtor::{Vtor, logo},
             wireframe::Wireframe,
         },
+        theme::{Theme, ThemeVal},
         widget::{
             area::{Area, AreaMode},
             button::{Button, ButtonImage},

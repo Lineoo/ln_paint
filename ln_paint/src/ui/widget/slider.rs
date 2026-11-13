@@ -9,7 +9,6 @@ use crate::{
         val::{Val, ValChanged},
     },
     measures::{Axis, FI64Ext, IRect},
-    theme::{Theme, ThemeVal},
     tools::{
         collider::ToolRectCollider,
         pointer::{PointerHit, PointerHitStatus, PointerHover, PointerHoverStatus},
@@ -21,6 +20,7 @@ use crate::{
             rrect::RRect,
             text::{Text, TextAttr},
         },
+        theme::{Theme, ThemeVal},
     },
 };
 

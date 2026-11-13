@@ -15,7 +15,6 @@ use crate::{
     },
     measures::IRect,
     paint::wrapper::{BrushConfigurationChanged, LayerPage},
-    theme::{Theme, ThemeVal},
     tools::pointer::{PointerHit, PointerHover, PointerScroll},
     ui::{
         brush_preview::BrushPreviewDescriptor,
@@ -27,6 +26,7 @@ use crate::{
             text::{Text, TextAttr},
         },
         sections::settings::SettingPanel,
+        theme::{Theme, ThemeVal},
         widget::{
             button::{Button, ButtonClick, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonTheme},
             tabs::{TabEntry, Tabs},

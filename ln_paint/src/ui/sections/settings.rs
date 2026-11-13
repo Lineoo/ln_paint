@@ -21,12 +21,12 @@ use crate::{
         },
         wrapper::{BrushConfigurationChanged, LayerPage},
     },
-    theme::ThemeVal,
     ui::{
         brush_preview::BrushPreviewDescriptor,
         common::WidgetCommon,
         container::{ContainerAttr, ContainerDeco, ContainerEcho, ContainerWithCamera},
         renderer::text::{Text, TextAttr},
+        theme::ThemeVal,
         widget::slider::{Slider, SliderLabel, SliderValue},
     },
 };

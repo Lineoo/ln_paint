@@ -6,9 +6,12 @@ use crate::{
         val::Val,
     },
     measures::IRect,
-    theme::{Theme, ThemeVal},
     tools::collider::ToolRectCollider,
-    ui::{common::WidgetCommon, renderer::rrect::RRect},
+    ui::{
+        common::WidgetCommon,
+        renderer::rrect::RRect,
+        theme::{Theme, ThemeVal},
+    },
 };
 
 pub struct PanelAttr {

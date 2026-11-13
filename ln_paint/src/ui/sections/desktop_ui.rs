@@ -21,7 +21,6 @@ use crate::{
         input::LayerInput,
         wrapper::{BrushConfigurationChanged, LayerPage},
     },
-    theme::ThemeVal,
     ui::{
         common::WidgetCommon,
         container::{ContainerAttr, ContainerEcho, ContainerWithCamera},
@@ -33,6 +32,7 @@ use crate::{
             brush_panel::BrushListPanel, color_picker::LayerOklabPalette, debug_panel::DebugPanel,
             layer_selection::LayerSelectionPanel, settings::SettingPanel,
         },
+        theme::ThemeVal,
         widget::{
             button::{Button, ButtonClick, ButtonImage, ButtonToggle},
             panel::{Panel, PanelAttr},

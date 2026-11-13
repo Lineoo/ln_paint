@@ -15,7 +15,6 @@ use crate::{
     },
     measures::{FI64Ext, IRect},
     paint::wrapper::{BrushConfigurationChanged, LayerPage},
-    theme::ThemeVal,
     ui::{
         common::WidgetCommon,
         container::{
@@ -24,6 +23,7 @@ use crate::{
         object::color_snip::{ColorSnip, ColorSnipAttr},
         renderer::{rrect::RRect, svg::svg_render},
         sections::{debug_panel::DebugPanel, layer_selection::LayerSelectionPanel},
+        theme::ThemeVal,
         widget::{
             button::{Button, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonToggle},
             palette::{

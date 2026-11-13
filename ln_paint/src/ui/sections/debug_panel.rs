@@ -11,7 +11,6 @@ use crate::{
     paint::wrapper::{LayerDebugMessage, LayerPage},
     render::Render,
     save::Save,
-    theme::ThemeVal,
     ui::{
         common::WidgetCommon,
         container::{
@@ -21,6 +20,7 @@ use crate::{
             svg::svg_render,
             text::{Text, TextAttr},
         },
+        theme::ThemeVal,
         widget::button::{Button, ButtonClick, ButtonImage, ButtonToggle},
     },
 };

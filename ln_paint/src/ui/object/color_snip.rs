@@ -12,7 +12,6 @@ use crate::{
         input::LayerInput,
         wrapper::{BrushConfigurationChanged, LayerPage},
     },
-    theme::ThemeVal,
     tools::{
         mouse::MouseMenu,
         pointer::{PointerHover, PointerScroll},
@@ -20,6 +19,7 @@ use crate::{
     ui::{
         common::WidgetCommon,
         renderer::rrect::RRect,
+        theme::ThemeVal,
         widget::button::{Button, ButtonClick, ButtonDrag, ButtonDragStatus},
     },
 };
