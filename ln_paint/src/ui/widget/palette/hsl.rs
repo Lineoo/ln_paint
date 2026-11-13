@@ -13,7 +13,7 @@ use crate::{
         pointer::PointerHit,
     },
     layout::{
-        transfer::Transfer,
+        packer::Packer,
         val::{Val, ValChanged},
     },
     shaders::shader_compile,
@@ -92,12 +92,15 @@ impl HslSquare {
         world.scope("hsl_square");
         world.set_autodeps(Some(this));
 
-        let thumb_rect = Transfer::derive(world, self.rect).build_with(move |&rect, world| {
+        let thumb_rect = Packer::attach(world, self.rect, move |world| {
             let this = world.fetch(this);
+            let rect = world.fetch(this.rect).val;
             square_thumb(rect, this.hsl)
-        });
-        let thumb_light_rect = Transfer::derive(world, thumb_rect).build(|rect| rect.expand(1));
-        let thumb_shadow_rect = Transfer::derive(world, thumb_rect).build(|rect| rect.expand(2));
+        })
+        .listen(self.rect)
+        .finish();
+        let thumb_light_rect = Packer::transfer(world, thumb_rect, |rect| rect.expand(1));
+        let thumb_shadow_rect = Packer::transfer(world, thumb_rect, |rect| rect.expand(2));
 
         let quad = world.insert(QuadMesh {
             common: self.common,
@@ -178,12 +181,15 @@ impl HslRing {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let thumb_rect = Transfer::derive(world, self.rect).build_with(move |&rect, world| {
+        let thumb_rect = Packer::attach(world, self.rect, move |world| {
             let this = world.fetch(this);
+            let rect = world.fetch(this.rect).val;
             ring_thumb(rect, this.hsl, this.inner_radius)
-        });
-        let thumb_light_rect = Transfer::derive(world, thumb_rect).build(|rect| rect.expand(1));
-        let thumb_shadow_rect = Transfer::derive(world, thumb_rect).build(|rect| rect.expand(2));
+        })
+        .listen(self.rect)
+        .finish();
+        let thumb_light_rect = Packer::transfer(world, thumb_rect, |rect| rect.expand(1));
+        let thumb_shadow_rect = Packer::transfer(world, thumb_rect, |rect| rect.expand(2));
 
         let quad = world.insert(QuadMesh {
             common: self.common,

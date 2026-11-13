@@ -9,7 +9,6 @@ use crate::{
             LuniRect,
         },
         packer::Packer,
-        transfer::Transfer,
         transform::{Transform, TransformEdge, TransformValue},
         val::{Val, ValChanged},
     },
@@ -72,7 +71,7 @@ impl Element for SettingPanel {
             ..Default::default()
         }));
 
-        let active_bc = Packer::derive(world, move |world| {
+        let active_bc = Packer::new(world, move |world| {
             let page = world.single_fetch::<LayerPage>();
             let theme = world.single_fetch::<ThemeVal>();
             let fallback = world.fetch(theme.gray4).val;
@@ -197,7 +196,7 @@ impl Element for TextSettingPanel {
             .filter(|spec| supported_keys.contains(&spec.0))
             .count();
         let row_count = world.insert(Val::new(shown as i32));
-        let restriction = Packer::derive(world, move |world| {
+        let restriction = Packer::new(world, move |world| {
             let this = world.fetch(this);
             let rect = world.fetch(this.rect).val;
             let rows = world.fetch(row_count).val;
@@ -430,7 +429,7 @@ fn option_visible(
     panel: Handle<Val<bool>>,
     supported: Handle<Val<bool>>,
 ) -> Handle<Val<bool>> {
-    Packer::derive(world, move |world| {
+    Packer::new(world, move |world| {
         world.fetch(panel).val && world.fetch(supported).val
     })
     .listen(panel)
@@ -621,7 +620,7 @@ fn option_slider(
         pressed: false,
     });
 
-    let text = Transfer::derive(world, value).build(move |&value| format(value));
+    let text = Packer::transfer(world, value, move |&value| format(value));
 
     world.insert(SliderLabel {
         text,

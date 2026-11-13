@@ -153,7 +153,7 @@ impl Element for LayerSelectionPanel {
                 },
                 local,
             ));
-            let selected = Packer::derive(world, move |world| world.fetch(active).val == i as u64)
+            let selected = Packer::new(world, move |world| world.fetch(active).val == i as u64)
                 .listen(active)
                 .finish();
             let layer0_button = world.insert(Button {

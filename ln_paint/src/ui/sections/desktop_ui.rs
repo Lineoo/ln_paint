@@ -10,7 +10,6 @@ use crate::{
             LuniParent, LuniRect,
         },
         packer::Packer,
-        transfer::Transfer,
         transform::{Transform, TransformEdge, TransformValue},
         val::{Val, ValChanged},
     },
@@ -210,7 +209,7 @@ impl Element for ToolBar {
                 })
             };
 
-        let eraser_selected = Packer::derive(world, move |world| {
+        let eraser_selected = Packer::new(world, move |world| {
             matches!(
                 world
                     .single_fetch::<LayerPage>()
@@ -283,7 +282,7 @@ impl Element for ToolBar {
             pressed: false,
         });
 
-        let slider_label_text = Transfer::derive(world, value).build(|&value| {
+        let slider_label_text = Packer::transfer(world, value, |&value| {
             let scale = (value.exp2() - 1.0) * 127.5 + 0.5;
             format!("{scale:.2} px")
         });

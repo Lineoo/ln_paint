@@ -9,7 +9,7 @@ use crate::{
     color::srgb::{mul_alpha, srgb_gamma_decode, srgb_gamma_encode},
     input::collider::ToolRectCollider,
     layout::{
-        transfer::Transfer,
+        packer::Packer,
         val::{Val, ValChanged},
     },
     paint::{
@@ -67,9 +67,9 @@ impl Descriptor for BrushPreviewDescriptor {
             let canvas = page.lp.create_standalone(rect);
             Val::new(canvas)
         });
-        let c0 = Transfer::derive(world, self.c0).build(|&c| srgb_gamma_encode(c));
-        let c1 = Transfer::derive(world, self.c1).build(|&c| srgb_gamma_encode(c));
-        let bc = Transfer::derive(world, self.bc).build(|&c| srgb_gamma_encode(c));
+        let c0 = Packer::transfer(world, self.c0, |&c0| srgb_gamma_encode(c0));
+        let c1 = Packer::transfer(world, self.c1, |&c1| srgb_gamma_encode(c1));
+        let bc = Packer::transfer(world, self.bc, |&bc| srgb_gamma_encode(bc));
         BrushPreview {
             common: self.common,
             rect: self.rect,

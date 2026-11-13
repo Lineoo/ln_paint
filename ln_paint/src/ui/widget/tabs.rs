@@ -9,7 +9,6 @@ use crate::{
             LuniParent, LuniRect,
         },
         packer::Packer,
-        transfer::Transfer,
         transform::{Transform, TransformEdge, TransformValue},
         val::{Val, ValChanged},
     },
@@ -120,7 +119,7 @@ impl Tabs {
 
             let button_rect = world.build(luni.child(LuniChild::default()));
             let active = self.active;
-            let button_selected = Packer::derive(world, move |world| world.fetch(active).val == i)
+            let button_selected = Packer::new(world, move |world| world.fetch(active).val == i)
                 .listen(active)
                 .finish();
             let button = world.insert(Button {
@@ -148,9 +147,11 @@ impl Tabs {
                 width: 0.0,
             });
 
-            Transfer::new(world, main_rect, entry.rect).copy();
+            Packer::attach(world, entry.rect, move |world| world.fetch(main_rect).val)
+                .listen(main_rect)
+                .finish();
 
-            Packer::new(world, entry.visible, move |world| {
+            Packer::attach(world, entry.visible, move |world| {
                 let this = world.fetch(handle);
                 world.fetch(button_selected).val && world.fetch(this.common.visible).val
             })
@@ -158,7 +159,7 @@ impl Tabs {
             .listen(self.common.visible)
             .finish();
 
-            Packer::new(world, entry_icon_modulate, move |world| {
+            Packer::attach(world, entry_icon_modulate, move |world| {
                 let theme = world.single_fetch::<ThemeVal>();
                 match world.fetch(button_selected).val {
                     true => world.fetch(theme.distinct).val,

@@ -7,7 +7,7 @@ use crate::{
         pointer::{PointerHit, PointerHitStatus, PointerScroll},
     },
     layout::{
-        transfer::Transfer,
+        packer::Packer,
         val::{Val, ValChanged},
     },
     lnwin::Lnwindow,
@@ -416,7 +416,7 @@ impl Descriptor for ContainerDecoDropdown {
     type Target = Handle<Val<IRect>>;
 
     fn when_build(self, world: &World) -> Self::Target {
-        Transfer::derive(world, self.outer).build(move |&rect| {
+        Packer::transfer(world, self.outer, move |&rect| {
             IRect::new(
                 0,
                 -self.height.unwrap_or(rect.extend.y as i32),

@@ -63,7 +63,7 @@ impl Slider {
             world.insert(Val::new(knob_split_rect(rect, self.axis, position)));
         let pressed = world.insert(Val::new(false));
 
-        let knob_color_anim = Packer::derive(world, move |world| {
+        let knob_color_anim = Packer::new(world, move |world| {
             let theme = world.single_fetch::<ThemeVal>();
             let pressed_val = world.fetch(pressed).val;
             match pressed_val {
@@ -77,7 +77,7 @@ impl Slider {
         .finish();
         let knob_color_val = world.build(Animator::new(knob_color_anim, theme.anim_factor));
 
-        let knob_split_color_anim = Packer::derive(world, move |world| {
+        let knob_split_color_anim = Packer::new(world, move |world| {
             let theme = world.single_fetch::<ThemeVal>();
             let pressed_val = world.fetch(pressed).val;
             match pressed_val {

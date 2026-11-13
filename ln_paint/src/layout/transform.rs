@@ -1,7 +1,7 @@
 use ln_world::{Descriptor, Handle, World};
 
 use crate::{
-    layout::{transfer::Transfer, val::Val},
+    layout::{packer::Packer, val::Val},
     unit::IRect,
 };
 
@@ -140,6 +140,8 @@ impl Descriptor for Transform {
     type Target = Handle<Val<IRect>>;
 
     fn when_build(self, world: &World) -> Self::Target {
-        Transfer::derive(world, self.source).build(move |&source| self.value.compute(source))
+        Packer::transfer(world, self.source, move |&source| {
+            self.value.compute(source)
+        })
     }
 }
