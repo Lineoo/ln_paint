@@ -17,8 +17,8 @@ use crate::{
     tools::collider::ToolRectCollider,
     ui::{
         common::WidgetCommon,
-        components::button::{Button, ButtonAction, ButtonImage},
         renderer::rrect::RRect,
+        widget::button::{Button, ButtonAction, ButtonImage},
     },
 };
 

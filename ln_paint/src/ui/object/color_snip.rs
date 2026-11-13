@@ -19,8 +19,8 @@ use crate::{
     },
     ui::{
         common::WidgetCommon,
-        components::button::{Button, ButtonClick, ButtonDrag, ButtonDragStatus},
         renderer::rrect::RRect,
+        widget::button::{Button, ButtonClick, ButtonDrag, ButtonDragStatus},
     },
 };
 

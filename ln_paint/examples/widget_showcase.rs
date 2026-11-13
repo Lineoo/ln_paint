@@ -8,10 +8,6 @@ use ln_paint::{
     theme::{Theme, ThemeVal},
     ui::{
         common::WidgetCommon,
-        components::{
-            area::{Area, AreaMode},
-            button::{Button, ButtonImage},
-        },
         renderer::{
             rrect::RRect,
             svg::svg_render,
@@ -20,6 +16,10 @@ use ln_paint::{
             wireframe::Wireframe,
         },
         slider::Slider,
+        widget::{
+            area::{Area, AreaMode},
+            button::{Button, ButtonImage},
+        },
     },
 };
 use ln_world::{Element, World};

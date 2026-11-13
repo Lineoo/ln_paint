@@ -17,13 +17,13 @@ use crate::{
     theme::ThemeVal,
     ui::{
         common::WidgetCommon,
-        components::{
-            button::{Button, ButtonClick, ButtonImage, ButtonToggle},
-            panel::{Panel, PanelAttr},
-        },
         renderer::svg::svg_render,
         sections::{brush_panel::BrushPanel, color_picker::ColorPickerButton},
         slider::{Slider, SliderLabel, SliderValue},
+        widget::{
+            button::{Button, ButtonClick, ButtonImage, ButtonToggle},
+            panel::{Panel, PanelAttr},
+        },
     },
 };
 

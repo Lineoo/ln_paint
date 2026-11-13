@@ -24,10 +24,6 @@ use crate::{
     theme::ThemeVal,
     ui::{
         common::WidgetCommon,
-        components::{
-            button::{Button, ButtonClick, ButtonImage, ButtonToggle},
-            panel::{Panel, PanelAttr},
-        },
         container::{ContainerAttr, ContainerEcho, ContainerWithCamera},
         renderer::{
             svg::svg_render,
@@ -39,6 +35,10 @@ use crate::{
         },
         slider::{Slider, SliderLabel, SliderValue},
         tabs::{TabEntry, Tabs},
+        widget::{
+            button::{Button, ButtonClick, ButtonImage, ButtonToggle},
+            panel::{Panel, PanelAttr},
+        },
     },
 };
 

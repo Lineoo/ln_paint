@@ -20,9 +20,6 @@ use crate::{
     ui::{
         brush_preview::BrushPreviewDescriptor,
         common::WidgetCommon,
-        components::button::{
-            Button, ButtonClick, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonTheme,
-        },
         container::{ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerWithCamera},
         renderer::{
             rrect::RRect,
@@ -31,6 +28,9 @@ use crate::{
         },
         sections::settings::SettingPanel,
         tabs::{TabEntry, Tabs},
+        widget::button::{
+            Button, ButtonClick, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonTheme,
+        },
     },
 };
 

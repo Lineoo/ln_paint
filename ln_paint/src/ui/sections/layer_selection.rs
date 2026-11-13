@@ -13,7 +13,6 @@ use crate::{
     theme::ThemeVal,
     ui::{
         common::WidgetCommon,
-        components::button::{Button, ButtonClick},
         container::{
             ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerEcho, ContainerWithCamera,
         },
@@ -21,6 +20,7 @@ use crate::{
             rrect::RRect,
             text::{Text, TextAttr},
         },
+        widget::button::{Button, ButtonClick},
     },
 };
 

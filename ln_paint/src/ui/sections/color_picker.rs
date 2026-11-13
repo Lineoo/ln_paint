@@ -18,7 +18,6 @@ use crate::{
     theme::ThemeVal,
     ui::{
         common::WidgetCommon,
-        components::button::{Button, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonToggle},
         container::{
             ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerEcho, ContainerWithCamera,
         },
@@ -30,6 +29,7 @@ use crate::{
         renderer::{rrect::RRect, svg::svg_render},
         sections::{debug_panel::DebugPanel, layer_selection::LayerSelectionPanel},
         tabs::{TabEntry, Tabs},
+        widget::button::{Button, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonToggle},
     },
 };
 
