@@ -9,7 +9,7 @@ use crate::{
         },
         wrapper::{BrushConfigurationChanged, LayerPage},
     },
-    render::nest::{ContainerAttr, ContainerDeco, ContainerEcho, ContainerWithCamera},
+    render::nest::{ContainerAttr, ContainerEcho, ContainerWithCamera},
     ui::{
         common::WidgetCommon,
         i18n::tr,
@@ -25,7 +25,10 @@ use crate::{
             text::{Text, TextAttr},
         },
         theme::ThemeVal,
-        widget::slider::{Slider, SliderLabel, SliderValue},
+        widget::{
+            container::ContainerDeco,
+            slider::{Slider, SliderLabel, SliderValue},
+        },
     },
     unit::{Axis, IRect},
     val::{Val, ValBind, ValChanged},

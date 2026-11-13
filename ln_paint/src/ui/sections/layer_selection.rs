@@ -3,9 +3,7 @@ use ln_world::{Element, Handle, World};
 
 use crate::{
     paint::wrapper::LayerPage,
-    render::nest::{
-        ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerEcho, ContainerWithCamera,
-    },
+    render::nest::{ContainerAttr, ContainerEcho, ContainerWithCamera},
     ui::{
         common::WidgetCommon,
         i18n::{tr, trp},
@@ -15,7 +13,10 @@ use crate::{
             text::{Text, TextAttr},
         },
         theme::ThemeVal,
-        widget::button::{Button, ButtonClick},
+        widget::{
+            button::{Button, ButtonClick},
+            container::{ContainerDeco, ContainerDecoDropdown},
+        },
     },
     unit::IRect,
     val::{Val, ValBind, ValChanged},

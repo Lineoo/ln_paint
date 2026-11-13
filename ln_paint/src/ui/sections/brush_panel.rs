@@ -4,7 +4,7 @@ use ln_world::{Element, Handle, World};
 use crate::{
     input::pointer::{PointerHit, PointerHover, PointerScroll},
     paint::wrapper::{BrushConfigurationChanged, LayerPage},
-    render::nest::{ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerWithCamera},
+    render::nest::{ContainerAttr, ContainerWithCamera},
     ui::{
         common::WidgetCommon,
         i18n::tr,
@@ -26,6 +26,7 @@ use crate::{
         theme::{Theme, ThemeVal},
         widget::{
             button::{Button, ButtonClick, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonTheme},
+            container::{ContainerDeco, ContainerDecoDropdown},
             tabs::{TabEntry, Tabs},
         },
     },

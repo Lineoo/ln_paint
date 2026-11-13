@@ -6,9 +6,7 @@ use crate::{
     paint::wrapper::{LayerDebugMessage, LayerPage},
     render::{
         Render,
-        nest::{
-            ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerEcho, ContainerWithCamera,
-        },
+        nest::{ContainerAttr, ContainerEcho, ContainerWithCamera},
     },
     save::Save,
     ui::{
@@ -19,7 +17,10 @@ use crate::{
             text::{Text, TextAttr},
         },
         theme::ThemeVal,
-        widget::button::{Button, ButtonClick, ButtonImage, ButtonToggle},
+        widget::{
+            button::{Button, ButtonClick, ButtonImage, ButtonToggle},
+            container::{ContainerDeco, ContainerDecoDropdown},
+        },
     },
     unit::IRect,
     val::{Val, ValChanged},

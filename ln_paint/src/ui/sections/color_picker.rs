@@ -10,9 +10,7 @@ use crate::{
         srgb::{mul_alpha, srgb_gamma_decode, srgb_gamma_encode},
     },
     paint::wrapper::{BrushConfigurationChanged, LayerPage},
-    render::nest::{
-        ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerEcho, ContainerWithCamera,
-    },
+    render::nest::{ContainerAttr, ContainerEcho, ContainerWithCamera},
     ui::{
         common::WidgetCommon,
         layout::transform::{Transform, TransformValue},
@@ -22,6 +20,7 @@ use crate::{
         theme::ThemeVal,
         widget::{
             button::{Button, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonToggle},
+            container::{ContainerDeco, ContainerDecoDropdown},
             palette::{
                 hsl::{ColorHsla, HslRing, HslSquare, INNER_RADIUS, SetColorHsla},
                 oklab::{ColorOklab, OklabBar, OklabPolar, SetColorOklab},
