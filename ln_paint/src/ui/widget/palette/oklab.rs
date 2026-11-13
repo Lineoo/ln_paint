@@ -6,7 +6,10 @@ use lyon::{
 };
 
 use crate::{
-    color::{oklab::oklab_to_linear_srgb, srgb::mul_alpha},
+    color::{
+        oklab::{find_gamut_intersection, oklab_to_linear_srgb},
+        srgb::mul_alpha,
+    },
     input::{collider::ToolRectCollider, pointer::PointerHit},
     layout::{
         transfer::Transfer,
@@ -20,7 +23,6 @@ use crate::{
             rrect::RRect,
             vtor::Vtor,
         },
-        widget::palette::utils::find_gamut_intersection,
     },
     unit::{FI64Ext, IRect},
 };
