@@ -17,7 +17,7 @@ use crate::{
         theme::{Theme, ThemeVal},
     },
     unit::{FI64Ext, IRect},
-    val::{Packer, Val, ValChanged},
+    val::{Val, ValBind, ValChanged},
 };
 
 #[derive(Clone, Copy)]
@@ -413,7 +413,7 @@ impl Descriptor for ContainerDecoDropdown {
     type Target = Handle<Val<IRect>>;
 
     fn when_build(self, world: &World) -> Self::Target {
-        Packer::transfer(world, self.outer, move |&rect| {
+        ValBind::transfer(world, self.outer, move |&rect| {
             IRect::new(
                 0,
                 -self.height.unwrap_or(rect.extend.y as i32),

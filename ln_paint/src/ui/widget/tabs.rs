@@ -17,7 +17,7 @@ use crate::{
         widget::button::{Button, ButtonAction, ButtonImage},
     },
     unit::IRect,
-    val::{Packer, Val, ValChanged},
+    val::{Val, ValBind, ValChanged},
 };
 
 pub struct Tabs {
@@ -118,7 +118,7 @@ impl Tabs {
 
             let button_rect = world.build(luni.child(LuniChild::default()));
             let active = self.active;
-            let button_selected = Packer::new(world, move |world| world.fetch(active).val == i)
+            let button_selected = ValBind::new(world, move |world| world.fetch(active).val == i)
                 .listen(active)
                 .finish();
             let button = world.insert(Button {
@@ -146,11 +146,11 @@ impl Tabs {
                 width: 0.0,
             });
 
-            Packer::attach(world, entry.rect, move |world| world.fetch(main_rect).val)
+            ValBind::attach(world, entry.rect, move |world| world.fetch(main_rect).val)
                 .listen(main_rect)
                 .finish();
 
-            Packer::attach(world, entry.visible, move |world| {
+            ValBind::attach(world, entry.visible, move |world| {
                 let this = world.fetch(handle);
                 world.fetch(button_selected).val && world.fetch(this.common.visible).val
             })
@@ -158,7 +158,7 @@ impl Tabs {
             .listen(self.common.visible)
             .finish();
 
-            Packer::attach(world, entry_icon_modulate, move |world| {
+            ValBind::attach(world, entry_icon_modulate, move |world| {
                 let theme = world.single_fetch::<ThemeVal>();
                 match world.fetch(button_selected).val {
                     true => world.fetch(theme.distinct).val,

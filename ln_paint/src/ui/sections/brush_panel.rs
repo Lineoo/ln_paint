@@ -30,7 +30,7 @@ use crate::{
         },
     },
     unit::IRect,
-    val::{Packer, Val},
+    val::{Val, ValBind},
 };
 
 const ITEM_HEIGHT: i32 = 80;
@@ -153,7 +153,7 @@ impl Element for BrushListPanel {
 
         for i in 0..count {
             let button_rect = world.build(luni.child(LuniChild::default()));
-            let selected = Packer::new(world, move |world| {
+            let selected = ValBind::new(world, move |world| {
                 world.single_fetch::<LayerPage>().active_brush == i
             })
             .observer(page.handle(), move |&BrushConfigurationChanged, world| {
@@ -176,7 +176,7 @@ impl Element for BrushListPanel {
 
             let outline_rect =
                 world.build(Transform::new(TransformValue::shrink(-2, -2), button_rect));
-            let outline_color_anim = Packer::new(world, move |world| {
+            let outline_color_anim = ValBind::new(world, move |world| {
                 let theme = world.single_fetch::<ThemeVal>();
                 let selected_val = world.fetch(selected).val;
                 match selected_val {

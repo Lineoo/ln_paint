@@ -2,7 +2,7 @@ use ln_world::{Descriptor, Handle, World};
 
 use crate::{
     unit::IRect,
-    val::{Packer, Val},
+    val::{Val, ValBind},
 };
 
 pub struct Transform {
@@ -140,7 +140,7 @@ impl Descriptor for Transform {
     type Target = Handle<Val<IRect>>;
 
     fn when_build(self, world: &World) -> Self::Target {
-        Packer::transfer(world, self.source, move |&source| {
+        ValBind::transfer(world, self.source, move |&source| {
             self.value.compute(source)
         })
     }

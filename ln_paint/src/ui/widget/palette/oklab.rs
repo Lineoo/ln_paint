@@ -21,7 +21,7 @@ use crate::{
         },
     },
     unit::{FI64Ext, IRect},
-    val::{Packer, Val, ValChanged},
+    val::{Val, ValBind, ValChanged},
 };
 
 const THUMB_RADIUS: f32 = 5.0;
@@ -101,15 +101,15 @@ impl OklabPolar {
         world.scope("oklab_polar");
         world.set_autodeps(Some(this));
 
-        let thumb_rect = Packer::attach(world, self.rect, move |world| {
+        let thumb_rect = ValBind::attach(world, self.rect, move |world| {
             let this = world.fetch(this);
             let rect = world.fetch(this.rect).val;
             polar_thumb(rect, this.oklab)
         })
         .listen(self.rect)
         .finish();
-        let thumb_light_rect = Packer::transfer(world, thumb_rect, |rect| rect.expand(1));
-        let thumb_shadow_rect = Packer::transfer(world, thumb_rect, |rect| rect.expand(2));
+        let thumb_light_rect = ValBind::transfer(world, thumb_rect, |rect| rect.expand(1));
+        let thumb_shadow_rect = ValBind::transfer(world, thumb_rect, |rect| rect.expand(2));
 
         let quad = world.insert(QuadMesh {
             common: self.common,
@@ -203,15 +203,15 @@ impl OklabBar {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let thumb_rect = Packer::attach(world, self.rect, move |world| {
+        let thumb_rect = ValBind::attach(world, self.rect, move |world| {
             let this = world.fetch(this);
             let rect = world.fetch(this.rect).val;
             bar_thumb(rect, this.oklab)
         })
         .listen(self.rect)
         .finish();
-        let thumb_light_rect = Packer::transfer(world, thumb_rect, |rect| rect.expand(1));
-        let thumb_shadow_rect = Packer::transfer(world, thumb_rect, |rect| rect.expand(2));
+        let thumb_light_rect = ValBind::transfer(world, thumb_rect, |rect| rect.expand(1));
+        let thumb_shadow_rect = ValBind::transfer(world, thumb_rect, |rect| rect.expand(2));
 
         let quad = world.insert(QuadMesh {
             common: self.common,

@@ -1,5 +1,7 @@
 use ln_world::{Element, Handle, HandleGeneric, World};
 
+type TransFunc<T> = Box<dyn Fn(&World) -> T + Send + 'static>;
+
 pub struct Val<T> {
     pub val: T,
 }
@@ -7,7 +9,12 @@ pub struct Val<T> {
 /// maybe change, maybe not
 pub struct ValChanged;
 
-impl<T: Send + 'static> Element for Val<T> {}
+/// Binding a function for data, and listen to nodes.
+pub struct ValBind<'w, T: Send + 'static> {
+    world: &'w World,
+    handle: Handle<Val<T>>,
+    fun: Handle<Val<TransFunc<T>>>,
+}
 
 impl<T> Val<T> {
     pub const fn new(val: T) -> Self {
@@ -15,38 +22,29 @@ impl<T> Val<T> {
     }
 }
 
-type F<T> = dyn Fn(&World) -> T + Send + 'static;
-
-/// Binding a function for data, and listen to nodes.
-pub struct Packer<'w, T: Send + 'static> {
-    world: &'w World,
-    handle: Handle<Val<T>>,
-    fun: Handle<Val<Box<F<T>>>>,
-}
-
-impl<T: Send + 'static> Packer<'_, T> {
-    pub fn new(world: &World, fun: impl Fn(&World) -> T + Send + 'static) -> Packer<'_, T> {
-        let fun = world.insert(Val::new(Box::new(fun) as Box<F<T>>));
+impl<T: Send + 'static> ValBind<'_, T> {
+    pub fn new(world: &World, fun: impl Fn(&World) -> T + Send + 'static) -> ValBind<'_, T> {
+        let fun = world.insert(Val::new(Box::new(fun) as TransFunc<T>));
         let handle = world.insert_with(move |world| {
             let fun = world.fetch(fun);
             Val::new((fun.val)(world))
         });
-        Packer { world, handle, fun }
+        ValBind { world, handle, fun }
     }
 
     pub fn attach(
         world: &World,
         handle: Handle<Val<T>>,
         fun: impl Fn(&World) -> T + Send + 'static,
-    ) -> Packer<'_, T> {
-        let fun = world.insert(Val::new(Box::new(fun) as Box<F<T>>));
+    ) -> ValBind<'_, T> {
+        let fun = world.insert(Val::new(Box::new(fun) as TransFunc<T>));
         world.queue(move |world| {
             let fun = world.fetch(fun);
             let mut that = world.fetch_mut(handle);
             that.val = (fun.val)(world);
             world.queue_trigger(that.handle(), ValChanged);
         });
-        Packer { world, handle, fun }
+        ValBind { world, handle, fun }
     }
 
     pub fn transfer<U: Send + 'static>(
@@ -54,14 +52,14 @@ impl<T: Send + 'static> Packer<'_, T> {
         src: Handle<Val<U>>,
         fun: impl Fn(&U) -> T + Send + 'static,
     ) -> Handle<Val<T>> {
-        Packer::new(world, move |world| fun(&world.fetch(src).val))
+        ValBind::new(world, move |world| fun(&world.fetch(src).val))
             .listen(src)
             .finish()
     }
 
     /// standard val bind observer
     pub fn listen(self, this: impl HandleGeneric) -> Self {
-        let Packer { world, handle, fun } = self;
+        let ValBind { world, handle, fun } = self;
         world.observer(this, move |ValChanged, world| {
             let fun = world.fetch(fun);
             let mut that = world.fetch_mut(handle);
@@ -77,7 +75,7 @@ impl<T: Send + 'static> Packer<'_, T> {
         this: impl HandleGeneric,
         mut action: impl FnMut(&E, &World) -> T + Send + 'static,
     ) -> Self {
-        let Packer { world, handle, .. } = self;
+        let ValBind { world, handle, .. } = self;
         world.observer(this, move |event: &E, world| {
             let mut that = world.fetch_mut(handle);
             that.val = (action)(event, world);
@@ -90,3 +88,5 @@ impl<T: Send + 'static> Packer<'_, T> {
         self.handle
     }
 }
+
+impl<T: Send + 'static> Element for Val<T> {}

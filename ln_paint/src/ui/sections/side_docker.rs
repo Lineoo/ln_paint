@@ -24,7 +24,7 @@ use crate::{
         },
     },
     unit::{Axis, IRect},
-    val::{Packer, Val, ValChanged},
+    val::{Val, ValBind, ValChanged},
 };
 
 pub struct SideDocker {
@@ -92,7 +92,7 @@ impl Element for SideDocker {
             },
         );
 
-        let eraser_selected = Packer::new(world, move |world| {
+        let eraser_selected = ValBind::new(world, move |world| {
             matches!(
                 world
                     .single_fetch::<LayerPage>()
@@ -226,7 +226,7 @@ impl Element for SideDocker {
             pressed: false,
         });
 
-        let slider_label_text = Packer::transfer(world, value, |&value| {
+        let slider_label_text = ValBind::transfer(world, value, |&value| {
             let scale = (value.exp2() - 1.0) * 127.5 + 0.5;
             format!("{scale:.2} px")
         });

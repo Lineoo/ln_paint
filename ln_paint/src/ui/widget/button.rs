@@ -17,7 +17,7 @@ use crate::{
         theme::Theme,
     },
     unit::{FI64Ext, IRect},
-    val::{Packer, Val, ValChanged},
+    val::{Val, ValBind, ValChanged},
 };
 
 pub struct Button {
@@ -97,7 +97,7 @@ impl Element for Button {
         let selected_color = self.theme.selected_color;
 
         let pressed = world.insert(Val::new(false));
-        let frame_color_anim = Packer::new(world, move |world| {
+        let frame_color_anim = ValBind::new(world, move |world| {
             let selected_val = world.fetch(selected).val;
             let hovering_val = world.fetch(hovering).val;
             let pressed_val = world.fetch(pressed).val;

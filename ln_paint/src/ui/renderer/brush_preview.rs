@@ -19,7 +19,7 @@ use crate::{
         container::{ContainerAttr, ContainerEcho, ContainerWithCamera},
     },
     unit::{FI64Ext, IRect},
-    val::{Packer, Val, ValChanged},
+    val::{Val, ValBind, ValChanged},
 };
 
 pub struct BrushPreviewDescriptor {
@@ -64,9 +64,9 @@ impl Descriptor for BrushPreviewDescriptor {
             let canvas = page.lp.create_standalone(rect);
             Val::new(canvas)
         });
-        let c0 = Packer::transfer(world, self.c0, |&c0| srgb_gamma_encode(c0));
-        let c1 = Packer::transfer(world, self.c1, |&c1| srgb_gamma_encode(c1));
-        let bc = Packer::transfer(world, self.bc, |&bc| srgb_gamma_encode(bc));
+        let c0 = ValBind::transfer(world, self.c0, |&c0| srgb_gamma_encode(c0));
+        let c1 = ValBind::transfer(world, self.c1, |&c1| srgb_gamma_encode(c1));
+        let bc = ValBind::transfer(world, self.bc, |&bc| srgb_gamma_encode(bc));
         BrushPreview {
             common: self.common,
             rect: self.rect,

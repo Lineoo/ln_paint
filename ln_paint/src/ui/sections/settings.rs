@@ -28,7 +28,7 @@ use crate::{
         widget::slider::{Slider, SliderLabel, SliderValue},
     },
     unit::{Axis, IRect},
-    val::{Packer, Val, ValChanged},
+    val::{Val, ValBind, ValChanged},
 };
 
 pub struct SettingPanel {
@@ -70,7 +70,7 @@ impl Element for SettingPanel {
             ..Default::default()
         }));
 
-        let active_bc = Packer::new(world, move |world| {
+        let active_bc = ValBind::new(world, move |world| {
             let page = world.single_fetch::<LayerPage>();
             let theme = world.single_fetch::<ThemeVal>();
             let fallback = world.fetch(theme.gray4).val;
@@ -195,7 +195,7 @@ impl Element for TextSettingPanel {
             .filter(|spec| supported_keys.contains(&spec.0))
             .count();
         let row_count = world.insert(Val::new(shown as i32));
-        let restriction = Packer::new(world, move |world| {
+        let restriction = ValBind::new(world, move |world| {
             let this = world.fetch(this);
             let rect = world.fetch(this.rect).val;
             let rows = world.fetch(row_count).val;
@@ -428,7 +428,7 @@ fn option_visible(
     panel: Handle<Val<bool>>,
     supported: Handle<Val<bool>>,
 ) -> Handle<Val<bool>> {
-    Packer::new(world, move |world| {
+    ValBind::new(world, move |world| {
         world.fetch(panel).val && world.fetch(supported).val
     })
     .listen(panel)
@@ -619,7 +619,7 @@ fn option_slider(
         pressed: false,
     });
 
-    let text = Packer::transfer(world, value, move |&value| format(value));
+    let text = ValBind::transfer(world, value, move |&value| format(value));
 
     world.insert(SliderLabel {
         text,

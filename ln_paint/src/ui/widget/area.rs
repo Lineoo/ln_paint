@@ -8,7 +8,7 @@ use crate::{
         renderer::{rrect::RRect, wireframe::Wireframe},
     },
     unit::IRect,
-    val::{Packer, Val},
+    val::{Val, ValBind},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -57,14 +57,14 @@ impl Area {
         let visible_handle = self.common.visible;
 
         let handle_rects: [Handle<Val<IRect>>; HANDLE_COUNT] = std::array::from_fn(|index| {
-            Packer::new(world, move |world| {
+            ValBind::new(world, move |world| {
                 handle_at(world.fetch(rect_handle).val, index)
             })
             .listen(rect_handle)
             .finish()
         });
         let handle_visibles: [Handle<Val<bool>>; HANDLE_COUNT] = std::array::from_fn(|index| {
-            Packer::new(world, move |world| {
+            ValBind::new(world, move |world| {
                 let mode = world.fetch(mode_handle).val;
                 let visible = world.fetch(visible_handle).val;
                 visible && handle_visible(mode, index)
