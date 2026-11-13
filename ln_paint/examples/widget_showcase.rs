@@ -15,10 +15,10 @@ use ln_paint::{
             vtor::{Vtor, logo},
             wireframe::Wireframe,
         },
-        slider::Slider,
         widget::{
             area::{Area, AreaMode},
             button::{Button, ButtonImage},
+            slider::Slider,
         },
     },
 };

@@ -27,9 +27,9 @@ use crate::{
             text::{Text, TextAttr},
         },
         sections::settings::SettingPanel,
-        tabs::{TabEntry, Tabs},
-        widget::button::{
-            Button, ButtonClick, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonTheme,
+        widget::{
+            button::{Button, ButtonClick, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonTheme},
+            tabs::{TabEntry, Tabs},
         },
     },
 };

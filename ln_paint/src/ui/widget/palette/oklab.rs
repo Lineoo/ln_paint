@@ -15,13 +15,13 @@ use crate::{
     tools::{collider::ToolRectCollider, pointer::PointerHit},
     ui::{
         common::WidgetCommon,
-        palette::utils::find_gamut_intersection,
         renderer::{
             quad::{QuadMaterial, QuadMesh, SetQuadMaterial},
             rrect::RRect,
             vtor::Vtor,
         },
         shaders::shader_compile,
+        widget::palette::utils::find_gamut_intersection,
     },
 };
 

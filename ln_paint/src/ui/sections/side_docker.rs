@@ -19,10 +19,10 @@ use crate::{
         common::WidgetCommon,
         renderer::svg::svg_render,
         sections::{brush_panel::BrushPanel, color_picker::ColorPickerButton},
-        slider::{Slider, SliderLabel, SliderValue},
         widget::{
             button::{Button, ButtonClick, ButtonImage, ButtonToggle},
             panel::{Panel, PanelAttr},
+            slider::{Slider, SliderLabel, SliderValue},
         },
     },
 };

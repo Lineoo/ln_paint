@@ -27,7 +27,7 @@ use crate::{
         common::WidgetCommon,
         container::{ContainerAttr, ContainerDeco, ContainerEcho, ContainerWithCamera},
         renderer::text::{Text, TextAttr},
-        slider::{Slider, SliderLabel, SliderValue},
+        widget::slider::{Slider, SliderLabel, SliderValue},
     },
 };
 

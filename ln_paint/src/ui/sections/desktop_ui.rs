@@ -33,11 +33,11 @@ use crate::{
             brush_panel::BrushListPanel, color_picker::LayerOklabPalette, debug_panel::DebugPanel,
             layer_selection::LayerSelectionPanel, settings::SettingPanel,
         },
-        slider::{Slider, SliderLabel, SliderValue},
-        tabs::{TabEntry, Tabs},
         widget::{
             button::{Button, ButtonClick, ButtonImage, ButtonToggle},
             panel::{Panel, PanelAttr},
+            slider::{Slider, SliderLabel, SliderValue},
+            tabs::{TabEntry, Tabs},
         },
     },
 };

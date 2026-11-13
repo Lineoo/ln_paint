@@ -28,15 +28,15 @@ use crate::{
     tools::{focus::FocusTool, mouse::MouseTool, pointer::PointerTool, touch::MultiTouchTool},
     ui::{
         common::WidgetCommon,
-        palette::{
-            hsl::{HslRingMaterial, HslSquareMaterial},
-            oklab::{OklabBarMaterial, OklabPolarMaterial},
-        },
         renderer::{
             canvas::CanvasPipeline, quad::QuadMeshPipeline, rrect::RRectMaterial,
             text::TextPipeline, vtor::VtorPipeline, wireframe::WireframePipeline,
         },
         sections::{desktop_ui::DesktopUi, mobile_ui::MobileUi},
+        widget::palette::{
+            hsl::{HslRingMaterial, HslSquareMaterial},
+            oklab::{OklabBarMaterial, OklabPolarMaterial},
+        },
     },
 };
 

@@ -22,14 +22,16 @@ use crate::{
             ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerEcho, ContainerWithCamera,
         },
         object::color_snip::{ColorSnip, ColorSnipAttr},
-        palette::{
-            hsl::{ColorHsla, HslRing, HslSquare, INNER_RADIUS, SetColorHsla},
-            oklab::{ColorOklab, OklabBar, OklabPolar, SetColorOklab},
-        },
         renderer::{rrect::RRect, svg::svg_render},
         sections::{debug_panel::DebugPanel, layer_selection::LayerSelectionPanel},
-        tabs::{TabEntry, Tabs},
-        widget::button::{Button, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonToggle},
+        widget::{
+            button::{Button, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonToggle},
+            palette::{
+                hsl::{ColorHsla, HslRing, HslSquare, INNER_RADIUS, SetColorHsla},
+                oklab::{ColorOklab, OklabBar, OklabPolar, SetColorOklab},
+            },
+            tabs::{TabEntry, Tabs},
+        },
     },
 };
 
