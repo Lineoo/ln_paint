@@ -20,7 +20,7 @@ use crate::{
     lnwin::Lnwindow,
     measures::{FI64Ext, IRect, MinMax},
     render::{MSAA_STATE, Render, RenderDrawControl, RenderPrepareControl, camera::CameraBind},
-    widgets::{common::WidgetCommon, shaders::shader_compile},
+    ui::{common::WidgetCommon, shaders::shader_compile},
 };
 
 const GLYPH_ATLAS_SIZE: u32 = 2048;

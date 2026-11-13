@@ -4,7 +4,7 @@ use ln_world::{Element, Handle, World};
 use crate::{
     layout::val::{Val, ValChanged},
     measures::IRect,
-    widgets::{
+    ui::{
         common::WidgetCommon,
         renderer::quad::{QuadMaterial, QuadMesh, SetQuadMaterial},
         shaders::shader_compile,

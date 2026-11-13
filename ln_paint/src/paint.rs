@@ -36,7 +36,7 @@ use crate::{
     measures::{FI64Ext, IRect},
     paint::{brush::Brush, stream::ThreadInput},
     render::camera::Camera,
-    widgets::shaders::shader_compile,
+    ui::shaders::shader_compile,
 };
 
 pub const DEFAULT_MIPMAP_CAP: u8 = 8;

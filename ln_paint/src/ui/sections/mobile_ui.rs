@@ -3,7 +3,7 @@ use ln_world::{Element, Handle, World};
 use crate::{
     lnwin::LnwindowRect,
     paint::wrapper::{BrushConfigurationChanged, LayerPage},
-    widgets::{common::WidgetCommon, sections::side_docker::SideDocker},
+    ui::{common::WidgetCommon, sections::side_docker::SideDocker},
 };
 
 pub struct MobileUi {

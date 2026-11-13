@@ -9,7 +9,7 @@ use ln_paint::{
     lnwin::{Lnwin, LnwindowRect},
     measures::IRect,
     theme::ThemeVal,
-    widgets::{
+    ui::{
         common::WidgetCommon,
         renderer::text::{Text, TextAttr},
     },

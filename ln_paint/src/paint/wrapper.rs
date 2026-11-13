@@ -33,7 +33,7 @@ use crate::{
         camera::{CameraBind, CameraUtils, SetCameraOutdated, UICamera},
     },
     save::{Autosave, Save, object::Objects},
-    widgets::{
+    ui::{
         common::WidgetCommon,
         container::{Container, ContainerAttr},
         renderer::rrect::RRect,

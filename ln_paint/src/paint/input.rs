@@ -24,7 +24,7 @@ use crate::{
         pointer::{PointerHover, PointerHoverStatus, PointerScroll},
         touch::{MultiTouchGroup, MultiTouchStatus},
     },
-    widgets::components::area::{Area, AreaMode},
+    ui::components::area::{Area, AreaMode},
 };
 
 const DRAG_DISTANCE: f64 = 0.005;

@@ -6,7 +6,7 @@ use crate::{
     lnwin::Lnwindow,
     measures::{FI64Ext, IRect},
     render::camera::{Camera, UICamera},
-    widgets::common::WidgetCommon,
+    ui::common::WidgetCommon,
 };
 
 pub struct ToolControl {

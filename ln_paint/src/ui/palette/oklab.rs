@@ -13,7 +13,7 @@ use crate::{
     },
     measures::{FI64Ext, IRect},
     tools::{collider::ToolRectCollider, pointer::PointerHit},
-    widgets::{
+    ui::{
         common::WidgetCommon,
         palette::utils::find_gamut_intersection,
         renderer::{

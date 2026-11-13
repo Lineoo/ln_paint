@@ -17,7 +17,7 @@ use crate::{
         mouse::MouseMenu,
         pointer::{PointerHover, PointerScroll},
     },
-    widgets::{
+    ui::{
         common::WidgetCommon,
         components::button::{Button, ButtonClick, ButtonDrag, ButtonDragStatus},
         renderer::rrect::RRect,

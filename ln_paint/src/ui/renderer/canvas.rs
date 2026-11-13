@@ -19,7 +19,7 @@ use crate::{
     lnwin::Lnwindow,
     measures::IRect,
     render::{MSAA_STATE, Render, RenderDrawControl, camera::CameraBind},
-    widgets::{common::WidgetCommon, shaders::shader_compile},
+    ui::{common::WidgetCommon, shaders::shader_compile},
 };
 
 pub struct Canvas {

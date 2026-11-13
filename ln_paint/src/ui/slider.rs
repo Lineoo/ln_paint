@@ -14,7 +14,7 @@ use crate::{
         collider::ToolRectCollider,
         pointer::{PointerHit, PointerHitStatus, PointerHover, PointerHoverStatus},
     },
-    widgets::{
+    ui::{
         WidgetHover,
         common::WidgetCommon,
         renderer::{

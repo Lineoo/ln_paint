@@ -16,7 +16,7 @@ use crate::{
     measures::{FI64Ext, IRect},
     paint::wrapper::{BrushConfigurationChanged, LayerPage},
     theme::ThemeVal,
-    widgets::{
+    ui::{
         common::WidgetCommon,
         components::button::{Button, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonToggle},
         container::{

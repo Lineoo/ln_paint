@@ -17,7 +17,7 @@ use crate::{
     paint::wrapper::{BrushConfigurationChanged, LayerPage},
     theme::{Theme, ThemeVal},
     tools::pointer::{PointerHit, PointerHover, PointerScroll},
-    widgets::{
+    ui::{
         brush_preview::BrushPreviewDescriptor,
         common::WidgetCommon,
         components::button::{

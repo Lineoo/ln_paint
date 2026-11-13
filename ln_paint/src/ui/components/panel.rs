@@ -8,7 +8,7 @@ use crate::{
     measures::IRect,
     theme::{Theme, ThemeVal},
     tools::collider::ToolRectCollider,
-    widgets::{common::WidgetCommon, renderer::rrect::RRect},
+    ui::{common::WidgetCommon, renderer::rrect::RRect},
 };
 
 pub struct PanelAttr {

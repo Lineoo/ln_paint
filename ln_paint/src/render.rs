@@ -23,7 +23,7 @@ use crate::{
         camera::{Camera, UICamera},
         export::Export,
     },
-    widgets::common::WidgetCommon,
+    ui::common::WidgetCommon,
 };
 
 pub const MSAA_SAMPLE_COUNT: u32 = 1;

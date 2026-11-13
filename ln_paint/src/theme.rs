@@ -8,7 +8,7 @@ use crate::{
     },
     layout::val::{Val, ValChanged},
     measures::Axis,
-    widgets::components::button::ButtonTheme,
+    ui::components::button::ButtonTheme,
 };
 
 pub struct Theme {

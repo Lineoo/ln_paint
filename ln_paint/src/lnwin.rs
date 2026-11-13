@@ -26,7 +26,7 @@ use crate::{
     save::{Autosave, AutosaveScheduler, Save},
     theme::Theme,
     tools::{focus::FocusTool, mouse::MouseTool, pointer::PointerTool, touch::MultiTouchTool},
-    widgets::{
+    ui::{
         common::WidgetCommon,
         palette::{
             hsl::{HslRingMaterial, HslSquareMaterial},

@@ -22,7 +22,7 @@ use crate::{
         wrapper::{BrushConfigurationChanged, LayerPage},
     },
     theme::ThemeVal,
-    widgets::{
+    ui::{
         common::WidgetCommon,
         components::{
             button::{Button, ButtonClick, ButtonImage, ButtonToggle},

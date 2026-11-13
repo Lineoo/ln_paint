@@ -1,6 +1,4 @@
-use std::marker::PhantomData;
-
-use glam::UVec2;
+use glam::{UVec2, Vec4};
 use ln_world::{Element, Handle, World};
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
@@ -12,77 +10,81 @@ use crate::{
     lnwin::Lnwindow,
     measures::IRect,
     render::{MSAA_STATE, Render, RenderDrawControl, camera::CameraBind},
-    widgets::{common::WidgetCommon, shaders::shader_compile},
+    ui::{common::WidgetCommon, shaders::shader_compile},
 };
 
-pub trait QuadMaterial: Clone + Copy + bytemuck::Pod + bytemuck::Zeroable + Send {
-    fn label() -> &'static str;
-
-    fn shader() -> ShaderSource<'static>;
-
-    fn vertex() -> Option<Option<&'static str>> {
-        None
-    }
-
-    fn fragment() -> Option<&'static str>;
-
-    fn edge(&self) -> UVec2 {
-        UVec2::ZERO
-    }
-}
-
-// TODO switch between pixel snap
-pub struct QuadMeshPipeline<M: QuadMaterial> {
-    pipeline: RenderPipeline,
-    bind: BindGroupLayout,
-    _marker: PhantomData<M>,
-}
-
-pub struct QuadMesh<M: QuadMaterial> {
+pub struct Wireframe {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,
     pub order: isize,
-    pub material: M,
+    pub color: Handle<Val<Vec4>>,
+    pub radius: f32,
+    pub width: f32,
+    /// 0.0 inside, 0.5 centered, 1.0 outside.
+    pub align: f32,
 }
-
-pub struct SetQuadMaterial<M: QuadMaterial>(pub M);
 
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct QuadUniform {
-    pub origin: [i32; 2],
-    pub extend: [u32; 2],
-    pub edge: UVec2,
+struct WireframeRect {
+    origin: [i32; 2],
+    extend: [u32; 2],
+    edge: UVec2,
 }
 
-impl<M: QuadMaterial> QuadMesh<M> {
+#[repr(C)]
+#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+struct WireframeMaterial {
+    color: Vec4,
+    radius: f32,
+    width: f32,
+    align: f32,
+    _pad: f32,
+}
+
+pub struct WireframePipeline {
+    pipeline: RenderPipeline,
+    bind: BindGroupLayout,
+}
+
+const EDGE_MARGIN: f32 = 20.0;
+
+// TODO less over-draw with more quads
+
+impl Wireframe {
     pub fn init(&self, world: &World, this: Handle<Self>) {
-        world.scope("quad_mesh");
+        world.scope("wireframe");
         world.set_autodeps(Some(this));
+        world.dependency(this, self.rect);
+        world.dependency(this, self.common.visible);
+        world.dependency(this, self.color);
+
+        assert!(self.width >= 0.0, "wireframe width must be non-negative");
 
         let rect = world.fetch(self.rect).val;
+        let color = world.fetch(self.color).val;
         let render = world.single_fetch::<Render>();
-        let pipeline = world.single_fetch::<QuadMeshPipeline<M>>();
+        let pipeline = world.single_fetch::<WireframePipeline>();
         let device = &render.device;
 
         let rectangle_buffer = device.create_buffer_init(&BufferInitDescriptor {
-            label: Some("rectangle"),
-            contents: bytemuck::bytes_of(&QuadUniform {
+            label: Some("wireframe_rect"),
+            contents: bytemuck::bytes_of(&WireframeRect {
                 origin: rect.origin.into(),
                 extend: rect.extend.into(),
-                edge: self.material.edge(),
+                edge: self.edge(),
             }),
             usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
         });
 
         let material_buffer = device.create_buffer_init(&BufferInitDescriptor {
-            label: Some(M::label()),
-            contents: bytemuck::bytes_of(&self.material),
+            label: Some("wireframe"),
+            contents: bytemuck::bytes_of(&self.material(color)),
             usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
         });
 
         let bind = device.create_bind_group(&BindGroupDescriptor {
-            label: Some(M::label()),
+            label: Some("wireframe"),
             layout: &pipeline.bind,
             entries: &[
                 BindGroupEntry {
@@ -100,11 +102,10 @@ impl<M: QuadMaterial> QuadMesh<M> {
             common: self.common,
             order: self.order,
             draw: Box::new(move |world, rpass, extra| {
-                let pipeline = world.single_fetch::<QuadMeshPipeline<M>>();
+                let pipeline = world.single_fetch::<WireframePipeline>();
                 let camera = extra.camera;
 
-                let key = format!("main > quad > {}", M::label());
-                let (start, end) = extra.diagnosis.assign_string(key);
+                let (start, end) = extra.diagnosis.assign("main > wireframe");
                 extra.diagnosis.write(rpass, start);
 
                 rpass.set_pipeline(&pipeline.pipeline);
@@ -120,50 +121,62 @@ impl<M: QuadMaterial> QuadMesh<M> {
             let this = world.fetch(this);
             let rect = world.fetch(this.rect).val;
             let render = world.single_fetch::<Render>();
-            let uniform = QuadUniform {
+            let uniform = WireframeRect {
                 origin: rect.origin.into(),
                 extend: rect.extend.into(),
-                edge: this.material.edge(),
+                edge: this.edge(),
             };
 
-            let bytes = bytemuck::bytes_of(&uniform);
-            render.queue.write_buffer(&rectangle_buffer, 0, bytes);
+            render
+                .queue
+                .write_buffer(&rectangle_buffer, 0, bytemuck::bytes_of(&uniform));
             let lnwindow = world.single_fetch::<Lnwindow>();
             lnwindow.window.request_redraw();
         });
 
-        world.observer(this, move |&SetQuadMaterial(mat), world| {
-            let mut this = world.fetch_mut(this);
+        world.observer(self.color, move |ValChanged, world| {
+            let this = world.fetch(this);
+            let color = world.fetch(this.color).val;
+            let material = this.material(color);
             let render = world.single_fetch::<Render>();
-            this.material = mat;
 
             render
                 .queue
-                .write_buffer(&material_buffer, 0, bytemuck::bytes_of(&mat));
+                .write_buffer(&material_buffer, 0, bytemuck::bytes_of(&material));
             let lnwindow = world.single_fetch::<Lnwindow>();
             lnwindow.window.request_redraw();
         });
     }
+
+    fn edge(&self) -> UVec2 {
+        let outer = (self.width * self.align).max(0.0);
+        UVec2::splat((outer + EDGE_MARGIN).ceil() as u32)
+    }
+
+    fn material(&self, color: Vec4) -> WireframeMaterial {
+        WireframeMaterial {
+            color,
+            radius: self.radius,
+            width: self.width,
+            align: self.align,
+            _pad: 0.0,
+        }
+    }
 }
 
-impl<M: QuadMaterial> QuadMeshPipeline<M> {
+impl WireframePipeline {
     pub fn from_world(world: &World) -> Self {
         let render = world.single_fetch::<Render>();
         let camera = world.single_fetch::<CameraBind>();
         let device = &render.device;
 
-        let quad_shader = device.create_shader_module(ShaderModuleDescriptor {
-            label: Some(M::label()),
-            source: ShaderSource::Wgsl(shader_compile(include_str!("quad.wgsl"), &[]).into()),
-        });
-
-        let custom_shader = device.create_shader_module(ShaderModuleDescriptor {
-            label: Some(M::label()),
-            source: M::shader(),
+        let shader = device.create_shader_module(ShaderModuleDescriptor {
+            label: Some("wireframe"),
+            source: ShaderSource::Wgsl(shader_compile(include_str!("wireframe.wgsl"), &[]).into()),
         });
 
         let bind = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-            label: Some(M::label()),
+            label: Some("wireframe"),
             entries: &[
                 BindGroupLayoutEntry {
                     binding: 0,
@@ -188,36 +201,28 @@ impl<M: QuadMaterial> QuadMeshPipeline<M> {
             ],
         });
 
-        let pipeline = device.create_pipeline_layout(&PipelineLayoutDescriptor {
-            label: Some(M::label()),
+        let layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
+            label: Some("wireframe"),
             bind_group_layouts: &[Some(&camera.layout), Some(&bind)],
             immediate_size: 0,
         });
 
         let pipeline = device.create_render_pipeline(&RenderPipelineDescriptor {
-            label: Some(M::label()),
-            layout: Some(&pipeline),
-            vertex: match M::vertex() {
-                Some(entry_point) => VertexState {
-                    module: &custom_shader,
-                    entry_point,
-                    compilation_options: Default::default(),
-                    buffers: &[],
-                },
-                None => VertexState {
-                    module: &quad_shader,
-                    entry_point: None,
-                    compilation_options: Default::default(),
-                    buffers: &[],
-                },
+            label: Some("wireframe"),
+            layout: Some(&layout),
+            vertex: VertexState {
+                module: &shader,
+                entry_point: Some("vs_main"),
+                compilation_options: Default::default(),
+                buffers: &[],
             },
             primitive: PrimitiveState {
                 topology: PrimitiveTopology::TriangleStrip,
                 ..Default::default()
             },
             fragment: Some(FragmentState {
-                module: &custom_shader,
-                entry_point: M::fragment(),
+                module: &shader,
+                entry_point: Some("main"),
                 compilation_options: Default::default(),
                 targets: &[Some(ColorTargetState {
                     format: render.target_format(),
@@ -231,17 +236,13 @@ impl<M: QuadMaterial> QuadMeshPipeline<M> {
             cache: render.cache.as_ref(),
         });
 
-        QuadMeshPipeline {
-            pipeline,
-            bind,
-            _marker: PhantomData::<M>,
-        }
+        WireframePipeline { pipeline, bind }
     }
 }
 
-impl<M: QuadMaterial> Element for QuadMeshPipeline<M> {}
+impl Element for WireframePipeline {}
 
-impl<M: QuadMaterial> Element for QuadMesh<M> {
+impl Element for Wireframe {
     fn when_insert(&mut self, world: &World, this: Handle<Self>) {
         self.init(world, this);
     }

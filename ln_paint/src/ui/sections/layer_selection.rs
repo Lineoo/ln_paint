@@ -11,7 +11,7 @@ use crate::{
     measures::IRect,
     paint::wrapper::LayerPage,
     theme::ThemeVal,
-    widgets::{
+    ui::{
         common::WidgetCommon,
         components::button::{Button, ButtonClick},
         container::{

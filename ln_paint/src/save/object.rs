@@ -7,7 +7,7 @@ use crate::{
     layout::val::Val,
     measures::IRect,
     save::{Autosave, Save},
-    widgets::{
+    ui::{
         common::WidgetCommon,
         object::color_snip::{ColorSnip, ColorSnipAttr},
     },

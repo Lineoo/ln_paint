@@ -22,7 +22,7 @@ use crate::{
         wrapper::{BrushConfigurationChanged, LayerPage},
     },
     theme::ThemeVal,
-    widgets::{
+    ui::{
         brush_preview::BrushPreviewDescriptor,
         common::WidgetCommon,
         container::{ContainerAttr, ContainerDeco, ContainerEcho, ContainerWithCamera},

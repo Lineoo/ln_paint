@@ -12,7 +12,7 @@ use crate::{
     render::Render,
     save::Save,
     theme::ThemeVal,
-    widgets::{
+    ui::{
         common::WidgetCommon,
         components::button::{Button, ButtonClick, ButtonImage, ButtonToggle},
         container::{

@@ -19,7 +19,7 @@ use crate::{
     },
     render::{RenderDrawControl, RenderPrepareControl, camera::SetCameraOutdated},
     tools::collider::ToolRectCollider,
-    widgets::{
+    ui::{
         common::WidgetCommon,
         container::{ContainerAttr, ContainerEcho, ContainerWithCamera},
     },

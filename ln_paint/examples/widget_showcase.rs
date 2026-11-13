@@ -6,7 +6,7 @@ use ln_paint::{
     lnwin::{Lnwin, LnwindowRect},
     measures::{Axis, IRect},
     theme::{Theme, ThemeVal},
-    widgets::{
+    ui::{
         common::WidgetCommon,
         components::{
             area::{Area, AreaMode},

@@ -15,7 +15,7 @@ use crate::{
     measures::IRect,
     theme::{Theme, ThemeVal},
     tools::collider::ToolRectCollider,
-    widgets::{
+    ui::{
         common::WidgetCommon,
         components::button::{Button, ButtonAction, ButtonImage},
         renderer::rrect::RRect,

@@ -17,7 +17,7 @@ use crate::{
         collider::{ToolRectCollider, ToolRingCollider},
         pointer::PointerHit,
     },
-    widgets::{
+    ui::{
         common::WidgetCommon,
         renderer::{
             quad::{QuadMaterial, QuadMesh, SetQuadMaterial},

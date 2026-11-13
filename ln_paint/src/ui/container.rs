@@ -17,7 +17,7 @@ use crate::{
         collider::{ToolControl, ToolHitResult},
         pointer::{PointerHit, PointerHitStatus, PointerScroll},
     },
-    widgets::{common::WidgetCommon, renderer::rrect::RRect},
+    ui::{common::WidgetCommon, renderer::rrect::RRect},
 };
 
 #[derive(Clone, Copy)]
