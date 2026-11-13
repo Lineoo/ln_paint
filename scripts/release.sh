@@ -27,4 +27,4 @@ echo LNPAINT_RELEASE=1
 
 #### Resources ####
 
-./scripts/icons.sh "icon_lime"
+./scripts/cp-icons.sh "icon_lime"
