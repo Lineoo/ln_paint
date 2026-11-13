@@ -29,13 +29,10 @@ use crate::{
     render::{
         Render, RenderDrawControl, RenderPrepareControl,
         camera::{CameraBind, CameraUtils, SetCameraOutdated, UICamera},
+        nest::{Container, ContainerAttr},
     },
     save::{Autosave, Save, object::Objects},
-    ui::{
-        common::WidgetCommon,
-        container::{Container, ContainerAttr},
-        renderer::rrect::RRect,
-    },
+    ui::{common::WidgetCommon, renderer::rrect::RRect},
     unit::{FI64Ext, IRect},
     val::Val,
 };

@@ -1,5 +1,6 @@
 pub mod camera;
 mod export;
+pub mod nest;
 
 use std::{
     path::PathBuf,

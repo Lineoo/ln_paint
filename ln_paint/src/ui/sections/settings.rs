@@ -9,9 +9,9 @@ use crate::{
         },
         wrapper::{BrushConfigurationChanged, LayerPage},
     },
+    render::nest::{ContainerAttr, ContainerDeco, ContainerEcho, ContainerWithCamera},
     ui::{
         common::WidgetCommon,
-        container::{ContainerAttr, ContainerDeco, ContainerEcho, ContainerWithCamera},
         i18n::tr,
         layout::{
             luni::{

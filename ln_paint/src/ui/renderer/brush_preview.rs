@@ -13,11 +13,12 @@ use crate::{
         brush::{BrushParams, Dab, DabBatch, Stroke},
         wrapper::LayerPage,
     },
-    render::{RenderDrawControl, RenderPrepareControl, camera::SetCameraOutdated},
-    ui::{
-        common::WidgetCommon,
-        container::{ContainerAttr, ContainerEcho, ContainerWithCamera},
+    render::{
+        RenderDrawControl, RenderPrepareControl,
+        camera::SetCameraOutdated,
+        nest::{ContainerAttr, ContainerEcho, ContainerWithCamera},
     },
+    ui::common::WidgetCommon,
     unit::{FI64Ext, IRect},
     val::{Val, ValBind, ValChanged},
 };

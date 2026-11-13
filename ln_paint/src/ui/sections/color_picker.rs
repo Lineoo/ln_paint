@@ -10,11 +10,11 @@ use crate::{
         srgb::{mul_alpha, srgb_gamma_decode, srgb_gamma_encode},
     },
     paint::wrapper::{BrushConfigurationChanged, LayerPage},
+    render::nest::{
+        ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerEcho, ContainerWithCamera,
+    },
     ui::{
         common::WidgetCommon,
-        container::{
-            ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerEcho, ContainerWithCamera,
-        },
         layout::transform::{Transform, TransformValue},
         object::color_snip::{ColorSnip, ColorSnipAttr},
         renderer::{rrect::RRect, svg::svg_render},
