@@ -17,6 +17,7 @@ use winit::{
 };
 
 use crate::{
+    input::{focus::FocusTool, mouse::MouseTool, pointer::PointerTool, touch::MultiTouchTool},
     layout::val::{Val, ValChanged},
     measures::{FI64Ext, IRect, URect},
     render::{
@@ -24,7 +25,6 @@ use crate::{
         camera::{Camera, CameraDescriptor, CameraOutdated, SetCameraOutdated, UICamera},
     },
     save::{Autosave, AutosaveScheduler, Save},
-    tools::{focus::FocusTool, mouse::MouseTool, pointer::PointerTool, touch::MultiTouchTool},
     ui::{
         common::WidgetCommon,
         renderer::{

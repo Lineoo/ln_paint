@@ -2,6 +2,7 @@ use glam::{IVec2, UVec2};
 use ln_world::{Element, Handle, HandleGeneric, World};
 
 use crate::{
+    input::collider::ToolRectCollider,
     layout::{
         luni::{
             LuniAlign, LuniAxis, LuniChild, LuniChildTemplate, LuniDistribution, LuniFlex,
@@ -13,7 +14,6 @@ use crate::{
         val::{Val, ValChanged},
     },
     measures::IRect,
-    tools::collider::ToolRectCollider,
     ui::{
         common::WidgetCommon,
         renderer::rrect::RRect,

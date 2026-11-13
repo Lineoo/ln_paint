@@ -3,6 +3,10 @@ use ln_world::{Element, Handle, World};
 
 use crate::{
     color::srgb::{mul_alpha, srgb_gamma_decode},
+    input::{
+        mouse::MouseMenu,
+        pointer::{PointerHover, PointerScroll},
+    },
     layout::{
         transform::{Transform, TransformValue},
         val::{Val, ValChanged},
@@ -11,10 +15,6 @@ use crate::{
     paint::{
         input::LayerInput,
         wrapper::{BrushConfigurationChanged, LayerPage},
-    },
-    tools::{
-        mouse::MouseMenu,
-        pointer::{PointerHover, PointerScroll},
     },
     ui::{
         common::WidgetCommon,

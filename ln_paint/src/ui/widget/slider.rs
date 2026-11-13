@@ -3,16 +3,16 @@ use glam::{IVec2, UVec2};
 use ln_world::{Element, Handle, HandleGeneric, World};
 
 use crate::{
+    input::{
+        collider::ToolRectCollider,
+        pointer::{PointerHit, PointerHitStatus, PointerHover, PointerHoverStatus},
+    },
     layout::{
         anim::{Animator, AnimatorSnap},
         packer::Packer,
         val::{Val, ValChanged},
     },
     measures::{Axis, FI64Ext, IRect},
-    tools::{
-        collider::ToolRectCollider,
-        pointer::{PointerHit, PointerHitStatus, PointerHover, PointerHoverStatus},
-    },
     ui::{
         WidgetHover,
         common::WidgetCommon,

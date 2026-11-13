@@ -7,6 +7,7 @@ use wgpu::{
 
 use crate::{
     color::srgb::{mul_alpha, srgb_gamma_decode, srgb_gamma_encode},
+    input::collider::ToolRectCollider,
     layout::{
         transfer::Transfer,
         val::{Val, ValChanged},
@@ -18,7 +19,6 @@ use crate::{
         wrapper::LayerPage,
     },
     render::{RenderDrawControl, RenderPrepareControl, camera::SetCameraOutdated},
-    tools::collider::ToolRectCollider,
     ui::{
         common::WidgetCommon,
         container::{ContainerAttr, ContainerEcho, ContainerWithCamera},

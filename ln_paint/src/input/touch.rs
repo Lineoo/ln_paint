@@ -5,7 +5,7 @@ use winit::event::{
     ButtonSource, ElementState, MouseButton, PointerKind, PointerSource, WindowEvent,
 };
 
-use crate::{lnwin::Lnwindow, render::camera::Camera, tools::collider::ToolControl};
+use crate::{input::collider::ToolControl, lnwin::Lnwindow, render::camera::Camera};
 
 /// Multi touch actions that allow inputs with more points than [`PointerTool`] but no hovering
 #[derive(Default)]

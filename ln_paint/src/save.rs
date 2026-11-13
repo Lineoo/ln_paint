@@ -15,6 +15,7 @@ use toml_edit::{DocumentMut, Item, Value};
 #[cfg(target_os = "android")]
 use crate::lnwin::LnAndroid;
 use crate::{
+    input::timer::{Timer, TimerHit},
     paint::{
         input::{OffsetCorrection, TiltCorrection},
         wrapper::PageContainerArchive,
@@ -23,7 +24,6 @@ use crate::{
         chunk::{TABLE_LAYER_CHUNK, TABLE_LAYER_CHUNK_RAW},
         object::TABLE_LAYER_OBJECT,
     },
-    tools::timer::{Timer, TimerHit},
 };
 
 /// The format version of the database.

@@ -9,6 +9,11 @@ use winit::{
 };
 
 use crate::{
+    input::{
+        collider::ToolRectCollider,
+        pointer::{PointerHover, PointerHoverStatus, PointerScroll},
+        touch::{MultiTouchGroup, MultiTouchStatus},
+    },
     layout::val::{Val, ValChanged},
     lnwin::Lnwindow,
     measures::{FI64Ext, IRect},
@@ -18,11 +23,6 @@ use crate::{
     },
     render::{RenderPrepareControl, camera::UICamera},
     save::Save,
-    tools::{
-        collider::ToolRectCollider,
-        pointer::{PointerHover, PointerHoverStatus, PointerScroll},
-        touch::{MultiTouchGroup, MultiTouchStatus},
-    },
     ui::{
         theme::Theme,
         widget::area::{Area, AreaMode},

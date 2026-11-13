@@ -2,9 +2,9 @@ use glam::{IVec2, UVec2, Vec4};
 use ln_world::{Element, Handle, HandleGeneric, World};
 
 use crate::{
+    input::collider::ToolRectCollider,
     layout::{packer::Packer, val::Val},
     measures::IRect,
-    tools::collider::ToolRectCollider,
     ui::{
         common::WidgetCommon,
         renderer::{rrect::RRect, wireframe::Wireframe},

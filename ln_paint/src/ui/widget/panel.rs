@@ -1,12 +1,12 @@
 use ln_world::{Element, Handle, HandleGeneric, World};
 
 use crate::{
+    input::collider::ToolRectCollider,
     layout::{
         transform::{Transform, TransformValue},
         val::Val,
     },
     measures::IRect,
-    tools::collider::ToolRectCollider,
     ui::{
         common::WidgetCommon,
         renderer::rrect::RRect,

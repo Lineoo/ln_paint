@@ -2,6 +2,10 @@ use glam::{DVec2, I64Vec2, UVec2};
 use ln_world::{Descriptor, Element, Handle, HandleGeneric, World};
 
 use crate::{
+    input::{
+        collider::{ToolControl, ToolHitResult},
+        pointer::{PointerHit, PointerHitStatus, PointerScroll},
+    },
     layout::{
         transfer::Transfer,
         val::{Val, ValChanged},
@@ -11,10 +15,6 @@ use crate::{
     render::{
         Render, RenderDrawControl, RenderExtra,
         camera::{Camera, CameraDescriptor, CameraOutdated, SetCameraOutdated},
-    },
-    tools::{
-        collider::{ToolControl, ToolHitResult},
-        pointer::{PointerHit, PointerHitStatus, PointerScroll},
     },
     ui::{
         common::WidgetCommon,

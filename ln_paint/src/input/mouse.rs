@@ -2,7 +2,7 @@ use glam::IVec2;
 use ln_world::{Element, Handle, World};
 use winit::event::{ButtonSource, ElementState, MouseButton, WindowEvent};
 
-use crate::{lnwin::Lnwindow, measures::FI64Ext, tools::collider::ToolControl};
+use crate::{input::collider::ToolControl, lnwin::Lnwindow, measures::FI64Ext};
 
 /// Mouse-specific operations like right-click and middle-click.
 #[derive(Default)]

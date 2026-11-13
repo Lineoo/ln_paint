@@ -2,6 +2,10 @@ use glam::{IVec2, UVec2, Vec4};
 use ln_world::{Element, Handle, HandleGeneric, World};
 
 use crate::{
+    input::{
+        collider::ToolRectCollider,
+        pointer::{PointerHit, PointerHitStatus, PointerHover, PointerHoverStatus},
+    },
     layout::{
         anim::Animator,
         packer::Packer,
@@ -9,10 +13,6 @@ use crate::{
         val::{Val, ValChanged},
     },
     measures::{FI64Ext, IRect},
-    tools::{
-        collider::ToolRectCollider,
-        pointer::{PointerHit, PointerHitStatus, PointerHover, PointerHoverStatus},
-    },
     ui::{
         WidgetHover,
         common::WidgetCommon,

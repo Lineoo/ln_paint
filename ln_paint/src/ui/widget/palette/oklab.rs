@@ -7,12 +7,12 @@ use lyon::{
 
 use crate::{
     color::{oklab::oklab_to_linear_srgb, srgb::mul_alpha},
+    input::{collider::ToolRectCollider, pointer::PointerHit},
     layout::{
         transfer::Transfer,
         val::{Val, ValChanged},
     },
     measures::{FI64Ext, IRect},
-    tools::{collider::ToolRectCollider, pointer::PointerHit},
     ui::{
         common::WidgetCommon,
         renderer::{

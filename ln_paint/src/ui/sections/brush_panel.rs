@@ -3,6 +3,7 @@ use ln_world::{Element, Handle, World};
 
 use crate::{
     i18n::tr,
+    input::pointer::{PointerHit, PointerHover, PointerScroll},
     layout::{
         anim::Animator,
         luni::{
@@ -15,7 +16,6 @@ use crate::{
     },
     measures::IRect,
     paint::wrapper::{BrushConfigurationChanged, LayerPage},
-    tools::pointer::{PointerHit, PointerHover, PointerScroll},
     ui::{
         brush_preview::BrushPreviewDescriptor,
         common::WidgetCommon,

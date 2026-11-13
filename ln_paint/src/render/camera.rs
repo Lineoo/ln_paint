@@ -7,10 +7,10 @@ use wgpu::{
 use winit::event::WindowEvent;
 
 use crate::{
+    input::collider::ToolControl,
     lnwin::Lnwindow,
     measures::FI64Ext,
     render::{Render, RenderDrawControl},
-    tools::collider::ToolControl,
     ui::container::Container,
 };
 

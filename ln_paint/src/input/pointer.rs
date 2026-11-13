@@ -6,9 +6,9 @@ use winit::event::{
 };
 
 use crate::{
+    input::collider::{ToolControl, ToolControlUpdate},
     lnwin::Lnwindow,
     render::camera::Camera,
-    tools::collider::{ToolControl, ToolControlUpdate},
 };
 
 /// Guaranteed for single-pointer operations like mouse cursor or the first-touch finger.

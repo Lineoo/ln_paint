@@ -8,15 +8,15 @@ use crate::{
         hsl::hsl_to_srgb,
         srgb::{mul_alpha, srgb_gamma_decode},
     },
+    input::{
+        collider::{ToolRectCollider, ToolRingCollider},
+        pointer::PointerHit,
+    },
     layout::{
         transfer::Transfer,
         val::{Val, ValChanged},
     },
     measures::{FI64Ext, IRect},
-    tools::{
-        collider::{ToolRectCollider, ToolRingCollider},
-        pointer::PointerHit,
-    },
     ui::{
         common::WidgetCommon,
         renderer::{
