@@ -29,7 +29,7 @@ use crate::{
     render::{
         Render, RenderDrawControl, RenderPrepareControl,
         camera::{CameraBind, CameraUtils, SetCameraOutdated, UICamera},
-        nest::{Container, ContainerAttr},
+        nest::{Nest, NestAttr},
     },
     save::{Autosave, Save, object::Objects},
     ui::{common::WidgetCommon, renderer::rrect::RRect},
@@ -83,7 +83,7 @@ pub struct LayerPage {
     rd: ChunkRenderer,
 
     pub common: WidgetCommon,
-    pub container: Handle<Container>,
+    pub container: Handle<Nest>,
     pub camera_utils: Handle<CameraUtils>,
 
     cache: CacheLayers,
@@ -160,7 +160,7 @@ impl LayerPage {
 
         let ui_camera = world.single_fetch::<UICamera>().0;
 
-        let attr = ContainerAttr {
+        let attr = NestAttr {
             center: save.sn().page_camera.center,
             zoom: save.sn().page_camera.zoom,
             anchor: DVec2::new(0.5, 0.5),
@@ -172,7 +172,7 @@ impl LayerPage {
             let rect = world.fetch(rect).val;
             world.build(attr.calc_camera(rect, &parent))
         });
-        let container = world.insert(Container {
+        let container = world.insert(Nest {
             common,
             order: -100,
             child: camera,

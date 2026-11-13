@@ -9,7 +9,7 @@ use crate::{
         input::LayerInput,
         wrapper::{BrushConfigurationChanged, LayerPage},
     },
-    render::nest::{ContainerAttr, ContainerEcho, ContainerWithCamera},
+    render::nest::{NestAttr, NestBind, NestedCamera},
     ui::{
         common::WidgetCommon,
         i18n::trp,
@@ -115,13 +115,13 @@ impl Element for MainWorkspace {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let attr = ContainerAttr::default();
-        let (container, common) = world.build(ContainerWithCamera {
+        let attr = NestAttr::default();
+        let (container, common) = world.build(NestedCamera {
             common: self.common,
             rect: self.rect,
             attr,
         });
-        let local = world.build(ContainerEcho { container });
+        let local = world.build(NestBind { container });
 
         let mut luni = LuniFlex::new(
             local,
@@ -175,17 +175,17 @@ impl Element for ToolBar {
         let page = world.single::<LayerPage>();
         let theme = world.single_fetch::<ThemeVal>();
 
-        let attr = ContainerAttr {
+        let attr = NestAttr {
             // cause we need the slider label to display
             clip: false,
             ..Default::default()
         };
-        let (container, common) = world.build(ContainerWithCamera {
+        let (container, common) = world.build(NestedCamera {
             common: self.common,
             rect: self.rect,
             attr,
         });
-        let local = world.build(ContainerEcho { container });
+        let local = world.build(NestBind { container });
 
         world.insert(Panel {
             common,
@@ -378,13 +378,13 @@ impl Element for StatusBar {
 
         let theme = world.single_fetch::<ThemeVal>();
 
-        let attr = ContainerAttr::default();
-        let (container, common) = world.build(ContainerWithCamera {
+        let attr = NestAttr::default();
+        let (container, common) = world.build(NestedCamera {
             common: self.common,
             rect: self.rect,
             attr,
         });
-        let local = world.build(ContainerEcho { container });
+        let local = world.build(NestBind { container });
 
         world.insert(Panel {
             common,
@@ -437,13 +437,13 @@ impl Element for CommandCenter {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let attr = ContainerAttr::default();
-        let (container, common) = world.build(ContainerWithCamera {
+        let attr = NestAttr::default();
+        let (container, common) = world.build(NestedCamera {
             common: self.common,
             rect: self.rect,
             attr,
         });
-        let local = world.build(ContainerEcho { container });
+        let local = world.build(NestBind { container });
 
         world.insert(Panel {
             common,

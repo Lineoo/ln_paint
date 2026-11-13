@@ -6,7 +6,7 @@ use crate::{
     paint::wrapper::{LayerDebugMessage, LayerPage},
     render::{
         Render,
-        nest::{ContainerAttr, ContainerEcho, ContainerWithCamera},
+        nest::{NestAttr, NestBind, NestedCamera},
     },
     save::Save,
     ui::{
@@ -19,7 +19,7 @@ use crate::{
         theme::ThemeVal,
         widget::{
             button::{Button, ButtonClick, ButtonImage, ButtonToggle},
-            container::{ContainerDeco, ContainerDecoDropdown},
+            container::{Container, ContainerDropdown},
         },
     },
     unit::IRect,
@@ -40,21 +40,21 @@ impl Element for DebugPanel {
 
         let theme = world.single_fetch::<ThemeVal>();
 
-        let attr = ContainerAttr::default();
-        let (container, common) = world.build(ContainerWithCamera {
+        let attr = NestAttr::default();
+        let (container, common) = world.build(NestedCamera {
             common: self.common,
             rect: self.rect,
             attr,
         });
-        let restriction = world.build(ContainerDecoDropdown {
+        let restriction = world.build(ContainerDropdown {
             height: None,
             outer: self.rect,
         });
-        world.insert(ContainerDeco {
-            container,
+        world.insert(Container {
+            nest: container,
             restriction,
         });
-        let local = world.build(ContainerEcho { container });
+        let local = world.build(NestBind { container });
 
         let text_rect = world.build(Transform::new(TransformValue::shrink(24, 24), local));
         let debug_text = world.insert(Text {

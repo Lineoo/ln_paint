@@ -13,8 +13,18 @@ use crate::{
     val::{Val, ValChanged},
 };
 
+/// separated coordination
+pub struct Nest {
+    pub common: WidgetCommon,
+    pub order: isize,
+    pub child: Handle<Camera>,
+    /// outer rectangle
+    pub rect: Handle<Val<IRect>>,
+    pub attr: NestAttr,
+}
+
 #[derive(Clone, Copy)]
-pub struct ContainerAttr {
+pub struct NestAttr {
     /// where is the zero point on outer rectangle
     pub anchor: DVec2,
     /// whether scissor rect should be set
@@ -25,7 +35,14 @@ pub struct ContainerAttr {
     pub zoom: i64,
 }
 
-impl Default for ContainerAttr {
+pub struct NestedCamera {
+    pub common: WidgetCommon,
+    /// outer rectangle
+    pub rect: Handle<Val<IRect>>,
+    pub attr: NestAttr,
+}
+
+impl Default for NestAttr {
     fn default() -> Self {
         Self {
             anchor: DVec2::new(0.0, 1.0),
@@ -37,15 +54,8 @@ impl Default for ContainerAttr {
     }
 }
 
-pub struct ContainerWithCamera {
-    pub common: WidgetCommon,
-    /// outer rectangle
-    pub rect: Handle<Val<IRect>>,
-    pub attr: ContainerAttr,
-}
-
-impl Descriptor for ContainerWithCamera {
-    type Target = (Handle<Container>, WidgetCommon);
+impl Descriptor for NestedCamera {
+    type Target = (Handle<Nest>, WidgetCommon);
 
     fn when_build(self, world: &World) -> Self::Target {
         let camera = world.insert_with(move |world| {
@@ -54,7 +64,7 @@ impl Descriptor for ContainerWithCamera {
             world.build(self.attr.calc_camera(rect, &parent))
         });
 
-        let container = world.insert(Container {
+        let container = world.insert(Nest {
             common: self.common,
             order: 100,
             child: camera,
@@ -71,17 +81,7 @@ impl Descriptor for ContainerWithCamera {
     }
 }
 
-/// separated coordination
-pub struct Container {
-    pub common: WidgetCommon,
-    pub order: isize,
-    pub child: Handle<Camera>,
-    /// outer rectangle
-    pub rect: Handle<Val<IRect>>,
-    pub attr: ContainerAttr,
-}
-
-impl Element for Container {
+impl Element for Nest {
     fn when_insert(&mut self, world: &World, handle: Handle<Self>) {
         world.scope("container");
         world.set_autodeps(Some(handle));
@@ -190,7 +190,7 @@ impl Element for Container {
     }
 }
 
-impl Container {
+impl Nest {
     pub fn update_camera(&self, rect: IRect, parent: &Camera, child: &mut Camera) {
         let desc = self.attr.calc_camera(rect, parent);
         child.zoom = desc.zoom;
@@ -235,7 +235,7 @@ impl Container {
     }
 }
 
-impl ContainerAttr {
+impl NestAttr {
     pub fn calc_camera(&self, rect: IRect, parent: &Camera) -> CameraDescriptor {
         let zoom = match !self.top {
             true => parent.zoom + self.zoom,
@@ -249,11 +249,11 @@ impl ContainerAttr {
 }
 
 /// - inner area when scroll is zero for container
-pub struct ContainerEcho {
-    pub container: Handle<Container>,
+pub struct NestBind {
+    pub container: Handle<Nest>,
 }
 
-impl Descriptor for ContainerEcho {
+impl Descriptor for NestBind {
     type Target = Handle<Val<IRect>>;
 
     fn when_build(self, world: &World) -> Self::Target {

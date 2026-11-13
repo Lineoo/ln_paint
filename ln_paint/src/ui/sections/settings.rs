@@ -9,7 +9,7 @@ use crate::{
         },
         wrapper::{BrushConfigurationChanged, LayerPage},
     },
-    render::nest::{ContainerAttr, ContainerEcho, ContainerWithCamera},
+    render::nest::{NestAttr, NestBind, NestedCamera},
     ui::{
         common::WidgetCommon,
         i18n::tr,
@@ -26,7 +26,7 @@ use crate::{
         },
         theme::ThemeVal,
         widget::{
-            container::ContainerDeco,
+            container::Container,
             slider::{Slider, SliderLabel, SliderValue},
         },
     },
@@ -49,13 +49,13 @@ impl Element for SettingPanel {
         let page = world.single_fetch::<LayerPage>();
         let theme = world.single_fetch::<ThemeVal>();
 
-        let attr = ContainerAttr::default();
-        let (container, common) = world.build(ContainerWithCamera {
+        let attr = NestAttr::default();
+        let (container, common) = world.build(NestedCamera {
             common: self.common,
             rect: self.rect,
             attr,
         });
-        let local = world.build(ContainerEcho { container });
+        let local = world.build(NestBind { container });
 
         let mut luni = LuniFlex::new(
             local,
@@ -187,8 +187,8 @@ impl Element for TextSettingPanel {
         let layer = layer.retrieve();
         let panel_visible = self.common.visible;
 
-        let attr = ContainerAttr::default();
-        let (container, common) = world.build(ContainerWithCamera {
+        let attr = NestAttr::default();
+        let (container, common) = world.build(NestedCamera {
             common: self.common,
             rect: self.rect,
             attr,
@@ -212,11 +212,11 @@ impl Element for TextSettingPanel {
         .listen(self.rect)
         .listen(row_count)
         .finish();
-        world.insert(ContainerDeco {
-            container,
+        world.insert(Container {
+            nest: container,
             restriction,
         });
-        let local = world.build(ContainerEcho { container });
+        let local = world.build(NestBind { container });
 
         let mut luni = LuniFlex::new(
             local,

@@ -3,7 +3,7 @@ use ln_world::{Descriptor, Element, Handle, World};
 
 use crate::{
     input::pointer::{PointerHit, PointerHitStatus, PointerScroll},
-    render::{camera::SetCameraOutdated, nest::Container},
+    render::{camera::SetCameraOutdated, nest::Nest},
     ui::{
         renderer::rrect::RRect,
         theme::{Theme, ThemeVal},
@@ -15,19 +15,19 @@ use crate::{
 /// - pointer scroll interaction
 /// - add a non-shadow panel
 /// - restrict is for scroll
-pub struct ContainerDeco {
-    pub container: Handle<Container>,
+pub struct Container {
+    pub nest: Handle<Nest>,
     pub restriction: Handle<Val<IRect>>,
 }
 
-impl Element for ContainerDeco {
+impl Element for Container {
     fn when_insert(&mut self, world: &World, this: Handle<Self>) {
         world.scope("container_deco");
         world.set_autodeps(Some(this));
 
         let theme = world.single_fetch::<Theme>();
         let theme_val = world.single_fetch::<ThemeVal>();
-        let handle = self.container;
+        let handle = self.nest;
         let container = world.fetch(handle);
 
         world.insert(RRect {
@@ -127,12 +127,12 @@ impl Element for ContainerDeco {
 }
 
 /// auto setup ContainerDeco's restriction area based on Container's view rect
-pub struct ContainerDecoDropdown {
+pub struct ContainerDropdown {
     pub height: Option<i32>,
     pub outer: Handle<Val<IRect>>,
 }
 
-impl Descriptor for ContainerDecoDropdown {
+impl Descriptor for ContainerDropdown {
     type Target = Handle<Val<IRect>>;
 
     fn when_build(self, world: &World) -> Self::Target {

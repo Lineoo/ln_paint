@@ -9,7 +9,7 @@ use winit::event::WindowEvent;
 use crate::{
     input::collider::ToolControl,
     lnwin::Lnwindow,
-    render::{Render, RenderDrawControl, nest::Container},
+    render::{Render, RenderDrawControl, nest::Nest},
     unit::FI64Ext,
 };
 
@@ -351,7 +351,7 @@ impl CameraUtils {
 
     // read write //
 
-    pub fn read_camera(&mut self, world: &World, container: Handle<Container>) {
+    pub fn read_camera(&mut self, world: &World, container: Handle<Nest>) {
         let container = world.fetch(container);
         let camera = world.fetch(container.child);
         self.camera_zoom = camera.zoom;
@@ -359,7 +359,7 @@ impl CameraUtils {
         self.surface_size = camera.surface_size;
     }
 
-    pub fn write_camera(&self, world: &World, container: Handle<Container>) {
+    pub fn write_camera(&self, world: &World, container: Handle<Nest>) {
         let mut container = world.fetch_mut(container);
         let parent = world.fetch(container.common.camera);
         let camera = world.fetch(container.child);

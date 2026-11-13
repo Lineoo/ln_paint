@@ -3,7 +3,7 @@ use ln_world::{Element, Handle, World};
 
 use crate::{
     paint::wrapper::LayerPage,
-    render::nest::{ContainerAttr, ContainerEcho, ContainerWithCamera},
+    render::nest::{NestAttr, NestBind, NestedCamera},
     ui::{
         common::WidgetCommon,
         i18n::{tr, trp},
@@ -15,7 +15,7 @@ use crate::{
         theme::ThemeVal,
         widget::{
             button::{Button, ButtonClick},
-            container::{ContainerDeco, ContainerDecoDropdown},
+            container::{Container, ContainerDropdown},
         },
     },
     unit::IRect,
@@ -36,21 +36,21 @@ impl Element for LayerSelectionPanel {
 
         let theme = world.single_fetch::<ThemeVal>();
 
-        let attr = ContainerAttr::default();
-        let (panel, common) = world.build(ContainerWithCamera {
+        let attr = NestAttr::default();
+        let (panel, common) = world.build(NestedCamera {
             rect: self.rect,
             common: self.common,
             attr,
         });
-        let restriction = world.build(ContainerDecoDropdown {
+        let restriction = world.build(ContainerDropdown {
             height: None,
             outer: self.rect,
         });
-        world.insert(ContainerDeco {
-            container: panel,
+        world.insert(Container {
+            nest: panel,
             restriction,
         });
-        let local = world.build(ContainerEcho { container: panel });
+        let local = world.build(NestBind { container: panel });
 
         let doc_label_rect = world.build(Transform::new(
             TransformValue::anchor((0.0, 1.0), IRect::new(28, -22 - 18, 28 + 32, -22)),

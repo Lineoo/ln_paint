@@ -10,7 +10,7 @@ use crate::{
         srgb::{mul_alpha, srgb_gamma_decode, srgb_gamma_encode},
     },
     paint::wrapper::{BrushConfigurationChanged, LayerPage},
-    render::nest::{ContainerAttr, ContainerEcho, ContainerWithCamera},
+    render::nest::{NestAttr, NestBind, NestedCamera},
     ui::{
         common::WidgetCommon,
         layout::transform::{Transform, TransformValue},
@@ -20,7 +20,7 @@ use crate::{
         theme::ThemeVal,
         widget::{
             button::{Button, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonToggle},
-            container::{ContainerDeco, ContainerDecoDropdown},
+            container::{Container, ContainerDropdown},
             palette::{
                 hsl::{ColorHsla, HslRing, HslSquare, INNER_RADIUS, SetColorHsla},
                 oklab::{ColorOklab, OklabBar, OklabPolar, SetColorOklab},
@@ -260,18 +260,18 @@ impl Element for LayerHslPalette {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let attr = ContainerAttr::default();
-        let (container, common) = world.build(ContainerWithCamera {
+        let attr = NestAttr::default();
+        let (container, common) = world.build(NestedCamera {
             common: self.common,
             rect: self.rect,
             attr,
         });
-        let restriction = world.build(ContainerDecoDropdown {
+        let restriction = world.build(ContainerDropdown {
             height: None,
             outer: self.rect,
         });
-        world.insert(ContainerDeco {
-            container,
+        world.insert(Container {
+            nest: container,
             restriction,
         });
 
@@ -335,21 +335,21 @@ impl Element for LayerOklabPalette {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let attr = ContainerAttr::default();
-        let (container, common) = world.build(ContainerWithCamera {
+        let attr = NestAttr::default();
+        let (container, common) = world.build(NestedCamera {
             common: self.common,
             rect: self.rect,
             attr,
         });
-        let restriction = world.build(ContainerDecoDropdown {
+        let restriction = world.build(ContainerDropdown {
             height: None,
             outer: self.rect,
         });
-        world.insert(ContainerDeco {
-            container,
+        world.insert(Container {
+            nest: container,
             restriction,
         });
-        let local = world.build(ContainerEcho { container });
+        let local = world.build(NestBind { container });
 
         let polar_rect = world.build(Transform::new(
             TransformValue::anchor(
