@@ -12,6 +12,7 @@ use crate::{
         transfer::Transfer,
         val::{Val, ValChanged},
     },
+    shaders::shader_compile,
     ui::{
         common::WidgetCommon,
         renderer::{
@@ -19,7 +20,6 @@ use crate::{
             rrect::RRect,
             vtor::Vtor,
         },
-        shaders::shader_compile,
         widget::palette::utils::find_gamut_intersection,
     },
     unit::{FI64Ext, IRect},

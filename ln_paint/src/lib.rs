@@ -6,6 +6,7 @@ pub mod lnwin;
 pub mod paint;
 pub mod render;
 pub mod save;
+pub mod shaders;
 pub mod ui;
 pub mod unit;
 

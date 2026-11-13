@@ -35,7 +35,7 @@ use crate::{
     color::srgb::{demul_alpha, mul_alpha, srgb_gamma_encode},
     paint::{brush::Brush, stream::ThreadInput},
     render::camera::Camera,
-    ui::shaders::shader_compile,
+    shaders::shader_compile,
     unit::{FI64Ext, IRect},
 };
 
