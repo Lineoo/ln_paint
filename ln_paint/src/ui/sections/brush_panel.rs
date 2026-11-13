@@ -16,10 +16,10 @@ use crate::{
     },
     paint::wrapper::{BrushConfigurationChanged, LayerPage},
     ui::{
-        brush_preview::BrushPreviewDescriptor,
         common::WidgetCommon,
         container::{ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerWithCamera},
         renderer::{
+            brush_preview::BrushPreviewDescriptor,
             rrect::RRect,
             svg::svg_render,
             text::{Text, TextAttr},

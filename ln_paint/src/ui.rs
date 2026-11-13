@@ -1,6 +1,5 @@
 //! See docs/ui.md
 
-pub mod brush_preview;
 pub mod common;
 pub mod container;
 pub mod object;
