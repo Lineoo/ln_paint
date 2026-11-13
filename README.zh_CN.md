@@ -41,7 +41,7 @@ $ ./gradlew assembleDebug
 
 ## 许可证 ##
 
-整个仓库基于 **GNU Affero 通用公共许可证 v3.0 或更高版本**（LICENSE 或 https://opensource.org/license/AGPL-3.0）授权。
+整个仓库基于 **GNU Affero 通用公共许可证 v3.0 或更高版本**（LICENSE 或 [https://opensource.org/license/AGPL-3.0](https://opensource.org/license/AGPL-3.0)）授权。
 
 此工作区包含多个具有不同许可证的 crate：
 
