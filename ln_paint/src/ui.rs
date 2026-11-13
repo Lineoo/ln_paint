@@ -1,4 +1,4 @@
-//! See docs/widgets.md
+//! See docs/ui.md
 
 pub mod brush_preview;
 pub mod common;

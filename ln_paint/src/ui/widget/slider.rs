@@ -24,8 +24,6 @@ use crate::{
     unit::{Axis, FI64Ext, IRect},
 };
 
-// TODO move to components/
-
 pub struct SliderValue(pub f32);
 
 pub struct Slider {

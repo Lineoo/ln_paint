@@ -108,7 +108,7 @@ fn oklab_clip_to_srgb_gamut(oklab: vec3f) -> vec3f {
 // sRGB gamut clipping.
 // Ported from Björn Ottosson's "sRGB gamut clipping".
 // https://bottosson.github.io/posts/gamutclipping/
-// Rust reference: ln_paint/src/widgets/palette/utils.rs
+// Rust reference: ln_paint/src/ui/widget/palette/utils.rs
 
 fn compute_max_saturation(a: f32, b: f32) -> f32 {
     var k0: f32;

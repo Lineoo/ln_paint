@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # pwd: should be executed at workspace root
-# update icons bitmaps in `res` folder
+# copy icons
 
 set -e
 
