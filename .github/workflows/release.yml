@@ -10,7 +10,7 @@ on:
         type: string
       draft:
         description: Generate a Draft Release
-        default: true
+        default: false
         type: boolean
 
 permissions:
