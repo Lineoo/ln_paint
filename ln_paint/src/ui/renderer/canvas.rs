@@ -6,10 +6,9 @@ use wgpu::{
     BufferBindingType, BufferUsages, ColorTargetState, ColorWrites, Extent3d, FilterMode,
     FragmentState, Origin3d, PipelineLayoutDescriptor, PrimitiveState, PrimitiveTopology, Queue,
     RenderPipeline, RenderPipelineDescriptor, SamplerBindingType, SamplerDescriptor,
-    ShaderModuleDescriptor, ShaderSource, ShaderStages, TexelCopyBufferLayout,
-    TexelCopyTextureInfo, Texture, TextureAspect, TextureDescriptor, TextureDimension,
-    TextureFormat, TextureSampleType, TextureUsages, TextureViewDescriptor, TextureViewDimension,
-    VertexState,
+    ShaderModuleDescriptor, ShaderStages, TexelCopyBufferLayout, TexelCopyTextureInfo, Texture,
+    TextureAspect, TextureDescriptor, TextureDimension, TextureFormat, TextureSampleType,
+    TextureUsages, TextureViewDescriptor, TextureViewDimension, VertexState,
     util::{BufferInitDescriptor, DeviceExt},
     wgt::TextureDataOrder,
 };
@@ -277,7 +276,7 @@ impl CanvasPipeline {
 
         let shader = render.device.create_shader_module(ShaderModuleDescriptor {
             label: Some("canvas_shader"),
-            source: ShaderSource::Wgsl(shader_compile(include_str!("canvas.wgsl"), &[]).into()),
+            source: shader_compile(include_str!("canvas.wgsl"), &[]),
         });
 
         let instance = render

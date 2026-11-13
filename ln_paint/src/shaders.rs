@@ -4,8 +4,12 @@ pub const LIB_CONSTANT: &'static str = include_str!("shaders/lib_constant.wgsl")
 pub const LIB_RECTANGLE: &'static str = include_str!("shaders/lib_rectangle.wgsl");
 pub const LIB_MATH: &'static str = include_str!("shaders/lib_math.wgsl");
 
+pub fn shader_compile(raw: &str, maps: &[(&str, &str)]) -> wgpu::ShaderSource<'static> {
+    wgpu::ShaderSource::Wgsl(shader_replace(raw, maps).into())
+}
+
 /// replace every `#key` into `value`
-pub fn shader_compile(raw: &str, maps: &[(&str, &str)]) -> String {
+fn shader_replace(raw: &str, maps: &[(&str, &str)]) -> String {
     let mut result = String::with_capacity(raw.len() + 100);
     let mut pattern = String::new();
     let mut matching = false;
@@ -63,31 +67,31 @@ mod tests {
 
     #[test]
     fn test_basic() {
-        assert_eq!(shader_compile("#foo", &[("foo", "bar")]), "bar");
+        assert_eq!(shader_replace("#foo", &[("foo", "bar")]), "bar");
     }
 
     #[test]
     fn test_separator() {
-        assert_eq!(shader_compile("#foo baz", &[("foo", "bar")]), "bar baz");
+        assert_eq!(shader_replace("#foo baz", &[("foo", "bar")]), "bar baz");
     }
 
     #[test]
     fn test_trailing() {
-        assert_eq!(shader_compile("end #foo", &[("foo", "bar")]), "end bar");
+        assert_eq!(shader_replace("end #foo", &[("foo", "bar")]), "end bar");
     }
 
     #[test]
     fn test_incomplete_match() {
-        assert_eq!(shader_compile("#abc3", &[("abc", "value")]), "#abc3");
+        assert_eq!(shader_replace("#abc3", &[("abc", "value")]), "#abc3");
     }
 
     #[test]
     fn test_hash_without_key() {
-        assert_eq!(shader_compile("# foo", &[]), "# foo");
+        assert_eq!(shader_replace("# foo", &[]), "# foo");
     }
 
     #[test]
     fn test_unknown_key() {
-        assert_eq!(shader_compile("#unkn own", &[]), "#unkn own");
+        assert_eq!(shader_replace("#unkn own", &[]), "#unkn own");
     }
 }

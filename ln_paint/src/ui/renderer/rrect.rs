@@ -70,7 +70,7 @@ impl QuadMaterial for RRectMaterial {
     }
 
     fn shader() -> wgpu::ShaderSource<'static> {
-        wgpu::ShaderSource::Wgsl(shader_compile(include_str!("rrect.wgsl"), &[]).into())
+        shader_compile(include_str!("rrect.wgsl"), &[])
     }
 
     fn fragment() -> Option<&'static str> {

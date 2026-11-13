@@ -263,7 +263,7 @@ impl VtorPipeline {
 
         let shader = device.create_shader_module(ShaderModuleDescriptor {
             label: Some("vtor"),
-            source: ShaderSource::Wgsl(shader_compile(include_str!("vtor.wgsl"), &[]).into()),
+            source: shader_compile(include_str!("vtor.wgsl"), &[]),
         });
 
         let vtor_bind = device.create_bind_group_layout(&BindGroupLayoutDescriptor {

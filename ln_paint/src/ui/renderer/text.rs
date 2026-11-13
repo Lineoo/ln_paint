@@ -406,7 +406,7 @@ impl TextPipeline {
 
         let shader = device.create_shader_module(ShaderModuleDescriptor {
             label: Some("text_shader"),
-            source: ShaderSource::Wgsl(shader_compile(include_str!("text.wgsl"), &[]).into()),
+            source: shader_compile(include_str!("text.wgsl"), &[]),
         });
 
         let material_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {

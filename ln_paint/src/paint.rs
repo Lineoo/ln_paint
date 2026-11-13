@@ -24,7 +24,7 @@ use wgpu::{
     ComputePipelineDescriptor, Device, Extent3d, FilterMode, FragmentState, MapMode, PipelineCache,
     PipelineCompilationOptions, PipelineLayout, PipelineLayoutDescriptor, PrimitiveState,
     PrimitiveTopology, Queue, RenderPass, RenderPipeline, RenderPipelineDescriptor,
-    SamplerBindingType, SamplerDescriptor, ShaderModuleDescriptor, ShaderSource, ShaderStages,
+    SamplerBindingType, SamplerDescriptor, ShaderModuleDescriptor, ShaderStages,
     StorageTextureAccess, Texture, TextureDescriptor, TextureDimension, TextureFormat,
     TextureFormatFeatureFlags, TextureSampleType, TextureUsages, TextureViewDescriptor,
     TextureViewDimension, VertexState, WasmNotSend,
@@ -1756,7 +1756,7 @@ fn render_pipelines(
 ) -> RenderPipelines {
     let render_shader = device.create_shader_module(ShaderModuleDescriptor {
         label: Some("layer_chunk"),
-        source: ShaderSource::Wgsl(shader_compile(include_str!("paint/render.wgsl"), &[]).into()),
+        source: shader_compile(include_str!("paint/render.wgsl"), &[]),
     });
 
     let render_pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
@@ -1813,7 +1813,7 @@ fn mipmap_pipeline(
 ) -> ComputePipeline {
     let shader = device.create_shader_module(ShaderModuleDescriptor {
         label: Some("layer_mipmap"),
-        source: ShaderSource::Wgsl(shader_compile(include_str!("paint/mipmap.wgsl"), &[]).into()),
+        source: shader_compile(include_str!("paint/mipmap.wgsl"), &[]),
     });
 
     let layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
@@ -1930,10 +1930,9 @@ fn merge_pipeline(
         ("write", write.write()),
         ("composite", composite.formula()),
     ];
-    let wgsl = shader_compile(include_str!("paint/merge.wgsl"), maps);
     let shader = device.create_shader_module(ShaderModuleDescriptor {
         label: Some(&label),
-        source: ShaderSource::Wgsl(wgsl.into()),
+        source: shader_compile(include_str!("paint/edit/merge.wgsl"), maps),
     });
     device.create_compute_pipeline(&ComputePipelineDescriptor {
         label: Some(&label),
@@ -1952,7 +1951,7 @@ fn copy_pipeline(
 ) -> ComputePipeline {
     let shader = device.create_shader_module(ShaderModuleDescriptor {
         label: Some("layer_copy"),
-        source: ShaderSource::Wgsl(shader_compile(include_str!("paint/copy.wgsl"), &[]).into()),
+        source: shader_compile(include_str!("paint/edit/copy.wgsl"), &[]),
     });
 
     let layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
@@ -1983,7 +1982,7 @@ fn readback_pipeline(
 ) -> ComputePipeline {
     let shader = device.create_shader_module(ShaderModuleDescriptor {
         label: Some("color_readback"),
-        source: ShaderSource::Wgsl(shader_compile(include_str!("paint/readback.wgsl"), &[]).into()),
+        source: shader_compile(include_str!("paint/readback.wgsl"), &[]),
     });
 
     let layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
@@ -2009,7 +2008,7 @@ fn clear_pipeline(
 ) -> ComputePipeline {
     let shader = device.create_shader_module(ShaderModuleDescriptor {
         label: Some("layer_clear"),
-        source: ShaderSource::Wgsl(shader_compile(include_str!("paint/clear.wgsl"), &[]).into()),
+        source: shader_compile(include_str!("paint/edit/clear.wgsl"), &[]),
     });
 
     let layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
@@ -2270,10 +2269,9 @@ fn brush_pipeline(
         ("composite", composite.formula()),
         ("mask", mask.formula()),
     ];
-    let wgsl = shader_compile(brush.shader(stage), maps);
     let shader = device.create_shader_module(ShaderModuleDescriptor {
         label: Some(&label),
-        source: ShaderSource::Wgsl(wgsl.into()),
+        source: shader_compile(brush.shader(stage), maps),
     });
     device.create_compute_pipeline(&ComputePipelineDescriptor {
         label: Some(&label),

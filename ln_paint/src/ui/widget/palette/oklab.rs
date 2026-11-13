@@ -291,7 +291,7 @@ impl QuadMaterial for OklabPolarMaterial {
     }
 
     fn shader() -> wgpu::ShaderSource<'static> {
-        wgpu::ShaderSource::Wgsl(shader_compile(include_str!("oklab_polar.wgsl"), &[]).into())
+        shader_compile(include_str!("oklab_polar.wgsl"), &[])
     }
 
     fn fragment() -> Option<&'static str> {
@@ -305,7 +305,7 @@ impl QuadMaterial for OklabBarMaterial {
     }
 
     fn shader() -> wgpu::ShaderSource<'static> {
-        wgpu::ShaderSource::Wgsl(shader_compile(include_str!("oklab_bar.wgsl"), &[]).into())
+        shader_compile(include_str!("oklab_bar.wgsl"), &[])
     }
 
     fn fragment() -> Option<&'static str> {

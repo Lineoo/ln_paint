@@ -155,7 +155,7 @@ impl<M: QuadMaterial> QuadMeshPipeline<M> {
 
         let quad_shader = device.create_shader_module(ShaderModuleDescriptor {
             label: Some(M::label()),
-            source: ShaderSource::Wgsl(shader_compile(include_str!("quad.wgsl"), &[]).into()),
+            source: shader_compile(include_str!("quad.wgsl"), &[]),
         });
 
         let custom_shader = device.create_shader_module(ShaderModuleDescriptor {

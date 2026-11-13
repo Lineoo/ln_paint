@@ -276,7 +276,7 @@ impl QuadMaterial for HslSquareMaterial {
     }
 
     fn shader() -> wgpu::ShaderSource<'static> {
-        wgpu::ShaderSource::Wgsl(shader_compile(include_str!("hsl_square.wgsl"), &[]).into())
+        shader_compile(include_str!("hsl_square.wgsl"), &[])
     }
 
     fn fragment() -> Option<&'static str> {
@@ -290,7 +290,7 @@ impl QuadMaterial for HslRingMaterial {
     }
 
     fn shader() -> wgpu::ShaderSource<'static> {
-        wgpu::ShaderSource::Wgsl(shader_compile(include_str!("hsl_ring.wgsl"), &[]).into())
+        shader_compile(include_str!("hsl_ring.wgsl"), &[]).into()
     }
 
     fn fragment() -> Option<&'static str> {

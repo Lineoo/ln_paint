@@ -173,7 +173,7 @@ impl WireframePipeline {
 
         let shader = device.create_shader_module(ShaderModuleDescriptor {
             label: Some("wireframe"),
-            source: ShaderSource::Wgsl(shader_compile(include_str!("wireframe.wgsl"), &[]).into()),
+            source: shader_compile(include_str!("wireframe.wgsl"), &[]),
         });
 
         let bind = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
