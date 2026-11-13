@@ -3,7 +3,6 @@ use glam::{IVec2, UVec2, Vec4};
 use ln_world::{Element, Handle, World};
 
 use crate::{
-    i18n::trp,
     lnwin::LnwindowRect,
     paint::{
         brush::param::BrushParamKey,
@@ -13,6 +12,7 @@ use crate::{
     ui::{
         common::WidgetCommon,
         container::{ContainerAttr, ContainerEcho, ContainerWithCamera},
+        i18n::trp,
         layout::{
             luni::{
                 LuniAlign, LuniAxis, LuniChild, LuniChildTemplate, LuniDistribution, LuniFlex,

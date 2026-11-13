@@ -1,5 +1,4 @@
 pub mod color;
-pub mod i18n;
 pub mod input;
 pub mod lnwin;
 pub mod paint;

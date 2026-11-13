@@ -2,13 +2,13 @@ use cosmic_text::{Attrs, Metrics};
 use ln_world::{Element, Handle, World};
 
 use crate::{
-    i18n::{tr, trp},
     paint::wrapper::LayerPage,
     ui::{
         common::WidgetCommon,
         container::{
             ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerEcho, ContainerWithCamera,
         },
+        i18n::{tr, trp},
         layout::transform::{Transform, TransformEdge, TransformValue},
         renderer::{
             rrect::RRect,

@@ -2,12 +2,12 @@ use cosmic_text::{Attrs, Metrics};
 use ln_world::{Element, Handle, World};
 
 use crate::{
-    i18n::tr,
     input::pointer::{PointerHit, PointerHover, PointerScroll},
     paint::wrapper::{BrushConfigurationChanged, LayerPage},
     ui::{
         common::WidgetCommon,
         container::{ContainerAttr, ContainerDeco, ContainerDecoDropdown, ContainerWithCamera},
+        i18n::tr,
         layout::{
             anim::Animator,
             luni::{

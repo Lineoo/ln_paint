@@ -12,13 +12,13 @@ static TRF: std::sync::LazyLock<toml_edit::Document<&'static str>> =
             let label = iter.get().to_string();
             log::debug!("match {label}");
             match &label[..] {
-                "zh-CN" => break include_str!("../lang/zh-CN.toml"),
-                "zh-Hant" => break include_str!("../lang/zh-Hant.toml"),
-                "zh" => break include_str!("../lang/zh-CN.toml"),
-                "en" => break include_str!("../lang/en.toml"),
-                "jp" => break include_str!("../lang/jp.toml"),
-                "ar" => break include_str!("../lang/ar.toml"),
-                "und" => break include_str!("../lang/en.toml"),
+                "zh-CN" => break include_str!("../../lang/zh-CN.toml"),
+                "zh-Hant" => break include_str!("../../lang/zh-Hant.toml"),
+                "zh" => break include_str!("../../lang/zh-CN.toml"),
+                "en" => break include_str!("../../lang/en.toml"),
+                "jp" => break include_str!("../../lang/jp.toml"),
+                "ar" => break include_str!("../../lang/ar.toml"),
+                "und" => break include_str!("../../lang/en.toml"),
                 _ => iter.step(),
             };
         };
@@ -28,7 +28,7 @@ static TRF: std::sync::LazyLock<toml_edit::Document<&'static str>> =
 
 static FALLBACK_TRF: std::sync::LazyLock<toml_edit::Document<&'static str>> =
     std::sync::LazyLock::new(|| {
-        toml_edit::Document::parse(include_str!("../lang/en.toml")).unwrap()
+        toml_edit::Document::parse(include_str!("../../lang/en.toml")).unwrap()
     });
 
 pub fn tr(key: &str) -> &str {

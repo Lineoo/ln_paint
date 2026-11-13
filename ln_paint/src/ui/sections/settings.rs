@@ -2,7 +2,6 @@ use cosmic_text::{Attrs, Metrics, Weight};
 use ln_world::{Element, Handle, World};
 
 use crate::{
-    i18n::tr,
     paint::{
         brush::{
             BrushParams,
@@ -13,6 +12,7 @@ use crate::{
     ui::{
         common::WidgetCommon,
         container::{ContainerAttr, ContainerDeco, ContainerEcho, ContainerWithCamera},
+        i18n::tr,
         layout::{
             luni::{
                 LuniAxis, LuniChild, LuniChildTemplate, LuniDistribution, LuniFlex, LuniParent,

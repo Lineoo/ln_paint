@@ -2,6 +2,7 @@
 
 pub mod common;
 pub mod container;
+pub mod i18n;
 pub mod layout;
 pub mod object;
 pub mod renderer;
