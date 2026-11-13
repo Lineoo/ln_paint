@@ -12,7 +12,6 @@ use crate::{
         packer::Packer,
         val::{Val, ValChanged},
     },
-    measures::{Axis, FI64Ext, IRect},
     ui::{
         WidgetHover,
         common::WidgetCommon,
@@ -22,6 +21,7 @@ use crate::{
         },
         theme::{Theme, ThemeVal},
     },
+    unit::{Axis, FI64Ext, IRect},
 };
 
 // TODO move to components/

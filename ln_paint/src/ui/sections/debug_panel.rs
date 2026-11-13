@@ -7,7 +7,6 @@ use crate::{
         transform::{Transform, TransformValue},
         val::{Val, ValChanged},
     },
-    measures::IRect,
     paint::wrapper::{LayerDebugMessage, LayerPage},
     render::Render,
     save::Save,
@@ -23,6 +22,7 @@ use crate::{
         theme::ThemeVal,
         widget::button::{Button, ButtonClick, ButtonImage, ButtonToggle},
     },
+    unit::IRect,
 };
 
 pub struct DebugPanel {

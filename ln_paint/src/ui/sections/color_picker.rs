@@ -13,7 +13,6 @@ use crate::{
         transform::{Transform, TransformValue},
         val::{Val, ValChanged},
     },
-    measures::{FI64Ext, IRect},
     paint::wrapper::{BrushConfigurationChanged, LayerPage},
     ui::{
         common::WidgetCommon,
@@ -33,6 +32,7 @@ use crate::{
             tabs::{TabEntry, Tabs},
         },
     },
+    unit::{FI64Ext, IRect},
 };
 
 const PANEL_WIDTH: i32 = 384;

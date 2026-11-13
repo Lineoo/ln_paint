@@ -6,8 +6,8 @@ use ln_world::{Descriptor, Element, Handle, World};
 use crate::{
     layout::val::{Val, ValChanged},
     lnwin::Lnwindow,
-    measures::IRect,
     render::RenderPrepareControl,
+    unit::IRect,
 };
 
 pub struct Animator<T: AnimationType> {

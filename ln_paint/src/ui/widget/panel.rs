@@ -6,12 +6,12 @@ use crate::{
         transform::{Transform, TransformValue},
         val::Val,
     },
-    measures::IRect,
     ui::{
         common::WidgetCommon,
         renderer::rrect::RRect,
         theme::{Theme, ThemeVal},
     },
+    unit::IRect,
 };
 
 pub struct PanelAttr {

@@ -18,12 +18,12 @@ use winit::{dpi::PhysicalSize, event::WindowEvent};
 use crate::{
     layout::val::ValChanged,
     lnwin::Lnwindow,
-    measures::URect,
     render::{
         camera::{Camera, UICamera},
         export::Export,
     },
     ui::common::WidgetCommon,
+    unit::URect,
 };
 
 pub const MSAA_SAMPLE_COUNT: u32 = 1;

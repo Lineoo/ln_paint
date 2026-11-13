@@ -15,7 +15,6 @@ use crate::{
         val::{Val, ValChanged},
     },
     lnwin::LnwindowRect,
-    measures::{Axis, IRect},
     paint::{
         brush::param::BrushParamKey,
         input::LayerInput,
@@ -40,6 +39,7 @@ use crate::{
             tabs::{TabEntry, Tabs},
         },
     },
+    unit::{Axis, IRect},
 };
 
 pub struct DesktopUi {

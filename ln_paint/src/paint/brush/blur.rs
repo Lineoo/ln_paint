@@ -4,7 +4,6 @@ use wgpu::ComputePass;
 
 use crate::{
     brush_params,
-    measures::{FI64Ext, IRect},
     paint::{
         BrushKind, BrushStage, CompositeMode, PaintPipeline, WriteMode,
         brush::{
@@ -12,6 +11,7 @@ use crate::{
             param::{BrushParam, mask_sq_integral, step_of},
         },
     },
+    unit::{FI64Ext, IRect},
 };
 
 #[derive(Clone)]

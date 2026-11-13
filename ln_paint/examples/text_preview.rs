@@ -7,12 +7,12 @@ use ln_paint::{
         val::Val,
     },
     lnwin::{Lnwin, LnwindowRect},
-    measures::IRect,
     ui::{
         common::WidgetCommon,
         renderer::text::{Text, TextAttr},
         theme::ThemeVal,
     },
+    unit::IRect,
 };
 use ln_world::{Element, Handle, World};
 use winit::event_loop::EventLoop;

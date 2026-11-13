@@ -2,7 +2,7 @@ use std::{fmt, ops};
 
 use glam::{DVec2, I64Vec2, IVec2, UVec2, Vec2};
 
-use crate::measures::{Axis, FI64Ext};
+use crate::unit::{Axis, FI64Ext};
 
 #[repr(C)]
 #[derive(

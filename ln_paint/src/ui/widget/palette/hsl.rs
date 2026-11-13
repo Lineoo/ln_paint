@@ -16,7 +16,6 @@ use crate::{
         transfer::Transfer,
         val::{Val, ValChanged},
     },
-    measures::{FI64Ext, IRect},
     ui::{
         common::WidgetCommon,
         renderer::{
@@ -25,6 +24,7 @@ use crate::{
         },
         shaders::shader_compile,
     },
+    unit::{FI64Ext, IRect},
 };
 
 /// Inner radius of the hue ring, normalized so that the outer radius is

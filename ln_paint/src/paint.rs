@@ -33,10 +33,10 @@ use wgpu::{
 
 use crate::{
     color::srgb::{demul_alpha, mul_alpha, srgb_gamma_encode},
-    measures::{FI64Ext, IRect},
     paint::{brush::Brush, stream::ThreadInput},
     render::camera::Camera,
     ui::shaders::shader_compile,
+    unit::{FI64Ext, IRect},
 };
 
 pub const DEFAULT_MIPMAP_CAP: u8 = 8;

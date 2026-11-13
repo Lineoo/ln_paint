@@ -4,7 +4,6 @@ use cosmic_text::{Align, Attrs, Family, Metrics};
 use ln_paint::{
     layout::{transform::Transform, val::Val},
     lnwin::{Lnwin, LnwindowRect},
-    measures::{Axis, IRect},
     ui::{
         common::WidgetCommon,
         renderer::{
@@ -21,6 +20,7 @@ use ln_paint::{
             slider::Slider,
         },
     },
+    unit::{Axis, IRect},
 };
 use ln_world::{Element, World};
 use winit::event_loop::EventLoop;

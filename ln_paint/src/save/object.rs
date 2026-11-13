@@ -5,12 +5,12 @@ use uuid::Uuid;
 
 use crate::{
     layout::val::Val,
-    measures::IRect,
     save::{Autosave, Save},
     ui::{
         common::WidgetCommon,
         object::color_snip::{ColorSnip, ColorSnipAttr},
     },
+    unit::IRect,
 };
 
 pub const TABLE_LAYER_OBJECT: TableDefinition<(u64, u128), &[u8]> =

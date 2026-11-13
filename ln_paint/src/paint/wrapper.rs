@@ -14,7 +14,6 @@ use wgpu::{CommandEncoderDescriptor, ComputePassDescriptor};
 use crate::{
     layout::val::Val,
     lnwin::Lnwindow,
-    measures::{FI64Ext, IRect},
     paint::{
         CacheLayerChunk, CacheLayers, ChunkPool, ChunkRenderer, DEFAULT_CHUNK_SIZE,
         DEFAULT_MIPMAP_CAP, PaintPipeline, PlainLayer, RawLayer, Standalone,
@@ -38,6 +37,7 @@ use crate::{
         container::{Container, ContainerAttr},
         renderer::rrect::RRect,
     },
+    unit::{FI64Ext, IRect},
 };
 
 const BRIDGE_CHUNK_SIZE: UVec2 = UVec2::splat(1024);

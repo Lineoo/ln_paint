@@ -11,7 +11,6 @@ use crate::{
         transform::{Transform, TransformValue},
         val::{Val, ValChanged},
     },
-    measures::{FI64Ext, IRect},
     paint::{
         input::LayerInput,
         wrapper::{BrushConfigurationChanged, LayerPage},
@@ -22,6 +21,7 @@ use crate::{
         theme::ThemeVal,
         widget::button::{Button, ButtonClick, ButtonDrag, ButtonDragStatus},
     },
+    unit::{FI64Ext, IRect},
 };
 
 pub struct ColorSnip {

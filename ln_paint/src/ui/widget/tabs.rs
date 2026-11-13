@@ -13,13 +13,13 @@ use crate::{
         transform::{Transform, TransformEdge, TransformValue},
         val::{Val, ValChanged},
     },
-    measures::IRect,
     ui::{
         common::WidgetCommon,
         renderer::rrect::RRect,
         theme::{Theme, ThemeVal},
         widget::button::{Button, ButtonAction, ButtonImage},
     },
+    unit::IRect,
 };
 
 // TODO move to container/

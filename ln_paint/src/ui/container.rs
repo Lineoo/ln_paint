@@ -11,7 +11,6 @@ use crate::{
         val::{Val, ValChanged},
     },
     lnwin::Lnwindow,
-    measures::{FI64Ext, IRect},
     render::{
         Render, RenderDrawControl, RenderExtra,
         camera::{Camera, CameraDescriptor, CameraOutdated, SetCameraOutdated},
@@ -21,6 +20,7 @@ use crate::{
         renderer::rrect::RRect,
         theme::{Theme, ThemeVal},
     },
+    unit::{FI64Ext, IRect},
 };
 
 #[derive(Clone, Copy)]

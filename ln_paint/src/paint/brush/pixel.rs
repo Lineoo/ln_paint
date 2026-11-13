@@ -5,11 +5,11 @@ use ln_world::Element;
 
 use crate::{
     brush_params,
-    measures::{FI64Ext, IRect},
     paint::{
         BrushKind, BrushStage, CompositeMode, DRAWS_ARRAY_CAPACITY, PaintPipeline, WriteMode,
         brush::{Brush, Dab, DrawsProcessor, param::BrushParam},
     },
+    unit::{FI64Ext, IRect},
 };
 
 #[derive(Clone)]

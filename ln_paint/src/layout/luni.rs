@@ -2,7 +2,7 @@ use ln_world::{Descriptor, Element, Handle, World};
 
 use crate::{
     layout::val::{Val, ValChanged},
-    measures::IRect,
+    unit::IRect,
 };
 
 pub struct LuniFlex {

@@ -18,9 +18,9 @@ use crate::{
     color::srgb::srgb_gamma_decode_f32,
     layout::val::{Val, ValChanged},
     lnwin::Lnwindow,
-    measures::{FI64Ext, IRect, MinMax},
     render::{MSAA_STATE, Render, RenderDrawControl, RenderPrepareControl, camera::CameraBind},
     ui::{common::WidgetCommon, shaders::shader_compile},
+    unit::{FI64Ext, IRect, MinMax},
 };
 
 const GLYPH_ATLAS_SIZE: u32 = 2048;

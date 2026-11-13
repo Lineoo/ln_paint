@@ -8,7 +8,6 @@ use crate::{
         transform::{Transform, TransformEdge, TransformValue},
         val::{Val, ValChanged},
     },
-    measures::{Axis, IRect},
     paint::{
         brush::param::BrushParamKey,
         input::{LayerInput, LayerInputMode},
@@ -25,6 +24,7 @@ use crate::{
             slider::{Slider, SliderLabel, SliderValue},
         },
     },
+    unit::{Axis, IRect},
 };
 
 pub struct SideDocker {

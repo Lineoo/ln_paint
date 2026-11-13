@@ -8,7 +8,6 @@ use crate::{
         transform::{Transform, TransformEdge, TransformValue},
         val::{Val, ValChanged},
     },
-    measures::IRect,
     paint::wrapper::LayerPage,
     ui::{
         common::WidgetCommon,
@@ -22,6 +21,7 @@ use crate::{
         theme::ThemeVal,
         widget::button::{Button, ButtonClick},
     },
+    unit::IRect,
 };
 
 pub struct LayerSelectionPanel {

@@ -16,7 +16,6 @@ use crate::{
     },
     layout::val::{Val, ValChanged},
     lnwin::Lnwindow,
-    measures::{FI64Ext, IRect},
     paint::{
         brush::{Dab, param::BrushParamKey},
         wrapper::{BrushConfigurationChanged, LayerPage},
@@ -27,6 +26,7 @@ use crate::{
         theme::Theme,
         widget::area::{Area, AreaMode},
     },
+    unit::{FI64Ext, IRect},
 };
 
 const DRAG_DISTANCE: f64 = 0.005;

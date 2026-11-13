@@ -12,7 +12,6 @@ use crate::{
         transfer::Transfer,
         val::{Val, ValChanged},
     },
-    measures::{FI64Ext, IRect},
     paint::{
         ChunkRenderer, PaintPipeline, Standalone,
         brush::{BrushParams, Dab, DabBatch, Stroke},
@@ -23,6 +22,7 @@ use crate::{
         common::WidgetCommon,
         container::{ContainerAttr, ContainerEcho, ContainerWithCamera},
     },
+    unit::{FI64Ext, IRect},
 };
 
 pub struct BrushPreviewDescriptor {

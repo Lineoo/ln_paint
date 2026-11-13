@@ -9,11 +9,11 @@ use wgpu::{
 };
 
 use crate::{
-    measures::IRect,
     paint::{
         CHUNK_TEXTURE_FORMAT, CacheLayers, ChunkPool, PaintPipeline, RawLayer, RawLayerChunk,
         brush::Stroke, chunks_key_to_rect, rect_chunks_iter,
     },
+    unit::IRect,
 };
 
 const UNDO_SNAPSHOTS_LIMIT: usize = 64;

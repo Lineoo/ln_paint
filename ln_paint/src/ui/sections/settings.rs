@@ -13,7 +13,6 @@ use crate::{
         transform::{Transform, TransformEdge, TransformValue},
         val::{Val, ValChanged},
     },
-    measures::{Axis, IRect},
     paint::{
         brush::{
             BrushParams,
@@ -29,6 +28,7 @@ use crate::{
         theme::ThemeVal,
         widget::slider::{Slider, SliderLabel, SliderValue},
     },
+    unit::{Axis, IRect},
 };
 
 pub struct SettingPanel {

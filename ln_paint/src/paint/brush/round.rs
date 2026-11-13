@@ -3,7 +3,6 @@ use ln_world::Element;
 
 use crate::{
     brush_params,
-    measures::{FI64Ext, IRect},
     paint::{
         BrushKind, BrushStage, CompositeMode, PaintPipeline, WriteMode,
         brush::{
@@ -11,6 +10,7 @@ use crate::{
             param::{BrushParam, overlap, rate_coeff, step_of},
         },
     },
+    unit::{FI64Ext, IRect},
 };
 
 #[derive(Clone)]

@@ -14,7 +14,6 @@ use crate::{
         transform::{Transform, TransformEdge, TransformValue},
         val::Val,
     },
-    measures::IRect,
     paint::wrapper::{BrushConfigurationChanged, LayerPage},
     ui::{
         brush_preview::BrushPreviewDescriptor,
@@ -32,6 +31,7 @@ use crate::{
             tabs::{TabEntry, Tabs},
         },
     },
+    unit::IRect,
 };
 
 const ITEM_HEIGHT: i32 = 80;

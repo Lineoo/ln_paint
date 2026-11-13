@@ -7,8 +7,8 @@ use crate::{
         srgb::{hex_to_srgb, srgb_gamma_decode},
     },
     layout::val::{Val, ValChanged},
-    measures::Axis,
     ui::widget::button::ButtonTheme,
+    unit::Axis,
 };
 
 pub struct Theme {

@@ -19,7 +19,6 @@ use winit::{
 use crate::{
     input::{focus::FocusTool, mouse::MouseTool, pointer::PointerTool, touch::MultiTouchTool},
     layout::val::{Val, ValChanged},
-    measures::{FI64Ext, IRect, URect},
     render::{
         Render,
         camera::{Camera, CameraDescriptor, CameraOutdated, SetCameraOutdated, UICamera},
@@ -38,6 +37,7 @@ use crate::{
             oklab::{OklabBarMaterial, OklabPolarMaterial},
         },
     },
+    unit::{FI64Ext, IRect, URect},
 };
 
 #[derive(Default)]

@@ -12,7 +12,6 @@ use glam::{I64Vec2, UVec2, Vec4};
 use wgpu::{BindGroup, CommandEncoderDescriptor, ComputePass, ComputePassDescriptor};
 
 use crate::{
-    measures::{FI64Ext, IRect},
     paint::{
         CacheLayerChunk, CacheLayers, ChunkPool, DRAWS_ARRAY_CAPACITY, PaintPipeline, PlainLayer,
         RawLayer, RawLayerChunk, Standalone, WriteMode,
@@ -21,6 +20,7 @@ use crate::{
         stream::ThreadInput,
         write_dispatch,
     },
+    unit::{FI64Ext, IRect},
 };
 
 #[derive(Clone, Copy, PartialEq)]

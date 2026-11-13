@@ -20,13 +20,13 @@ use wgpu::{
 use winit::window::Window;
 
 use crate::{
-    measures::{FI64Ext, IRect},
     paint::{
         CacheLayerChunk, DirtyChunkPool, PaintPipeline, RawLayerChunk, chunks_key_to_rect,
         chunks_stack_key_to_rect, point_zoom_to_chunks_stack, rect_chunks_iter,
         rect_chunks_stack_layer_iter, rect_chunks_stack_layer_range,
     },
     save::chunk::{ChunkLoad, ChunkLoadResult, ChunkSave},
+    unit::{FI64Ext, IRect},
 };
 
 const CHUNK_CACHE_REAL_CAP: usize = 512;

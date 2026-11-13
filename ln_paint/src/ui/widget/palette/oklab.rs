@@ -12,7 +12,6 @@ use crate::{
         transfer::Transfer,
         val::{Val, ValChanged},
     },
-    measures::{FI64Ext, IRect},
     ui::{
         common::WidgetCommon,
         renderer::{
@@ -23,6 +22,7 @@ use crate::{
         shaders::shader_compile,
         widget::palette::utils::find_gamut_intersection,
     },
+    unit::{FI64Ext, IRect},
 };
 
 const THUMB_RADIUS: f32 = 5.0;
