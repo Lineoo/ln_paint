@@ -25,17 +25,17 @@ pub struct SliderValue(pub f32);
 pub struct Slider {
     pub common: WidgetCommon,
     pub value: Handle<Val<f32>>,
-    pub axis: Axis,
     pub rect: Handle<Val<IRect>>,
     pub hover: Handle<Val<bool>>,
+    pub axis: Axis,
     pub pressed: bool,
 }
 
 pub struct SliderLabel {
-    pub text: Handle<Val<String>>,
-    pub clockwise: bool,
-    pub source: Handle<Slider>,
     pub common: WidgetCommon,
+    pub text: Handle<Val<String>>,
+    pub source: Handle<Slider>,
+    pub clockwise: bool,
 }
 
 impl Element for Slider {
