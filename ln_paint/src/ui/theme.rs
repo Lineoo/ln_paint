@@ -46,11 +46,11 @@ pub struct ThemeVal {
 impl Theme {
     pub fn dark_mode() -> Self {
         Theme {
-            gray0: srgb_gamma_decode(hex_to_srgb("#333")),
-            gray1: srgb_gamma_decode(hex_to_srgb("#444")),
-            gray2: srgb_gamma_decode(hex_to_srgb("#555")),
-            gray3: srgb_gamma_decode(hex_to_srgb("#777")),
-            gray4: srgb_gamma_decode(hex_to_srgb("#aaa")),
+            gray0: srgb_gamma_decode(hex_to_srgb("#1f1f1f")),
+            gray1: srgb_gamma_decode(hex_to_srgb("#3e3e3e")),
+            gray2: srgb_gamma_decode(hex_to_srgb("#454545")),
+            gray3: srgb_gamma_decode(hex_to_srgb("#676767")),
+            gray4: srgb_gamma_decode(hex_to_srgb("#818181")),
             theme: srgb_gamma_decode(hex_to_srgb("#cc7353")),
             distinct: srgb_gamma_decode(hex_to_srgb("#fff")),
             c0: oklab_to_linear_srgb(Vec4::new(0.6, 0.08, 0.0, 1.0)),
