@@ -40,8 +40,9 @@ impl<T: Send + 'static> ValBind<'_, T> {
         let fun = world.insert(Val::new(Box::new(fun) as TransFunc<T>));
         world.queue(move |world| {
             let fun = world.fetch(fun);
+            let val = (fun.val)(world);
             let mut that = world.fetch_mut(handle);
-            that.val = (fun.val)(world);
+            that.val = val;
             world.queue_trigger(that.handle(), ValChanged);
         });
         ValBind { world, handle, fun }
@@ -62,8 +63,9 @@ impl<T: Send + 'static> ValBind<'_, T> {
         let ValBind { world, handle, fun } = self;
         world.observer(this, move |ValChanged, world| {
             let fun = world.fetch(fun);
+            let val = (fun.val)(world);
             let mut that = world.fetch_mut(handle);
-            that.val = (fun.val)(world);
+            that.val = val;
             world.queue_trigger(that.handle(), ValChanged);
         });
         self
@@ -77,8 +79,9 @@ impl<T: Send + 'static> ValBind<'_, T> {
     ) -> Self {
         let ValBind { world, handle, .. } = self;
         world.observer(this, move |event: &E, world| {
+            let val = (action)(event, world);
             let mut that = world.fetch_mut(handle);
-            that.val = (action)(event, world);
+            that.val = val;
             world.queue_trigger(that.handle(), ValChanged);
         });
         self

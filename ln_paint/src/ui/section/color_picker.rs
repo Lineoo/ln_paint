@@ -32,9 +32,6 @@ use crate::{
     val::{Val, ValChanged},
 };
 
-const PANEL_WIDTH: i32 = 384;
-const PANEL_HEIGHT: i32 = 320;
-
 pub struct ColorPickerPanel {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,
@@ -175,19 +172,6 @@ impl Element for ColorPickerButton {
             color,
             radius: 10.0,
             width: 0.0,
-        });
-
-        let panel_rect = world.build(Transform::anchor(
-            (1.0, 1.0),
-            IRect::new_extend(20, -PANEL_HEIGHT, PANEL_WIDTH as u32, PANEL_HEIGHT as u32),
-            self.rect,
-        ));
-        world.insert(ColorPickerPanel {
-            common: WidgetCommon {
-                visible: self.selected,
-                ..self.common
-            },
-            rect: panel_rect,
         });
 
         world.observer(page.handle(), move |&BrushConfigurationChanged, world| {

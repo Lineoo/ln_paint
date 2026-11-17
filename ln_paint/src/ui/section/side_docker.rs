@@ -15,7 +15,10 @@ use crate::{
             transform::{Transform, TransformEdge, TransformValue},
         },
         renderer::svg::svg_render,
-        section::{brush_panel::BrushPanel, color_picker::ColorPickerButton},
+        section::{
+            brush_panel::BrushPanel,
+            color_picker::{ColorPickerButton, ColorPickerPanel},
+        },
         theme::ThemeVal,
         widget::{
             button::{Button, ButtonClick, ButtonImage, ButtonToggle},
@@ -38,7 +41,7 @@ impl Element for SideDocker {
         world.set_autodeps(Some(this));
 
         let theme = world.single_fetch::<ThemeVal>();
-        let layer = world.single::<LayerPage>();
+        let page = world.single::<LayerPage>();
 
         let panel_rect = world.build(Transform::new(
             TransformValue {
@@ -92,151 +95,220 @@ impl Element for SideDocker {
             },
         );
 
-        let eraser_selected = ValBind::new(world, move |world| {
-            matches!(
-                world
-                    .single_fetch::<LayerPage>()
-                    .active()
-                    .toggle(BrushParamKey::Erase),
-                Some(true)
-            )
-        })
-        .observer(layer, move |&BrushConfigurationChanged, world| {
-            matches!(
-                world
-                    .single_fetch::<LayerPage>()
-                    .active()
-                    .toggle(BrushParamKey::Erase),
-                Some(true)
-            )
-        })
-        .finish();
-
-        let docker_button =
-            |luni: &mut LuniFlex, image_bytes: &[u8], selected: Handle<Val<bool>>| {
-                let rect = world.build(luni.child(LuniChild::default()));
-                world.insert(Button {
-                    common: self.common,
-                    rect,
-                    theme: theme.button(),
-                    image: Some(ButtonImage::new(svg_render(image_bytes), theme.distinct, 8)),
-                    selected,
-                    hovering: world.insert(Val::new(false)),
-                })
-            };
+        let docker_button = |luni: &mut LuniFlex, image_bytes: &[u8]| {
+            let rect = world.build(luni.child(LuniChild::default()));
+            Button {
+                common: self.common,
+                rect,
+                theme: theme.button(),
+                image: Some(ButtonImage::new(svg_render(image_bytes), theme.distinct, 8)),
+                selected: world.insert(Val::new(false)),
+                hovering: world.insert(Val::new(false)),
+            }
+        };
 
         let brush_visible = world.insert(Val::new(false));
-        let brush_menu_rect = world.build(luni.child(LuniChild::default()));
-        let brush_menu = world.insert(Button {
-            common: self.common,
-            rect: brush_menu_rect,
-            theme: theme.button(),
-            image: Some(ButtonImage::new(
-                svg_render(include_bytes!("../../../res/interface/pen.svg")),
-                theme.distinct,
-                8,
-            )),
-            selected: brush_visible,
-            hovering: world.insert(Val::new(false)),
-        });
-        world.insert(ButtonToggle { source: brush_menu });
-
-        let eraser = docker_button(
-            &mut luni,
-            include_bytes!("../../../res/interface/eraser.svg"),
-            eraser_selected,
-        );
-
         let color_visible = world.insert(Val::new(false));
-        let color_picker_rect = world.build(luni.child(LuniChild::default()));
-        world.insert(ColorPickerButton {
-            common: self.common,
-            rect: color_picker_rect,
-            selected: color_visible,
-        });
 
-        let selection = docker_button(
-            &mut luni,
-            include_bytes!("../../../res/interface/square-dashed.svg"),
-            world.insert(Val::new(false)),
-        );
+        {
+            let brush_menu_rect = world.build(luni.child(LuniChild::default()));
+            let brush_menu = world.insert(Button {
+                common: self.common,
+                rect: brush_menu_rect,
+                theme: theme.button(),
+                image: Some(ButtonImage::new(
+                    svg_render(include_bytes!("../../../res/interface/pen.svg")),
+                    theme.distinct,
+                    8,
+                )),
+                selected: brush_visible,
+                hovering: world.insert(Val::new(false)),
+            });
+            world.insert(ButtonToggle { source: brush_menu });
 
-        let undo = docker_button(
-            &mut luni,
-            include_bytes!("../../../res/interface/undo-2.svg"),
-            world.insert(Val::new(false)),
-        );
+            let brush_panel_rect = world.build(Transform::anchor(
+                (1.0, 1.0),
+                IRect::new_extend(20, -480, 364, 480),
+                brush_menu_rect,
+            ));
 
-        let redo = docker_button(
-            &mut luni,
-            include_bytes!("../../../res/interface/redo-2.svg"),
-            world.insert(Val::new(false)),
-        );
+            world.insert(BrushPanel {
+                common: WidgetCommon {
+                    visible: brush_visible,
+                    ..self.common
+                },
+                rect: brush_panel_rect,
+            });
+        }
+        {
+            let eraser_selected = world.insert(Val::new(false));
+            let eraser = world.insert(Button {
+                common: self.common,
+                rect: world.build(luni.child(LuniChild::default())),
+                theme: theme.button(),
+                image: Some(ButtonImage::new(
+                    svg_render(include_bytes!("../../../res/interface/eraser.svg")),
+                    theme.distinct,
+                    8,
+                )),
+                selected: eraser_selected,
+                hovering: world.insert(Val::new(false)),
+            });
+            world.observer(eraser, move |&ButtonClick, world| {
+                let mut page = world.fetch_mut(page);
+                let is_erase = page
+                    .active()
+                    .toggle(BrushParamKey::Erase)
+                    .unwrap_or_default();
+                page.active_mut()
+                    .set_toggle(BrushParamKey::Erase, !is_erase);
+                world.queue_trigger(page.handle(), BrushConfigurationChanged);
+            });
+            world.observer(page, move |&BrushConfigurationChanged, world| {
+                let mut selected = world.fetch_mut(eraser_selected);
+                let page = world.fetch(page);
+                selected.val = page
+                    .active()
+                    .toggle(BrushParamKey::Erase)
+                    .unwrap_or_default()
+            });
+        }
+        {
+            let color_menu_rect = world.build(luni.child(LuniChild::default()));
+            world.insert(ColorPickerButton {
+                common: self.common,
+                rect: color_menu_rect,
+                selected: color_visible,
+            });
+            let color_panel_rect = world.build(Transform::anchor(
+                (1.0, 1.0),
+                IRect::new_extend(20, -320, 364, 320),
+                color_menu_rect,
+            ));
 
+            world.insert(ColorPickerPanel {
+                common: WidgetCommon {
+                    visible: color_visible,
+                    ..self.common
+                },
+                rect: color_panel_rect,
+            });
+        }
+        {
+            let selection = world.insert(docker_button(
+                &mut luni,
+                include_bytes!("../../../res/interface/square-dashed.svg"),
+            ));
+            world.insert(ButtonToggle { source: selection });
+            // TODO selection state is not synced with LayerInput mode
+            world.observer(selection, move |&ButtonClick, world| {
+                let mut input = world.single_fetch_mut::<LayerInput>();
+                input.mode = LayerInputMode::Area;
+            });
+        }
+        {
+            let undo = world.insert(docker_button(
+                &mut luni,
+                include_bytes!("../../../res/interface/undo-2.svg"),
+            ));
+            world.observer(undo, move |&ButtonClick, world| {
+                let mut layer = world.fetch_mut::<LayerPage>(page);
+                layer.undo();
+            });
+        }
+        {
+            let redo = world.insert(docker_button(
+                &mut luni,
+                include_bytes!("../../../res/interface/redo-2.svg"),
+            ));
+            world.observer(redo, move |&ButtonClick, world| {
+                let mut layer = world.fetch_mut::<LayerPage>(page);
+                layer.redo();
+            });
+        }
         world.build(luni.child(LuniChild {
             basis: Some(0),
             grow: Some(1.0),
             ..Default::default()
         }));
+        {
+            let slider_rect = world.build(luni.child(LuniChild {
+                basis: Some(160),
+                shrink: Some(1.0),
+                margin: Some(LuniRect {
+                    left: 0,
+                    bottom: 5,
+                    right: 0,
+                    top: 5,
+                }),
+                ..Default::default()
+            }));
+            let slider_value = world.insert(Val::new(0.67));
+            let slider = world.insert(Slider {
+                common: self.common,
+                rect: slider_rect,
+                axis: Axis::Up,
+                value: slider_value,
+                pressed: false,
+            });
+            let slider_label_text = ValBind::transfer(world, slider_value, |&value| {
+                let scale = (value.exp2() - 1.0) * 127.5 + 0.5;
+                format!("{scale:.2} px")
+            });
+            world.insert(SliderLabel {
+                text: slider_label_text,
+                clockwise: true,
+                source: slider,
+                hover: false,
+                common: self.common,
+            });
+            world.observer(slider, move |&SliderValue(value), world| {
+                let mut layer = world.fetch_mut(page);
+                let scale = (value.exp2() - 1.) * 127.5 + 0.5;
+                if let Some(param) = layer.active_mut().scalar_mut(BrushParamKey::Size) {
+                    param.scale = scale;
+                }
 
-        let slider_rect = world.build(luni.child(LuniChild {
-            basis: Some(160),
-            shrink: Some(1.0),
-            margin: Some(LuniRect {
-                left: 0,
-                bottom: 5,
-                right: 0,
-                top: 5,
-            }),
-            ..Default::default()
-        }));
-
-        let touch = docker_button(
-            &mut luni,
-            include_bytes!("../../../res/interface/pointer.svg"),
-            world.insert(Val::new(false)),
-        );
-
-        let pipette = docker_button(
-            &mut luni,
-            include_bytes!("../../../res/interface/pipette.svg"),
-            world.insert(Val::new(false)),
-        );
-
-        let brush_panel_rect = world.build(Transform::anchor(
-            (1.0, 1.0),
-            IRect::new_extend(20, -480, 364, 480),
-            brush_menu_rect,
-        ));
-
-        world.insert(BrushPanel {
-            common: WidgetCommon {
-                camera: self.common.camera,
-                visible: brush_visible,
-            },
-            rect: brush_panel_rect,
-        });
-
-        let value = world.insert(Val::new(0.67));
-        let slider = world.insert(Slider {
-            common: self.common,
-            rect: slider_rect,
-            axis: Axis::Up,
-            value,
-            pressed: false,
-        });
-
-        let slider_label_text = ValBind::transfer(world, value, |&value| {
-            let scale = (value.exp2() - 1.0) * 127.5 + 0.5;
-            format!("{scale:.2} px")
-        });
-        world.insert(SliderLabel {
-            text: slider_label_text,
-            clockwise: true,
-            source: slider,
-            hover: false,
-            common: self.common,
-        });
+                world.queue_trigger(layer.handle(), BrushConfigurationChanged);
+            });
+            world.observer(page, move |&BrushConfigurationChanged, world| {
+                let page = world.fetch(page);
+                let handle = world.fetch(slider).value;
+                let mut value = world.fetch_mut(handle);
+                let curr = page
+                    .active()
+                    .scalar(BrushParamKey::Size)
+                    .map(|param| param.scale)
+                    .unwrap_or(0.0);
+                let display = ((curr - 0.5) / 127.5 + 1.).log2();
+                if value.val != display {
+                    value.val = display;
+                    world.queue_trigger(handle, ValChanged);
+                }
+            });
+        }
+        {
+            let touch = world.insert(docker_button(
+                &mut luni,
+                include_bytes!("../../../res/interface/pointer.svg"),
+            ));
+            world.insert(ButtonToggle { source: touch });
+            world.observer(touch, move |&ButtonClick, world| {
+                let mut input = world.single_fetch_mut::<LayerInput>();
+                input.touch_draw = !input.touch_draw;
+            });
+        }
+        {
+            let pipette = world.insert(docker_button(
+                &mut luni,
+                include_bytes!("../../../res/interface/pipette.svg"),
+            ));
+            world.insert(ButtonToggle { source: pipette });
+            world.observer(pipette, move |&ButtonClick, world| {
+                let mut input = world.single_fetch_mut::<LayerInput>();
+                input.hold_pick = !input.hold_pick;
+            });
+        }
 
         world.observer(brush_visible, move |&ValChanged, world| {
             if world.fetch(brush_visible).val {
@@ -252,78 +324,6 @@ impl Element for SideDocker {
             }
         });
 
-        world.observer(eraser, move |&ButtonClick, world| {
-            let mut layer = world.fetch_mut(layer);
-            let is_erase = matches!(layer.active().toggle(BrushParamKey::Erase), Some(true));
-            layer
-                .active_mut()
-                .set_toggle(BrushParamKey::Erase, !is_erase);
-            world.queue_trigger(layer.handle(), BrushConfigurationChanged);
-        });
-
-        world.insert(ButtonToggle { source: pipette });
-        world.observer(pipette, move |&ButtonClick, world| {
-            let mut input = world.single_fetch_mut::<LayerInput>();
-            input.hold_pick = !input.hold_pick;
-        });
-
-        world.insert(ButtonToggle { source: selection });
-        // TODO selection state is not synced with LayerInput mode
-        world.observer(selection, move |&ButtonClick, world| {
-            let mut input = world.single_fetch_mut::<LayerInput>();
-            input.mode = LayerInputMode::Area;
-        });
-
-        world.insert(ButtonToggle { source: touch });
-        world.observer(touch, move |&ButtonClick, world| {
-            let mut input = world.single_fetch_mut::<LayerInput>();
-            input.touch_draw = !input.touch_draw;
-        });
-
-        world.observer(undo, move |&ButtonClick, world| {
-            let mut layer = world.fetch_mut::<LayerPage>(layer);
-            layer.undo();
-        });
-
-        world.observer(redo, move |&ButtonClick, world| {
-            let mut layer = world.fetch_mut::<LayerPage>(layer);
-            layer.redo();
-        });
-
-        world.observer(slider, move |&SliderValue(value), world| {
-            let mut layer = world.fetch_mut(layer);
-            let scale = (value.exp2() - 1.) * 127.5 + 0.5;
-            if let Some(param) = layer.active_mut().scalar_mut(BrushParamKey::Size) {
-                param.scale = scale;
-            }
-
-            world.queue_trigger(layer.handle(), BrushConfigurationChanged);
-        });
-
-        world.observer(layer, move |&BrushConfigurationChanged, world| {
-            let value = {
-                let layer = world.fetch(layer);
-                layer
-                    .active()
-                    .scalar(BrushParamKey::Size)
-                    .map(|param| param.scale)
-                    .unwrap_or(0.0)
-            };
-            set_slider_value(world, slider, ((value - 0.5) / 127.5 + 1.).log2());
-        });
-
         world.insert(luni);
-
-        world.dependency(this, self.rect);
-    }
-}
-
-fn set_slider_value(world: &World, slider: Handle<Slider>, next: f32) {
-    let handle = world.fetch(slider).value;
-    let mut value = world.fetch_mut(handle);
-    if value.val != next {
-        value.val = next;
-        drop(value);
-        world.queue_trigger(handle, ValChanged);
     }
 }
