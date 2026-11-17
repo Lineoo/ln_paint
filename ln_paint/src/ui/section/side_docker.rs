@@ -15,7 +15,7 @@ use crate::{
             transform::{Transform, TransformEdge, TransformValue},
         },
         renderer::svg::svg_render,
-        sections::{brush_panel::BrushPanel, color_picker::ColorPickerButton},
+        section::{brush_panel::BrushPanel, color_picker::ColorPickerButton},
         theme::ThemeVal,
         widget::{
             button::{Button, ButtonClick, ButtonImage, ButtonToggle},

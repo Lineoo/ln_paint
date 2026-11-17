@@ -29,7 +29,7 @@ use crate::{
             canvas::CanvasPipeline, quad::QuadMeshPipeline, rrect::RRectMaterial,
             text::TextPipeline, vtor::VtorPipeline, wireframe::WireframePipeline,
         },
-        sections::{desktop_ui::DesktopUi, mobile_ui::MobileUi},
+        section::{desktop_ui::DesktopUi, mobile_ui::MobileUi},
         theme::Theme,
         widget::palette::{
             hsl::{HslRingMaterial, HslSquareMaterial},

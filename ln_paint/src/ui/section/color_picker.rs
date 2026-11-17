@@ -16,7 +16,7 @@ use crate::{
         layout::transform::{Transform, TransformValue},
         object::color_snip::{ColorSnip, ColorSnipAttr},
         renderer::{rrect::RRect, svg::svg_render},
-        sections::{debug_panel::DebugPanel, layer_selection::LayerSelectionPanel},
+        section::{debug_panel::DebugPanel, layer_selection::LayerSelectionPanel},
         theme::ThemeVal,
         widget::{
             button::{Button, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonToggle},

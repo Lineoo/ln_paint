@@ -24,7 +24,7 @@ use crate::{
             svg::svg_render,
             text::{Text, TextAttr},
         },
-        sections::{
+        section::{
             brush_panel::BrushListPanel, color_picker::LayerOklabPalette, debug_panel::DebugPanel,
             layer_selection::LayerSelectionPanel, settings::SettingPanel,
         },

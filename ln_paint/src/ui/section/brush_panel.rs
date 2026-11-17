@@ -22,7 +22,7 @@ use crate::{
             svg::svg_render,
             text::{Text, TextAttr},
         },
-        sections::settings::SettingPanel,
+        section::settings::SettingPanel,
         theme::{Theme, ThemeVal},
         widget::{
             button::{Button, ButtonClick, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonTheme},
