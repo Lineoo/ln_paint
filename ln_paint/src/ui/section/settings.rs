@@ -619,6 +619,7 @@ fn option_slider(
         value,
         axis: Axis::Right,
         rect,
+        hover: world.insert(Val::new(false)),
         pressed: false,
     });
 
@@ -628,7 +629,6 @@ fn option_slider(
         text,
         clockwise: false,
         source: slider,
-        hover: false,
         common,
     });
 

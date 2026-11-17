@@ -249,6 +249,7 @@ impl Element for SideDocker {
                 rect: slider_rect,
                 axis: Axis::Up,
                 value: slider_value,
+                hover: world.insert(Val::new(false)),
                 pressed: false,
             });
             let slider_label_text = ValBind::transfer(world, slider_value, |&value| {
@@ -259,7 +260,6 @@ impl Element for SideDocker {
                 text: slider_label_text,
                 clockwise: true,
                 source: slider,
-                hover: false,
                 common: self.common,
             });
             world.observer(slider, move |&SliderValue(value), world| {

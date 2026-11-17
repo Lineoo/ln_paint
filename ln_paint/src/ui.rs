@@ -8,8 +8,3 @@ pub mod renderer;
 pub mod section;
 pub mod theme;
 pub mod widget;
-
-pub enum WidgetHover {
-    Enter,
-    Leave,
-}

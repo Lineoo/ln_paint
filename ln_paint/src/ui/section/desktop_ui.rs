@@ -278,6 +278,7 @@ impl Element for ToolBar {
             rect: slider_rect,
             axis: Axis::Right,
             value,
+            hover: world.insert(Val::new(false)),
             pressed: false,
         });
 
@@ -289,7 +290,6 @@ impl Element for ToolBar {
             text: slider_label_text,
             clockwise: true,
             source: slider,
-            hover: false,
             common,
         });
 

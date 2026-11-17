@@ -8,7 +8,6 @@ use crate::{
         pointer::{PointerHit, PointerHitStatus, PointerHover, PointerHoverStatus},
     },
     ui::{
-        WidgetHover,
         common::WidgetCommon,
         layout::anim::{Animator, AnimatorSnap},
         renderer::{
@@ -28,6 +27,7 @@ pub struct Slider {
     pub value: Handle<Val<f32>>,
     pub axis: Axis,
     pub rect: Handle<Val<IRect>>,
+    pub hover: Handle<Val<bool>>,
     pub pressed: bool,
 }
 
@@ -35,12 +35,11 @@ pub struct SliderLabel {
     pub text: Handle<Val<String>>,
     pub clockwise: bool,
     pub source: Handle<Slider>,
-    pub hover: bool,
     pub common: WidgetCommon,
 }
 
-impl Slider {
-    pub fn init(&self, world: &World, handle: Handle<Self>) {
+impl Element for Slider {
+    fn when_insert(&mut self, world: &World, handle: Handle<Self>) {
         world.scope("slider");
         world.set_autodeps(Some(handle));
         world.dependency(handle, self.rect);
@@ -133,11 +132,14 @@ impl Slider {
         });
 
         world.observer(handle, move |event: &PointerHover, world| {
-            if let PointerHoverStatus::Enter = event.status {
-                world.queue_trigger(handle, WidgetHover::Enter);
-            } else if let PointerHoverStatus::Leave = event.status {
-                world.queue_trigger(handle, WidgetHover::Leave);
-            }
+            let this = world.fetch(handle);
+            let hover = match event.status {
+                PointerHoverStatus::Enter => true,
+                PointerHoverStatus::Leave => false,
+                _ => return,
+            };
+            world.fetch_mut(this.hover).val = hover;
+            world.queue_trigger(this.hover, ValChanged);
         });
 
         world.observer(handle, move |event: &PointerHit, world| {
@@ -225,8 +227,8 @@ impl Slider {
     }
 }
 
-impl SliderLabel {
-    fn init(&self, world: &World, this: Handle<Self>) {
+impl Element for SliderLabel {
+    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
         world.scope("slider_label");
         world.set_autodeps(Some(this));
 
@@ -242,10 +244,9 @@ impl SliderLabel {
             self.clockwise,
             position,
         )));
-        let label_visible = world.insert(Val::new(self.hover));
         let common = WidgetCommon {
             camera: self.common.camera,
-            visible: label_visible,
+            visible: source.hover,
         };
 
         world.insert(RRect {
@@ -271,18 +272,6 @@ impl SliderLabel {
             outdated: false,
         });
 
-        world.observer(self.source, move |event: &WidgetHover, world| {
-            let mut this = world.fetch_mut(this);
-            let visible = world.fetch(this.common.visible).val;
-            let mut label_visible = world.fetch_mut(label_visible);
-            this.hover = match event {
-                WidgetHover::Enter => true,
-                WidgetHover::Leave => false,
-            };
-            label_visible.val = this.hover && visible;
-            world.queue_trigger(label_visible.handle(), ValChanged);
-        });
-
         world.observer(source.rect, move |ValChanged, world| {
             let this = world.fetch(this);
             let source = world.fetch(this.source);
@@ -292,14 +281,6 @@ impl SliderLabel {
             let position = into_position_pressed(rect, source.axis, value);
             label_rect.val = label_back_rect(rect, source.axis, this.clockwise, position);
             world.queue_trigger(label_rect.handle(), ValChanged);
-        });
-
-        world.observer(self.common.visible, move |ValChanged, world| {
-            let this = world.fetch(this);
-            let visible = world.fetch(this.common.visible).val;
-            let mut label_visible = world.fetch_mut(label_visible);
-            label_visible.val = this.hover && visible;
-            world.queue_trigger(label_visible.handle(), ValChanged);
         });
 
         world.observer(source.value, move |ValChanged, world| {
@@ -402,16 +383,4 @@ fn label_back_rect(rect: IRect, axis: Axis, clockwise: bool, position: i32) -> I
             + raxis.ivec2() * offset,
         LABEL_HALF,
     )
-}
-
-impl Element for Slider {
-    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
-        self.init(world, this);
-    }
-}
-
-impl Element for SliderLabel {
-    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
-        self.init(world, this);
-    }
 }

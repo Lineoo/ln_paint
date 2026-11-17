@@ -7,7 +7,6 @@ use crate::{
         pointer::{PointerHit, PointerHitStatus, PointerHover, PointerHoverStatus},
     },
     ui::{
-        WidgetHover,
         common::WidgetCommon,
         layout::{
             anim::Animator,
@@ -216,13 +215,6 @@ impl Element for Button {
             };
             world.fetch_mut(hovering).val = hover;
             world.queue_trigger(hovering, ValChanged);
-            world.queue_trigger(
-                this,
-                match hover {
-                    true => WidgetHover::Enter,
-                    false => WidgetHover::Leave,
-                },
-            );
         });
 
         world.observer(this, move |event: &ButtonAction, world| {
