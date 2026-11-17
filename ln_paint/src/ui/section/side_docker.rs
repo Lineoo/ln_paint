@@ -1,3 +1,4 @@
+use glam::{IVec2, UVec2};
 use ln_world::{Element, Handle, World};
 
 use crate::{
@@ -12,7 +13,7 @@ use crate::{
             luni::{
                 LuniAlign, LuniAxis, LuniChild, LuniChildTemplate, LuniFlex, LuniParent, LuniRect,
             },
-            transform::{Transform, TransformEdge, TransformValue},
+            transform::{Transform, TransformValue},
         },
         renderer::svg::svg_render,
         section::{
@@ -33,6 +34,7 @@ use crate::{
 pub struct SideDocker {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,
+    pub axis: Handle<Val<Axis>>,
 }
 
 impl Element for SideDocker {
@@ -43,25 +45,12 @@ impl Element for SideDocker {
         let theme = world.single_fetch::<ThemeVal>();
         let page = world.single::<LayerPage>();
 
+        let axis = world.fetch(self.axis).val;
         let panel_rect = world.build(Transform::new(
-            TransformValue {
-                left: TransformEdge {
-                    anchor: 0.0,
-                    offset: 24,
-                },
-                down: TransformEdge {
-                    anchor: 0.5,
-                    offset: -280,
-                },
-                right: TransformEdge {
-                    anchor: 0.0,
-                    offset: 24 + 44,
-                },
-                up: TransformEdge {
-                    anchor: 0.5,
-                    offset: 280,
-                },
-            },
+            TransformValue::anchor(
+                axis.anchor().into(),
+                IRect::new_half(axis.direction() * -36, axis.half(22, 280)),
+            ),
             self.rect,
         ));
 
@@ -74,10 +63,11 @@ impl Element for SideDocker {
             },
         });
 
+        let place_dir = axis.positive().rotate_cw();
         let mut luni = LuniFlex::new(
             panel_rect,
             LuniParent {
-                axis: LuniAxis::Column,
+                axis: LuniAxis::from_axis(place_dir),
                 template: LuniChildTemplate {
                     basis: 36,
                     cross: 36,
@@ -85,10 +75,10 @@ impl Element for SideDocker {
                     ..Default::default()
                 },
                 padding: LuniRect {
-                    left: 0,
-                    bottom: 4,
-                    right: 0,
-                    top: 4,
+                    left: 4 * place_dir.positive().horizontal(),
+                    bottom: 4 * place_dir.positive().vertical(),
+                    right: 4 * place_dir.positive().horizontal(),
+                    top: 4 * place_dir.positive().vertical(),
                 },
                 gap: 4,
                 ..Default::default()
@@ -127,9 +117,12 @@ impl Element for SideDocker {
             world.insert(ButtonToggle { source: brush_menu });
 
             let brush_panel_rect = world.build(Transform::anchor(
-                (1.0, 1.0),
-                IRect::new_extend(20, -480, 364, 480),
-                brush_menu_rect,
+                (0.5, 0.5),
+                IRect::new_half(
+                    axis.flip().direction() * IVec2::new(182 + 34, 240 + 34),
+                    UVec2::new(182, 240),
+                ),
+                panel_rect,
             ));
 
             world.insert(BrushPanel {
@@ -180,10 +173,14 @@ impl Element for SideDocker {
                 rect: color_menu_rect,
                 selected: color_visible,
             });
+
             let color_panel_rect = world.build(Transform::anchor(
-                (1.0, 1.0),
-                IRect::new_extend(20, -320, 364, 320),
-                color_menu_rect,
+                (0.5, 0.5),
+                IRect::new_half(
+                    axis.flip().direction() * IVec2::new(182 + 34, 160 + 34),
+                    UVec2::new(182, 160),
+                ),
+                panel_rect,
             ));
 
             world.insert(ColorPickerPanel {
@@ -247,7 +244,7 @@ impl Element for SideDocker {
             let slider = world.insert(Slider {
                 common: self.common,
                 rect: slider_rect,
-                axis: Axis::Up,
+                axis: place_dir.positive(),
                 value: slider_value,
                 hover: world.insert(Val::new(false)),
                 pressed: false,

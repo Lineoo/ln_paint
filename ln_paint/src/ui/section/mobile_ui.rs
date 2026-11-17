@@ -4,6 +4,8 @@ use crate::{
     lnwin::LnwindowRect,
     paint::wrapper::{BrushConfigurationChanged, LayerPage},
     ui::{common::WidgetCommon, section::side_docker::SideDocker},
+    unit::Axis,
+    val::Val,
 };
 
 pub struct MobileUi {
@@ -22,6 +24,7 @@ impl Element for MobileUi {
         world.insert(SideDocker {
             common: self.common,
             rect,
+            axis: world.insert(Val::new(Axis::Left)),
         });
 
         world.scope("layer_init");

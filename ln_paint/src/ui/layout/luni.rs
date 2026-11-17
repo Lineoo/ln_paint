@@ -1,7 +1,7 @@
 use ln_world::{Descriptor, Element, Handle, World};
 
 use crate::{
-    unit::IRect,
+    unit::{Axis, IRect},
     val::{Val, ValChanged},
 };
 
@@ -50,6 +50,17 @@ pub enum LuniAxis {
     RowReverse,
     Column,
     ColumnReverse,
+}
+
+impl LuniAxis {
+    pub fn from_axis(axis: Axis) -> LuniAxis {
+        match axis {
+            Axis::Left => LuniAxis::RowReverse,
+            Axis::Down => LuniAxis::Column,
+            Axis::Right => LuniAxis::Row,
+            Axis::Up => LuniAxis::ColumnReverse,
+        }
+    }
 }
 
 #[derive(Default, Clone, Copy)]

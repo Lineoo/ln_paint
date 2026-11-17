@@ -315,30 +315,30 @@ fn back_rect_pressed(rect: IRect, axis: Axis) -> IRect {
 fn front_rect(rect: IRect, axis: Axis, position: i32) -> IRect {
     IRect::axis_new(
         rect.axis_start(axis),
-        rect.axis_center(axis.rotate()) - BAR_HW * axis.sign(),
+        rect.axis_center(axis.rotate_cw()) - BAR_HW * axis.sign(),
         position,
-        rect.axis_center(axis.rotate()) + BAR_HW * axis.sign(),
+        rect.axis_center(axis.rotate_cw()) + BAR_HW * axis.sign(),
         axis,
     )
 }
 
 fn knob_rect(rect: IRect, axis: Axis, position: i32) -> IRect {
     IRect::new_half(
-        axis.vertical_ivec2(IVec2::new(rect.axis_center(axis.rotate()), position)),
+        axis.vertical_ivec2(IVec2::new(rect.axis_center(axis.rotate_cw()), position)),
         axis.vertical_uvec2(KNOB_SIZE),
     )
 }
 
 fn knob_rect_pressed(rect: IRect, axis: Axis, position: i32) -> IRect {
     IRect::new_half(
-        axis.vertical_ivec2(IVec2::new(rect.axis_center(axis.rotate()), position)),
+        axis.vertical_ivec2(IVec2::new(rect.axis_center(axis.rotate_cw()), position)),
         axis.vertical_uvec2(KNOB_SIZE_PRESSED),
     )
 }
 
 fn knob_split_rect(rect: IRect, axis: Axis, position: i32) -> IRect {
     IRect::new_half(
-        axis.vertical_ivec2(IVec2::new(rect.axis_center(axis.rotate()), position)),
+        axis.vertical_ivec2(IVec2::new(rect.axis_center(axis.rotate_cw()), position)),
         axis.vertical_uvec2(KNOB_SPLIT_SIZE),
     )
 }
@@ -374,13 +374,13 @@ fn knob_limit_pressed(rect: IRect, axis: Axis) -> (i32, i32) {
 
 fn label_back_rect(rect: IRect, axis: Axis, clockwise: bool, position: i32) -> IRect {
     let raxis = match clockwise {
-        true => axis.rotate(),
-        false => axis.rotate_rev(),
+        true => axis.rotate_cw(),
+        false => axis.rotate_ccw(),
     };
     let offset = BAR_HW + BAR_EX + LABEL_GAP + axis.horizontal_uvec2(LABEL_HALF).y as i32;
     IRect::new_half(
-        axis.horizontal_ivec2(IVec2::new(position, rect.axis_center(axis.rotate())))
-            + raxis.ivec2() * offset,
+        axis.horizontal_ivec2(IVec2::new(position, rect.axis_center(axis.rotate_cw())))
+            + raxis.direction() * offset,
         LABEL_HALF,
     )
 }
