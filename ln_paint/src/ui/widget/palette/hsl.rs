@@ -89,7 +89,7 @@ impl HslSquare {
         world.scope("hsl_square");
         world.set_autodeps(Some(this));
 
-        let thumb_rect = ValBind::attach(world, self.rect, move |world| {
+        let thumb_rect = ValBind::new(world, move |world| {
             let this = world.fetch(this);
             let rect = world.fetch(this.rect).val;
             square_thumb(rect, this.hsl)
@@ -178,7 +178,7 @@ impl HslRing {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let thumb_rect = ValBind::attach(world, self.rect, move |world| {
+        let thumb_rect = ValBind::new(world, move |world| {
             let this = world.fetch(this);
             let rect = world.fetch(this.rect).val;
             ring_thumb(rect, this.hsl, this.inner_radius)

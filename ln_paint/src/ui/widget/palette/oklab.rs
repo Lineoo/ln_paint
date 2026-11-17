@@ -101,7 +101,7 @@ impl OklabPolar {
         world.scope("oklab_polar");
         world.set_autodeps(Some(this));
 
-        let thumb_rect = ValBind::attach(world, self.rect, move |world| {
+        let thumb_rect = ValBind::new(world, move |world| {
             let this = world.fetch(this);
             let rect = world.fetch(this.rect).val;
             polar_thumb(rect, this.oklab)
@@ -203,7 +203,7 @@ impl OklabBar {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let thumb_rect = ValBind::attach(world, self.rect, move |world| {
+        let thumb_rect = ValBind::new(world, move |world| {
             let this = world.fetch(this);
             let rect = world.fetch(this.rect).val;
             bar_thumb(rect, this.oklab)
