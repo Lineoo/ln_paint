@@ -8,7 +8,7 @@ GPU-accelerated drawing app featured infinite canvas in Rust (winit + wgpu). Car
 
 ## Tasks
 
-- If assigned to review in read-only mode, assume that users has run `cargo check` and `cargo fmt`. Skip cargo tool calls that'll need write-permission, except when significant type errors are spotted.
+- If assigned to review in read-only mode, assume that users have run `cargo check` (no type errors). Skip cargo tool calls that'll need write-permission, except when significant type errors are spotted.
 - Headless rendering is only experimentally supported, and just tell user when you need it.
 - Don't run `cargo check --target aarch64-linux-android`. Tell user to perform Android check or build.
 - Don't use clippy. No need to check that (it returns warnings, but we just don't care about that). 
@@ -31,7 +31,7 @@ GPU-accelerated drawing app featured infinite canvas in Rust (winit + wgpu). Car
 Documents in `docs/`. Most of them are in Chinese if not specially marked with language suffix. Sort by importance.
 
 - `index.md` - The overall codebase architecture.
-- `style.en.md` - The coding style instructions, list in format `### <tags,> - <title>`.
+- `style.en.md` - The coding style instructions, `rg "###" docs/style.en.md` for a quick peak.
 - `world.md` - About how to use `ln_world`.
 - `composite.md` - Color-space notation for rendering and drawing. Important when treating color conventions.
 - `paint.md` - Draw call pipeline: batch-draw, stroke-submit, stroke-discard, undo/redo, failure paths, stream-thread synchronization.
