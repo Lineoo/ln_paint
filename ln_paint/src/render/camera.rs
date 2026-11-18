@@ -4,11 +4,9 @@ use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
     *,
 };
-use winit::event::WindowEvent;
 
 use crate::{
     input::collider::ToolControl,
-    lnwin::Lnwindow,
     render::{Render, RenderDrawControl, nest::Nest},
     unit::FI64Ext,
 };
@@ -38,9 +36,6 @@ pub struct CameraDescriptor {
 pub struct CameraBind {
     pub layout: BindGroupLayout,
 }
-
-pub struct SetCameraOutdated;
-pub struct CameraOutdated;
 
 pub struct UICamera(pub Handle<Camera>);
 
@@ -109,17 +104,7 @@ impl Descriptor for CameraDescriptor {
     }
 }
 
-impl Element for Camera {
-    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
-        let lnwindow = world.single::<Lnwindow>();
-        let obs = world.observer(lnwindow, move |event: &WindowEvent, world| {
-            if let WindowEvent::SurfaceResized(_) = event {
-                world.queue_trigger(this, SetCameraOutdated);
-            }
-        });
-        world.dependency(obs, this);
-    }
-}
+impl Element for Camera {}
 
 impl Element for CameraBind {}
 
@@ -362,7 +347,6 @@ impl CameraUtils {
     pub fn write_camera(&self, world: &World, container: Handle<Nest>) {
         let mut container = world.fetch_mut(container);
         let parent = world.fetch(container.common.camera);
-        let camera = world.fetch(container.child);
         let rect = world.fetch(container.rect).val;
         let scale = (self.camera_zoom - parent.zoom).q32_as_f64().exp2();
         container.attr.zoom = if container.attr.top {
@@ -374,7 +358,9 @@ impl CameraUtils {
             - I64Vec2::q32_from_f64(
                 (parent.center - rect.q32_anchor(container.attr.anchor)).q32_as_f64() / scale,
             );
-        world.queue_trigger(camera.handle(), SetCameraOutdated);
+
+        let nest = container.handle();
+        world.queue(move |world| Nest::refresh_camera(world, nest));
     }
 
     // resolve //

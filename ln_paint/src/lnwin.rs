@@ -20,7 +20,8 @@ use crate::{
     input::{focus::FocusTool, mouse::MouseTool, pointer::PointerTool, touch::MultiTouchTool},
     render::{
         Render,
-        camera::{Camera, CameraDescriptor, CameraOutdated, SetCameraOutdated, UICamera},
+        camera::{Camera, CameraDescriptor, UICamera},
+        nest::Nest,
     },
     save::{Autosave, AutosaveScheduler, Save},
     ui::{
@@ -261,8 +262,7 @@ impl Element for Lnwindow {
                     camera.surface_size = UVec2::new(size.width, size.height);
                     camera.upload();
                     lnwindow.window.request_redraw();
-                    world.queue_trigger(camera.handle(), CameraOutdated);
-                    world.queue_trigger(camera.handle(), SetCameraOutdated);
+                    world.queue(move |world| Nest::refresh_camera_children(world, ui_camera));
                 }
             });
 

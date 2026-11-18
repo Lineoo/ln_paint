@@ -3,7 +3,7 @@ use ln_world::{Element, Handle, World};
 
 use crate::{
     input::pointer::{PointerHit, PointerHitStatus, PointerScroll},
-    render::{camera::SetCameraOutdated, nest::Nest},
+    render::nest::Nest,
     ui::{
         renderer::rrect::RRect,
         theme::{Theme, ThemeVal},
@@ -53,14 +53,12 @@ impl Element for Container {
                     let rect = world.fetch(container.rect).val;
                     let restriction = world.fetch(this.restriction).val;
                     let parent_camera = world.fetch(container.common.camera);
-                    let mut child_camera = world.fetch_mut(container.child);
                     let delta =
                         parent_camera.screen_to_world_relative(event.pointer.screen - position);
 
                     container.attr.center -= delta;
                     container.clamp_scroll(rect, restriction);
-                    container.update_camera(rect, &parent_camera, &mut child_camera);
-                    world.queue_trigger(container.child, SetCameraOutdated);
+                    world.queue(move |world| Nest::refresh_camera(world, handle));
                     Some(event.pointer.screen)
                 }
                 (Some(position), PointerHitStatus::Release) => {
@@ -69,14 +67,12 @@ impl Element for Container {
                     let rect = world.fetch(container.rect).val;
                     let restriction = world.fetch(this.restriction).val;
                     let parent_camera = world.fetch(container.common.camera);
-                    let mut child_camera = world.fetch_mut(container.child);
                     let delta =
                         parent_camera.screen_to_world_relative(event.pointer.screen - position);
 
                     container.attr.center -= delta;
                     container.clamp_scroll(rect, restriction);
-                    container.update_camera(rect, &parent_camera, &mut child_camera);
-                    world.queue_trigger(container.child, SetCameraOutdated);
+                    world.queue(move |world| Nest::refresh_camera(world, handle));
                     None
                 }
             }
@@ -85,43 +81,34 @@ impl Element for Container {
         world.observer(handle, move |event: &PointerScroll, world| {
             let this = world.fetch(this);
             let mut container = world.fetch_mut(handle);
-            let parent_camera = world.fetch(container.common.camera);
-            let mut child_camera = world.fetch_mut(container.child);
             let rect = world.fetch(container.rect).val;
             let restriction = world.fetch(this.restriction).val;
 
             let delta = I64Vec2::q32_from_f64(event.delta);
             container.attr.center -= delta;
             container.clamp_scroll(rect, restriction);
-            container.update_camera(rect, &parent_camera, &mut child_camera);
-            world.queue_trigger(child_camera.handle(), SetCameraOutdated);
+            world.queue(move |world| Nest::refresh_camera(world, handle));
         });
 
         world.observer(container.rect, move |ValChanged, world| {
             let this = world.fetch(this);
             let mut container = world.fetch_mut(handle);
-            let parent_camera = world.fetch(container.common.camera);
-            let mut child_camera = world.fetch_mut(container.child);
             let rect = world.fetch(container.rect).val;
             let restriction = world.fetch(this.restriction).val;
 
             container.clamp_scroll(rect, restriction);
-            container.update_camera(rect, &parent_camera, &mut child_camera);
-            world.queue_trigger(child_camera.handle(), SetCameraOutdated);
+            world.queue(move |world| Nest::refresh_camera(world, handle));
         });
 
         // Re-clamp when content shrinks, otherwise the camera stays below the new bounds.
         world.observer(self.restriction, move |ValChanged, world| {
             let this = world.fetch(this);
             let mut container = world.fetch_mut(handle);
-            let parent_camera = world.fetch(container.common.camera);
-            let mut child_camera = world.fetch_mut(container.child);
             let rect = world.fetch(container.rect).val;
             let restriction = world.fetch(this.restriction).val;
 
             container.clamp_scroll(rect, restriction);
-            container.update_camera(rect, &parent_camera, &mut child_camera);
-            world.queue_trigger(child_camera.handle(), SetCameraOutdated);
+            world.queue(move |world| Nest::refresh_camera(world, handle));
         });
     }
 }

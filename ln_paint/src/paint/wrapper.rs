@@ -28,7 +28,7 @@ use crate::{
     },
     render::{
         Render, RenderDrawControl, RenderPrepareControl,
-        camera::{CameraBind, CameraUtils, SetCameraOutdated, UICamera},
+        camera::{CameraBind, CameraUtils, UICamera},
         nest::{Nest, NestAttr},
     },
     save::{Autosave, Save, object::Objects},
@@ -112,6 +112,8 @@ pub struct LayerPage {
     pub cursor_shadow_rect: Handle<Val<IRect>>,
     pub cursor_visible: Handle<Val<bool>>,
     pub zoom_offset: f64,
+
+    stream_camera: Option<(i64, IRect)>,
 
     thread_tx: Sender<ThreadInput>,
     thread_rx: Receiver<ThreadOutput>,
@@ -343,6 +345,7 @@ impl LayerPage {
             cursor_shadow_rect,
             cursor_visible,
             zoom_offset: DEFAULT_ZOOM_OFFSET,
+            stream_camera: None,
             thread_tx: input_tx,
             thread_rx: output_rx,
             thread: Some(thread),
@@ -488,7 +491,25 @@ impl LayerPage {
             });
     }
 
+    fn sync_stream_camera(&mut self, world: &World) {
+        let container = world.fetch(self.container);
+        let parent = world.fetch(container.common.camera);
+        let child = world.fetch(container.child);
+        let rect = world.fetch(container.rect).val;
+        let zoom = child.zoom;
+        let inner = container.inner_rect(rect, container.attr.center, zoom - parent.zoom);
+
+        if self.stream_camera != Some((zoom, inner)) {
+            self.stream_camera = Some((zoom, inner));
+            self.thread_tx
+                .send(ThreadInput::SetStreamCamera(zoom, inner))
+                .unwrap();
+        }
+    }
+
     fn process_stream(&mut self, world: &World) {
+        self.sync_stream_camera(world);
+
         let mut cache_ack = Vec::new();
         let mut raw_ack = Vec::new();
         while let Ok(output) = self.thread_rx.try_recv() {
@@ -614,22 +635,7 @@ impl Element for LayerPage {
         world.scope("layer_page");
         world.set_autodeps(Some(this));
         world.dependency(this, self.common.visible);
-
-        let container = world.fetch(self.container);
-        let parent = world.fetch(container.common.camera);
-        let child = world.fetch(container.child);
-        let container_rect = world.fetch(container.rect).val;
-
-        self.thread_tx
-            .send(ThreadInput::SetStreamCamera(
-                child.zoom,
-                container.inner_rect(
-                    container_rect,
-                    container.attr.center,
-                    child.zoom - parent.zoom,
-                ),
-            ))
-            .unwrap();
+        self.sync_stream_camera(world);
 
         world.insert(Autosave(Box::new(move |world, task| {
             let this = world.fetch(this);
@@ -644,60 +650,6 @@ impl Element for LayerPage {
             let this = world.single_fetch::<LayerPage>();
             this.thread_tx.send(ThreadInput::Autosave).unwrap();
         })));
-
-        world.observer(self.common.camera, move |&SetCameraOutdated, world| {
-            let this = world.single_fetch::<LayerPage>();
-            let container = world.fetch(this.container);
-            let parent = world.fetch(container.common.camera);
-            let child = world.fetch(container.child);
-            let container_rect = world.fetch(container.rect).val;
-
-            this.thread_tx
-                .send(ThreadInput::SetStreamCamera(
-                    child.zoom,
-                    container.inner_rect(
-                        container_rect,
-                        container.attr.center,
-                        child.zoom - parent.zoom,
-                    ),
-                ))
-                .unwrap();
-        });
-
-        // TEMP: verify Container::inner_rect; red border should hug the page clip.
-        // let test_rect = world.insert(Val::new(
-        //     container
-        //         .inner_rect(
-        //             container_rect,
-        //             container.attr.center,
-        //             child.zoom - parent.zoom,
-        //         )
-        //         .expand(-5),
-        // ));
-        // world.insert(RRect {
-        //     common: self.common,
-        //     rect: test_rect,
-        //     order: 1000,
-        //     color: world.insert(Val::new(Vec4::new(1.0, 0.0, 0.0, 0.3))),
-        //     radius: 0.0,
-        //     width: 0.0,
-        // });
-        // world.observer(self.common.camera, move |&SetCameraOutdated, world| {
-        //     let this = world.single_fetch::<LayerPage>();
-        //     let container = world.fetch(this.container);
-        //     let parent = world.fetch(container.common.camera);
-        //     let child = world.fetch(container.child);
-        //     let container_rect = world.fetch(container.rect).val;
-        //     let mut test_rect = world.fetch_mut(test_rect);
-        //     test_rect.val = container
-        //         .inner_rect(
-        //             container_rect,
-        //             container.attr.center,
-        //             child.zoom - parent.zoom,
-        //         )
-        //         .expand(-5);
-        //     world.queue_trigger(test_rect.handle(), ValChanged);
-        // });
 
         // Interaction //
 

@@ -6,7 +6,7 @@ use crate::{
     lnwin::Lnwindow,
     render::{
         Render, RenderDrawControl, RenderExtra,
-        camera::{Camera, CameraDescriptor, CameraOutdated, SetCameraOutdated},
+        camera::{Camera, CameraDescriptor},
     },
     ui::common::WidgetCommon,
     unit::{FI64Ext, IRect},
@@ -170,35 +170,52 @@ impl Element for Nest {
             }),
         });
 
-        world.observer(self.common.camera, move |CameraOutdated, world| {
-            let this = world.fetch(handle);
-            world.queue_trigger(this.child, SetCameraOutdated);
-        });
-
-        world.observer(self.child, move |SetCameraOutdated, world| {
-            let this = world.fetch(handle);
-            let lnwindow = world.single_fetch::<Lnwindow>();
-            let parent_camera = world.fetch(this.common.camera);
-            let mut child_camera = world.fetch_mut(this.child);
-            let rect = world.fetch(this.rect).val;
-            let size = lnwindow.window.surface_size();
-
-            this.update_camera(rect, &parent_camera, &mut child_camera);
-            child_camera.surface_size = UVec2::new(size.width, size.height);
-            child_camera.upload();
-            lnwindow.window.request_redraw();
-
-            world.queue_trigger(this.child, CameraOutdated);
-        });
-
         world.observer(self.rect, move |ValChanged, world| {
-            let this = world.fetch(handle);
-            world.queue_trigger(this.child, SetCameraOutdated);
+            world.queue(move |world| Nest::refresh_camera(world, handle));
         });
     }
 }
 
 impl Nest {
+    /// Recompute the child camera from parent and rect, then refresh nests nested in it.
+    pub fn refresh_camera(world: &World, this: Handle<Self>) {
+        let nest = world.fetch(this);
+        let parent = world.fetch(nest.common.camera);
+        let rect = world.fetch(nest.rect).val;
+        let lnwindow = world.single_fetch::<Lnwindow>();
+
+        let mut camera = world.fetch_mut(nest.child);
+        nest.update_camera(rect, &parent, &mut camera);
+        let size = lnwindow.window.surface_size();
+        camera.surface_size = UVec2::new(size.width, size.height);
+        camera.upload();
+        lnwindow.window.request_redraw();
+
+        let child = camera.handle();
+        let mut children = Vec::new();
+        world.foreach::<Nest>(|other| {
+            if world.fetch(other).common.camera == child {
+                children.push(other);
+            }
+        });
+        for other in children {
+            world.queue(move |world| Nest::refresh_camera(world, other));
+        }
+    }
+
+    /// Refresh nests directly nested in `camera` without recomputing `camera` itself.
+    pub fn refresh_camera_children(world: &World, camera: Handle<Camera>) {
+        let mut children = Vec::new();
+        world.foreach::<Nest>(|nest| {
+            if world.fetch(nest).common.camera == camera {
+                children.push(nest);
+            }
+        });
+        for nest in children {
+            world.queue(move |world| Nest::refresh_camera(world, nest));
+        }
+    }
+
     pub fn update_camera(&self, rect: IRect, parent: &Camera, child: &mut Camera) {
         let desc = self.attr.calc_camera(rect, parent);
         child.zoom = desc.zoom;
