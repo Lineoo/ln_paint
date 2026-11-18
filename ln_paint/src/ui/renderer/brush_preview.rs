@@ -16,7 +16,7 @@ use crate::{
     render::{
         RenderDrawControl, RenderPrepareControl,
         camera::SetCameraOutdated,
-        nest::{NestAttr, NestBind, NestedCamera},
+        nest::{NestAttr, NestBuilder},
     },
     ui::common::WidgetCommon,
     unit::{FI64Ext, IRect},
@@ -90,7 +90,7 @@ impl Element for BrushPreview {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let (container, common) = world.build(NestedCamera {
+        let (_, inner, common) = world.build(NestBuilder {
             common: self.common,
             rect: self.rect,
             attr: NestAttr {
@@ -98,7 +98,6 @@ impl Element for BrushPreview {
                 ..Default::default()
             },
         });
-        let inner = world.build(NestBind { container });
         world.queue_trigger(common.camera, SetCameraOutdated);
 
         world.insert(ToolRectCollider {

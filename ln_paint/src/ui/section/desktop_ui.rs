@@ -9,7 +9,7 @@ use crate::{
         input::LayerInput,
         wrapper::{BrushConfigurationChanged, LayerPage},
     },
-    render::nest::{NestAttr, NestBind, NestedCamera},
+    render::nest::{NestAttr, NestBuilder},
     ui::{
         common::WidgetCommon,
         i18n::trp,
@@ -116,15 +116,14 @@ impl Element for MainWorkspace {
         world.dependency(this, self.common.visible);
 
         let attr = NestAttr::default();
-        let (container, common) = world.build(NestedCamera {
+        let (_, inner, common) = world.build(NestBuilder {
             common: self.common,
             rect: self.rect,
             attr,
         });
-        let local = world.build(NestBind { container });
 
         let mut luni = LuniFlex::new(
-            local,
+            inner,
             LuniParent {
                 axis: LuniAxis::Row,
                 distribution: LuniDistribution::FlexStart,
@@ -180,16 +179,15 @@ impl Element for ToolBar {
             clip: false,
             ..Default::default()
         };
-        let (container, common) = world.build(NestedCamera {
+        let (_, inner, common) = world.build(NestBuilder {
             common: self.common,
             rect: self.rect,
             attr,
         });
-        let local = world.build(NestBind { container });
 
         world.insert(Panel {
             common,
-            rect: local,
+            rect: inner,
             attr: PanelAttr {
                 shadow: false,
                 round: false,
@@ -229,7 +227,7 @@ impl Element for ToolBar {
         .finish();
 
         let mut luni = LuniFlex::new(
-            local,
+            inner,
             LuniParent {
                 axis: LuniAxis::Row,
                 distribution: LuniDistribution::Center,
@@ -379,16 +377,15 @@ impl Element for StatusBar {
         let theme = world.single_fetch::<ThemeVal>();
 
         let attr = NestAttr::default();
-        let (container, common) = world.build(NestedCamera {
+        let (_, inner, common) = world.build(NestBuilder {
             common: self.common,
             rect: self.rect,
             attr,
         });
-        let local = world.build(NestBind { container });
 
         world.insert(Panel {
             common,
-            rect: local,
+            rect: inner,
             attr: PanelAttr {
                 shadow: false,
                 round: false,
@@ -400,7 +397,7 @@ impl Element for StatusBar {
                 (0.5, 0.5),
                 IRect::new_half(IVec2::ZERO, UVec2::new(100, 10)),
             ),
-            local,
+            inner,
         ));
         world.insert(Text {
             text: world.insert(Val::new(trp(
@@ -438,16 +435,15 @@ impl Element for CommandCenter {
         world.dependency(this, self.common.visible);
 
         let attr = NestAttr::default();
-        let (container, common) = world.build(NestedCamera {
+        let (_, inner, common) = world.build(NestBuilder {
             common: self.common,
             rect: self.rect,
             attr,
         });
-        let local = world.build(NestBind { container });
 
         world.insert(Panel {
             common,
-            rect: local,
+            rect: inner,
             attr: PanelAttr {
                 shadow: false,
                 round: false,
@@ -473,7 +469,7 @@ impl Element for CommandCenter {
                     offset: 0,
                 },
             },
-            local,
+            inner,
         ));
         world.insert(LayerOklabPalette {
             common,
@@ -500,7 +496,7 @@ impl Element for CommandCenter {
                     offset: -300,
                 },
             },
-            local,
+            inner,
         ));
         world.insert(VerbosePanel {
             common,

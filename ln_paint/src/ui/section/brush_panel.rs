@@ -4,7 +4,7 @@ use ln_world::{Element, Handle, World};
 use crate::{
     input::pointer::{PointerHit, PointerHover, PointerScroll},
     paint::wrapper::{BrushConfigurationChanged, LayerPage},
-    render::nest::{NestAttr, NestedCamera},
+    render::nest::{NestAttr, NestBuilder},
     ui::{
         common::WidgetCommon,
         i18n::tr,
@@ -26,7 +26,7 @@ use crate::{
         theme::{Theme, ThemeVal},
         widget::{
             button::{Button, ButtonClick, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonTheme},
-            container::{Container, ContainerDropdown},
+            container::Container,
             tabs::{TabEntry, Tabs},
         },
     },
@@ -118,14 +118,18 @@ impl Element for BrushListPanel {
             count as i32 * ITEM_HEIGHT + (count as i32 - 1).max(0) * ITEM_GAP + LIST_PADDING * 2;
 
         let attr = NestAttr::default();
-        let (container, common) = world.build(NestedCamera {
+        let (container, inner, common) = world.build(NestBuilder {
             common: self.common,
             rect: self.rect,
             attr,
         });
-        let restriction = world.build(ContainerDropdown {
-            height: Some(content_height),
-            outer: self.rect,
+        let restriction = ValBind::transfer(world, inner, move |&inner| {
+            IRect::new(
+                inner.left(),
+                inner.up() - content_height,
+                inner.right(),
+                inner.up(),
+            )
         });
         world.insert(Container {
             nest: container,

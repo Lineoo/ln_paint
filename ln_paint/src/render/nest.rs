@@ -35,7 +35,13 @@ pub struct NestAttr {
     pub zoom: i64,
 }
 
-pub struct NestedCamera {
+/// inner area when scroll is zero for container
+pub struct NestRect {
+    pub source: Handle<Nest>,
+}
+
+/// Full builder, Nest + (sub) Camera + NestRect
+pub struct NestBuilder {
     pub common: WidgetCommon,
     /// outer rectangle
     pub rect: Handle<Val<IRect>>,
@@ -54,8 +60,8 @@ impl Default for NestAttr {
     }
 }
 
-impl Descriptor for NestedCamera {
-    type Target = (Handle<Nest>, WidgetCommon);
+impl Descriptor for NestBuilder {
+    type Target = (Handle<Nest>, Handle<Val<IRect>>, WidgetCommon);
 
     fn when_build(self, world: &World) -> Self::Target {
         let camera = world.insert_with(move |world| {
@@ -64,7 +70,7 @@ impl Descriptor for NestedCamera {
             world.build(self.attr.calc_camera(rect, &parent))
         });
 
-        let container = world.insert(Nest {
+        let nest = world.insert(Nest {
             common: self.common,
             order: 100,
             child: camera,
@@ -72,12 +78,14 @@ impl Descriptor for NestedCamera {
             attr: self.attr,
         });
 
+        let rect = world.build(NestRect { source: nest });
+
         let common = WidgetCommon {
             camera,
             visible: self.common.visible,
         };
 
-        (container, common)
+        (nest, rect, common)
     }
 }
 
@@ -248,16 +256,11 @@ impl NestAttr {
     }
 }
 
-/// - inner area when scroll is zero for container
-pub struct NestBind {
-    pub container: Handle<Nest>,
-}
-
-impl Descriptor for NestBind {
+impl Descriptor for NestRect {
     type Target = Handle<Val<IRect>>;
 
     fn when_build(self, world: &World) -> Self::Target {
-        let container = self.container;
+        let container = self.source;
         let inner = world.insert(Val::new(IRect::default()));
 
         world.queue(move |world| {

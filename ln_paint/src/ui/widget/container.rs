@@ -1,5 +1,5 @@
 use glam::I64Vec2;
-use ln_world::{Descriptor, Element, Handle, World};
+use ln_world::{Element, Handle, World};
 
 use crate::{
     input::pointer::{PointerHit, PointerHitStatus, PointerScroll},
@@ -9,7 +9,7 @@ use crate::{
         theme::{Theme, ThemeVal},
     },
     unit::{FI64Ext, IRect},
-    val::{Val, ValBind, ValChanged},
+    val::{Val, ValChanged},
 };
 
 /// - pointer scroll interaction
@@ -123,26 +123,5 @@ impl Element for Container {
             container.update_camera(rect, &parent_camera, &mut child_camera);
             world.queue_trigger(child_camera.handle(), SetCameraOutdated);
         });
-    }
-}
-
-/// auto setup ContainerDeco's restriction area based on Container's view rect
-pub struct ContainerDropdown {
-    pub height: Option<i32>,
-    pub outer: Handle<Val<IRect>>,
-}
-
-impl Descriptor for ContainerDropdown {
-    type Target = Handle<Val<IRect>>;
-
-    fn when_build(self, world: &World) -> Self::Target {
-        ValBind::transfer(world, self.outer, move |&rect| {
-            IRect::new(
-                0,
-                -self.height.unwrap_or(rect.extend.y as i32),
-                rect.extend.x as i32,
-                0,
-            )
-        })
     }
 }

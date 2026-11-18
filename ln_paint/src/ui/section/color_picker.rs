@@ -10,7 +10,7 @@ use crate::{
         srgb::{mul_alpha, srgb_gamma_decode, srgb_gamma_encode},
     },
     paint::wrapper::{BrushConfigurationChanged, LayerPage},
-    render::nest::{NestAttr, NestBind, NestedCamera},
+    render::nest::{NestAttr, NestBuilder, NestRect},
     ui::{
         common::WidgetCommon,
         layout::transform::{Transform, TransformValue},
@@ -20,7 +20,7 @@ use crate::{
         theme::ThemeVal,
         widget::{
             button::{Button, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonToggle},
-            container::{Container, ContainerDropdown},
+            container::Container,
             palette::{
                 hsl::{ColorHsla, HslRing, HslSquare, INNER_RADIUS, SetColorHsla},
                 oklab::{ColorOklab, OklabBar, OklabPolar, SetColorOklab},
@@ -245,18 +245,14 @@ impl Element for LayerHslPalette {
         world.dependency(this, self.common.visible);
 
         let attr = NestAttr::default();
-        let (container, common) = world.build(NestedCamera {
+        let (container, inner, common) = world.build(NestBuilder {
             common: self.common,
             rect: self.rect,
             attr,
         });
-        let restriction = world.build(ContainerDropdown {
-            height: None,
-            outer: self.rect,
-        });
         world.insert(Container {
             nest: container,
-            restriction,
+            restriction: inner,
         });
 
         let ring_rect = world.build(Transform::new(
@@ -264,7 +260,7 @@ impl Element for LayerHslPalette {
                 (0.5, 0.5),
                 IRect::new_half(IVec2::ZERO, UVec2::splat(RING_HALF)),
             ),
-            restriction,
+            inner,
         ));
         let ring = world.insert(HslRing {
             common,
@@ -278,7 +274,7 @@ impl Element for LayerHslPalette {
                 (0.5, 0.5),
                 IRect::new_half(IVec2::ZERO, UVec2::splat(SQUARE_HALF)),
             ),
-            restriction,
+            inner,
         ));
         let square = world.insert(HslSquare {
             common,
@@ -320,20 +316,16 @@ impl Element for LayerOklabPalette {
         world.dependency(this, self.common.visible);
 
         let attr = NestAttr::default();
-        let (container, common) = world.build(NestedCamera {
+        let (container, inner, common) = world.build(NestBuilder {
             common: self.common,
             rect: self.rect,
             attr,
         });
-        let restriction = world.build(ContainerDropdown {
-            height: None,
-            outer: self.rect,
-        });
         world.insert(Container {
             nest: container,
-            restriction,
+            restriction: inner,
         });
-        let local = world.build(NestBind { container });
+        let local = world.build(NestRect { source: container });
 
         let polar_rect = world.build(Transform::new(
             TransformValue::anchor(

@@ -9,7 +9,7 @@ use crate::{
         },
         wrapper::{BrushConfigurationChanged, LayerPage},
     },
-    render::nest::{NestAttr, NestBind, NestedCamera},
+    render::nest::{NestAttr, NestBuilder, NestRect},
     ui::{
         common::WidgetCommon,
         i18n::tr,
@@ -50,15 +50,13 @@ impl Element for SettingPanel {
         let theme = world.single_fetch::<ThemeVal>();
 
         let attr = NestAttr::default();
-        let (container, common) = world.build(NestedCamera {
+        let (_, inner, common) = world.build(NestBuilder {
             common: self.common,
             rect: self.rect,
             attr,
         });
-        let local = world.build(NestBind { container });
-
         let mut luni = LuniFlex::new(
-            local,
+            inner,
             LuniParent {
                 axis: LuniAxis::Column,
                 distribution: LuniDistribution::FlexStart,
@@ -188,7 +186,7 @@ impl Element for TextSettingPanel {
         let panel_visible = self.common.visible;
 
         let attr = NestAttr::default();
-        let (container, common) = world.build(NestedCamera {
+        let (container, inner, common) = world.build(NestBuilder {
             common: self.common,
             rect: self.rect,
             attr,
@@ -199,14 +197,13 @@ impl Element for TextSettingPanel {
             .count();
         let row_count = world.insert(Val::new(shown as i32));
         let restriction = ValBind::new(world, move |world| {
-            let this = world.fetch(this);
-            let rect = world.fetch(this.rect).val;
+            let inner = world.fetch(inner).val;
             let rows = world.fetch(row_count).val;
             IRect::new(
-                0,
-                -(SLIDER + 4) * (rows + 1) - TITLE * 2 - 8,
-                rect.extend.x as i32,
-                0,
+                inner.left(),
+                inner.up() - (SLIDER + 4) * (rows + 1) - TITLE * 2 - 8,
+                inner.right(),
+                inner.up(),
             )
         })
         .listen(self.rect)
@@ -216,7 +213,7 @@ impl Element for TextSettingPanel {
             nest: container,
             restriction,
         });
-        let local = world.build(NestBind { container });
+        let local = world.build(NestRect { source: container });
 
         let mut luni = LuniFlex::new(
             local,
