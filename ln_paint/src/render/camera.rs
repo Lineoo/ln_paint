@@ -21,6 +21,7 @@ pub struct Camera {
     pub bind: BindGroup,
     pub uniform: Buffer,
 
+    pub nests: Vec<Handle<Nest>>,
     pub renderers: Vec<Handle<RenderDrawControl>>,
     pub colliders: Vec<Handle<ToolControl>>,
 
@@ -97,6 +98,7 @@ impl Descriptor for CameraDescriptor {
             surface_size: size,
             bind,
             uniform,
+            nests: Vec::new(),
             renderers: Vec::new(),
             colliders: Vec::new(),
             queue: render.queue.clone(),

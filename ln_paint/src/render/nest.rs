@@ -90,21 +90,24 @@ impl Descriptor for NestBuilder {
 }
 
 impl Element for Nest {
-    fn when_insert(&mut self, world: &World, handle: Handle<Self>) {
+    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
         world.scope("container");
-        world.set_autodeps(Some(handle));
+        world.set_autodeps(Some(this));
 
-        world.dependency(handle, self.rect);
-        world.dependency(handle, self.common.visible);
-        world.dependency(self.child, handle);
-        world.dependency(handle, self.common.camera);
+        world.dependency(this, self.rect);
+        world.dependency(this, self.common.visible);
+        world.dependency(self.child, this);
+        world.dependency(this, self.common.camera);
+
+        let mut camera = world.fetch_mut(self.common.camera);
+        camera.nests.push(this);
 
         world.insert(RenderDrawControl {
             common: self.common,
             order: self.order,
             draw: Box::new(move |world, rpass, extra| {
                 let lnwindow = world.single_fetch::<Lnwindow>();
-                let this = world.fetch(handle);
+                let this = world.fetch(this);
                 let child = world.fetch(this.child);
 
                 if this.attr.clip {
@@ -151,7 +154,7 @@ impl Element for Nest {
             common: self.common,
             order: self.order,
             hit: Box::new(move |world, screen| {
-                let this = world.fetch(handle);
+                let this = world.fetch(this);
                 let parent = world.fetch(this.common.camera);
                 let position = parent.screen_to_world(screen);
                 let rect = world.fetch(this.rect).val;
@@ -161,7 +164,7 @@ impl Element for Nest {
                     } else {
                         Some(ToolHitResult {
                             camera: this.child,
-                            handle: handle.untyped(),
+                            handle: this.handle().untyped(),
                         })
                     }
                 } else {
@@ -171,8 +174,13 @@ impl Element for Nest {
         });
 
         world.observer(self.rect, move |ValChanged, world| {
-            world.queue(move |world| Nest::refresh_camera(world, handle));
+            world.queue(move |world| Nest::refresh_camera(world, this));
         });
+    }
+
+    fn when_remove(&mut self, world: &World, this: Handle<Self>) {
+        let mut camera = world.fetch_mut(self.common.camera);
+        camera.nests.retain(|&x| x != this);
     }
 }
 
@@ -191,27 +199,15 @@ impl Nest {
         camera.upload();
         lnwindow.window.request_redraw();
 
-        let child = camera.handle();
-        let mut children = Vec::new();
-        world.foreach::<Nest>(|other| {
-            if world.fetch(other).common.camera == child {
-                children.push(other);
-            }
-        });
-        for other in children {
+        for &other in &camera.nests {
             world.queue(move |world| Nest::refresh_camera(world, other));
         }
     }
 
     /// Refresh nests directly nested in `camera` without recomputing `camera` itself.
     pub fn refresh_camera_children(world: &World, camera: Handle<Camera>) {
-        let mut children = Vec::new();
-        world.foreach::<Nest>(|nest| {
-            if world.fetch(nest).common.camera == camera {
-                children.push(nest);
-            }
-        });
-        for nest in children {
+        let camera = world.fetch(camera);
+        for &nest in &camera.nests {
             world.queue(move |world| Nest::refresh_camera(world, nest));
         }
     }
