@@ -191,9 +191,11 @@ impl Nest {
         let parent = world.fetch(nest.common.camera);
         let rect = world.fetch(nest.rect).val;
         let lnwindow = world.single_fetch::<Lnwindow>();
-
         let mut camera = world.fetch_mut(nest.child);
-        nest.update_camera(rect, &parent, &mut camera);
+
+        let desc = nest.attr.calc_camera(rect, &parent);
+        camera.zoom = desc.zoom;
+        camera.center = desc.center;
         let size = lnwindow.window.surface_size();
         camera.surface_size = UVec2::new(size.width, size.height);
         camera.upload();
@@ -202,20 +204,6 @@ impl Nest {
         for &other in &camera.nests {
             world.queue(move |world| Nest::refresh_camera(world, other));
         }
-    }
-
-    /// Refresh nests directly nested in `camera` without recomputing `camera` itself.
-    pub fn refresh_camera_children(world: &World, camera: Handle<Camera>) {
-        let camera = world.fetch(camera);
-        for &nest in &camera.nests {
-            world.queue(move |world| Nest::refresh_camera(world, nest));
-        }
-    }
-
-    pub fn update_camera(&self, rect: IRect, parent: &Camera, child: &mut Camera) {
-        let desc = self.attr.calc_camera(rect, parent);
-        child.zoom = desc.zoom;
-        child.center = desc.center;
     }
 
     pub fn inner_rect(&self, rect: IRect, center: I64Vec2, zoom: i64) -> IRect {

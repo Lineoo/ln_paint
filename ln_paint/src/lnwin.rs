@@ -262,7 +262,10 @@ impl Element for Lnwindow {
                     camera.surface_size = UVec2::new(size.width, size.height);
                     camera.upload();
                     lnwindow.window.request_redraw();
-                    world.queue(move |world| Nest::refresh_camera_children(world, ui_camera));
+
+                    for &nest in &camera.nests {
+                        world.queue(move |world| Nest::refresh_camera(world, nest));
+                    }
                 }
             });
 
