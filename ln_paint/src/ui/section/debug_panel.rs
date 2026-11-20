@@ -116,7 +116,7 @@ impl Element for DebugPanel {
             include_bytes!("../../../res/interface/compass.svg"),
         );
         world.observer(compass, move |&ButtonClick, world| {
-            let container = world.single_fetch::<LayerPage>().container;
+            let container = world.single_fetch::<LayerPage>().nest;
             let utils = world.single_fetch::<LayerPage>().camera_utils;
             let mut camera = world.fetch_mut(utils);
             camera.force_clear();

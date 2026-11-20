@@ -29,7 +29,7 @@ use crate::{
     render::{
         Render, RenderDrawControl, RenderPrepareControl,
         camera::{CameraBind, CameraUtils, UICamera},
-        nest::{Nest, NestAttr},
+        nest::{Nest, NestAttr, NestTool},
     },
     save::{Autosave, Save, object::Objects},
     ui::{common::WidgetCommon, renderer::rrect::RRect},
@@ -83,7 +83,7 @@ pub struct LayerPage {
     rd: ChunkRenderer,
 
     pub common: WidgetCommon,
-    pub container: Handle<Nest>,
+    pub nest: Handle<Nest>,
     pub camera_utils: Handle<CameraUtils>,
 
     cache: CacheLayers,
@@ -174,7 +174,7 @@ impl LayerPage {
             let rect = world.fetch(rect).val;
             world.build(attr.calc_camera(rect, &parent))
         });
-        let container = world.insert(Nest {
+        let nest = world.insert(Nest {
             common,
             order: -100,
             child: camera,
@@ -182,6 +182,7 @@ impl LayerPage {
             attr,
         });
         let common = WidgetCommon { camera, ..common };
+        world.build(NestTool { source: nest });
         let camera_utils = world.insert_with(move |world| {
             let camera = world.fetch(common.camera);
             CameraUtils::new(&camera)
@@ -339,7 +340,7 @@ impl LayerPage {
             },
             color,
             debug: false,
-            container,
+            nest,
             camera_utils,
             cursor_rect,
             cursor_shadow_rect,
@@ -492,7 +493,7 @@ impl LayerPage {
     }
 
     fn sync_stream_camera(&mut self, world: &World) {
-        let container = world.fetch(self.container);
+        let container = world.fetch(self.nest);
         let parent = world.fetch(container.common.camera);
         let child = world.fetch(container.child);
         let rect = world.fetch(container.rect).val;
@@ -639,7 +640,7 @@ impl Element for LayerPage {
 
         world.insert(Autosave(Box::new(move |world, task| {
             let this = world.fetch(this);
-            let container = world.fetch(this.container);
+            let container = world.fetch(this.nest);
             task.sn_doc.set_page_camera(PageContainerArchive {
                 center: container.attr.center,
                 zoom: container.attr.zoom,
@@ -672,7 +673,7 @@ impl Element for LayerPage {
             order: 0,
             draw: Box::new(|world, rpass, extra| {
                 let this = world.single_fetch::<LayerPage>();
-                let container = world.fetch(this.container);
+                let container = world.fetch(this.nest);
                 let parent = world.fetch(container.common.camera);
                 let child = world.fetch(container.child);
                 let container_rect = world.fetch(container.rect).val;
