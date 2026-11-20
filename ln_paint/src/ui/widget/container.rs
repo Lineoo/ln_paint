@@ -27,12 +27,11 @@ impl Element for Container {
 
         let theme = world.single_fetch::<Theme>();
         let theme_val = world.single_fetch::<ThemeVal>();
-        let handle = self.nest;
-        let container = world.fetch(handle);
+        let nest = world.fetch(self.nest);
 
         world.insert(RRect {
-            common: container.common,
-            rect: container.rect,
+            common: nest.common,
+            rect: nest.rect,
             order: 10,
             color: theme_val.gray1,
             radius: theme.roundness,
@@ -40,7 +39,7 @@ impl Element for Container {
         });
 
         let mut status = None;
-        world.observer(handle, move |event: &PointerHit, world| {
+        world.observer(self.nest, move |event: &PointerHit, world| {
             status = match (status, event.status) {
                 (None, PointerHitStatus::Press | PointerHitStatus::Moving) => {
                     Some(event.pointer.screen)
@@ -49,66 +48,71 @@ impl Element for Container {
                 (Some(_), PointerHitStatus::Press) => Some(event.pointer.screen),
                 (Some(position), PointerHitStatus::Moving) => {
                     let this = world.fetch(this);
-                    let mut container = world.fetch_mut(handle);
-                    let rect = world.fetch(container.rect).val;
+                    let mut nest = world.fetch_mut(this.nest);
+                    let rect = world.fetch(nest.rect).val;
                     let restriction = world.fetch(this.restriction).val;
-                    let parent_camera = world.fetch(container.common.camera);
+                    let parent_camera = world.fetch(nest.common.camera);
                     let delta =
                         parent_camera.screen_to_world_relative(event.pointer.screen - position);
 
-                    container.attr.center -= delta;
-                    container.clamp_scroll(rect, restriction);
-                    world.queue(move |world| Nest::refresh_camera(world, handle));
+                    nest.attr.center -= delta;
+                    nest.clamp_scroll(rect, restriction);
+                    let nest = nest.handle();
+                    world.queue(move |world| Nest::refresh_camera(world, nest));
                     Some(event.pointer.screen)
                 }
                 (Some(position), PointerHitStatus::Release) => {
                     let this = world.fetch(this);
-                    let mut container = world.fetch_mut(handle);
-                    let rect = world.fetch(container.rect).val;
+                    let mut nest = world.fetch_mut(this.nest);
+                    let rect = world.fetch(nest.rect).val;
                     let restriction = world.fetch(this.restriction).val;
-                    let parent_camera = world.fetch(container.common.camera);
+                    let parent_camera = world.fetch(nest.common.camera);
                     let delta =
                         parent_camera.screen_to_world_relative(event.pointer.screen - position);
 
-                    container.attr.center -= delta;
-                    container.clamp_scroll(rect, restriction);
-                    world.queue(move |world| Nest::refresh_camera(world, handle));
+                    nest.attr.center -= delta;
+                    nest.clamp_scroll(rect, restriction);
+                    let nest = nest.handle();
+                    world.queue(move |world| Nest::refresh_camera(world, nest));
                     None
                 }
             }
         });
 
-        world.observer(handle, move |event: &PointerScroll, world| {
+        world.observer(self.nest, move |event: &PointerScroll, world| {
             let this = world.fetch(this);
-            let mut container = world.fetch_mut(handle);
-            let rect = world.fetch(container.rect).val;
+            let mut nest = world.fetch_mut(this.nest);
+            let rect = world.fetch(nest.rect).val;
             let restriction = world.fetch(this.restriction).val;
 
             let delta = I64Vec2::q32_from_f64(event.delta);
-            container.attr.center -= delta;
-            container.clamp_scroll(rect, restriction);
-            world.queue(move |world| Nest::refresh_camera(world, handle));
+            nest.attr.center -= delta;
+            nest.clamp_scroll(rect, restriction);
+            let nest = nest.handle();
+            world.queue(move |world| Nest::refresh_camera(world, nest));
         });
 
-        world.observer(container.rect, move |ValChanged, world| {
+        world.observer(nest.rect, move |ValChanged, world| {
             let this = world.fetch(this);
-            let mut container = world.fetch_mut(handle);
-            let rect = world.fetch(container.rect).val;
+            let mut nest = world.fetch_mut(this.nest);
+            let rect = world.fetch(nest.rect).val;
             let restriction = world.fetch(this.restriction).val;
 
-            container.clamp_scroll(rect, restriction);
-            world.queue(move |world| Nest::refresh_camera(world, handle));
+            nest.clamp_scroll(rect, restriction);
+            let nest = nest.handle();
+            world.queue(move |world| Nest::refresh_camera(world, nest));
         });
 
         // Re-clamp when content shrinks, otherwise the camera stays below the new bounds.
         world.observer(self.restriction, move |ValChanged, world| {
             let this = world.fetch(this);
-            let mut container = world.fetch_mut(handle);
-            let rect = world.fetch(container.rect).val;
+            let mut nest = world.fetch_mut(this.nest);
+            let rect = world.fetch(nest.rect).val;
             let restriction = world.fetch(this.restriction).val;
 
-            container.clamp_scroll(rect, restriction);
-            world.queue(move |world| Nest::refresh_camera(world, handle));
+            nest.clamp_scroll(rect, restriction);
+            let nest = nest.handle();
+            world.queue(move |world| Nest::refresh_camera(world, nest));
         });
     }
 }

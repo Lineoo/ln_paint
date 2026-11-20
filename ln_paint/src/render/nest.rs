@@ -40,6 +40,11 @@ pub struct NestRect {
     pub source: Handle<Nest>,
 }
 
+/// setup standard pointer tool
+pub struct NestTool {
+    pub source: Handle<Nest>,
+}
+
 /// Full builder, Nest + (sub) Camera + NestRect
 pub struct NestBuilder {
     pub common: WidgetCommon,
@@ -79,6 +84,7 @@ impl Descriptor for NestBuilder {
         });
 
         let rect = world.build(NestRect { source: nest });
+        world.build(NestTool { source: nest });
 
         let common = WidgetCommon {
             camera,
@@ -86,6 +92,39 @@ impl Descriptor for NestBuilder {
         };
 
         (nest, rect, common)
+    }
+}
+
+impl Descriptor for NestTool {
+    type Target = Handle<ToolControl>;
+
+    fn when_build(self, world: &World) -> Self::Target {
+        world.insert_with(move |world| {
+            let source = self.source;
+            let nest = world.fetch(source);
+            ToolControl {
+                common: nest.common,
+                order: nest.order,
+                hit: Box::new(move |world, screen| {
+                    let source = world.fetch(source);
+                    let parent = world.fetch(source.common.camera);
+                    let position = parent.screen_to_world(screen);
+                    let rect = world.fetch(source.rect).val;
+                    if rect.contains(position.q32_floor()) {
+                        if let Some(hit) = ToolControl::intersect(world, screen, source.child) {
+                            Some(hit)
+                        } else {
+                            Some(ToolHitResult {
+                                camera: source.child,
+                                handle: source.handle().untyped(),
+                            })
+                        }
+                    } else {
+                        None
+                    }
+                }),
+            }
+        })
     }
 }
 
@@ -146,29 +185,6 @@ impl Element for Nest {
                     );
                 } else {
                     Render::draw(&child, world, rpass, extra);
-                }
-            }),
-        });
-
-        world.insert(ToolControl {
-            common: self.common,
-            order: self.order,
-            hit: Box::new(move |world, screen| {
-                let this = world.fetch(this);
-                let parent = world.fetch(this.common.camera);
-                let position = parent.screen_to_world(screen);
-                let rect = world.fetch(this.rect).val;
-                if rect.contains(position.q32_floor()) {
-                    if let Some(hit) = ToolControl::intersect(world, screen, this.child) {
-                        Some(hit)
-                    } else {
-                        Some(ToolHitResult {
-                            camera: this.child,
-                            handle: this.handle().untyped(),
-                        })
-                    }
-                } else {
-                    None
                 }
             }),
         });
