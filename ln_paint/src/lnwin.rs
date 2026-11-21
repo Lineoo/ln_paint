@@ -17,28 +17,19 @@ use winit::{
 };
 
 use crate::{
-    input::{focus::FocusTool, mouse::MouseTool, pointer::PointerTool, touch::MultiTouchTool},
-    render::{
+    input::{focus::FocusTool, mouse::MouseTool, pointer::PointerTool, touch::MultiTouchTool}, render::{
         Render,
         camera::{Camera, CameraDescriptor, UICamera},
         nest::Nest,
-    },
-    save::{Autosave, AutosaveScheduler, Save},
-    ui::{
-        common::WidgetCommon,
-        renderer::{
+    }, save::{Autosave, AutosaveScheduler, Save}, ui::{
+        common::WidgetCommon, renderer::{
             canvas::CanvasPipeline, quad::QuadMeshPipeline, rrect::RRectMaterial,
             text::TextPipeline, vtor::VtorPipeline, wireframe::WireframePipeline,
-        },
-        section::{desktop_ui::DesktopUi, mobile_ui::MobileUi},
-        theme::Theme,
-        widget::palette::{
+        }, section::{desktop_ui::DesktopUi, mobile_ui::MobileUi}, theme::{Theme, ThemeVal}, widget::palette::{
             hsl::{HslRingMaterial, HslSquareMaterial},
             oklab::{OklabBarMaterial, OklabPolarMaterial},
         },
-    },
-    unit::{FI64Ext, IRect, URect},
-    val::{Val, ValChanged},
+    }, unit::{FI64Ext, IRect, URect}, val::{Val, ValChanged},
 };
 
 #[derive(Default)]
@@ -213,8 +204,8 @@ impl Element for Lnwindow {
                 None | Some(true) => Theme::dark_mode(),
                 Some(false) => Theme::light_mode(),
             };
-            world.insert(theme.bind(world));
-            world.insert(theme);
+            let theme = world.insert(theme);
+            world.insert(ThemeVal::bind(world, theme));
             drop(save);
 
             world.flush();

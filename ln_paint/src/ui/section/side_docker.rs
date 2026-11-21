@@ -192,15 +192,34 @@ impl Element for SideDocker {
             });
         }
         {
-            let selection = world.insert(docker_button(
-                &mut luni,
-                include_bytes!("../../../res/interface/square-dashed.svg"),
-            ));
-            world.insert(ButtonToggle { source: selection });
-            // TODO selection state is not synced with LayerInput mode
+            let rect = world.build(luni.child(LuniChild::default()));
+            let input = world.single::<LayerInput>();
+            let selected = ValBind::new(world, |world| {
+                let input = world.single_fetch::<LayerInput>();
+                matches!(input.mode, LayerInputMode::Area)
+            })
+            .listen(input)
+            .finish();
+            let selection = world.insert(Button {
+                common: self.common,
+                rect,
+                theme: theme.button(),
+                image: Some(ButtonImage::new(
+                    svg_render(include_bytes!("../../../res/interface/square-dashed.svg")),
+                    theme.distinct,
+                    8,
+                )),
+                selected,
+                hovering: world.insert(Val::new(false)),
+            });
             world.observer(selection, move |&ButtonClick, world| {
                 let mut input = world.single_fetch_mut::<LayerInput>();
-                input.mode = LayerInputMode::Area;
+                if let LayerInputMode::Area = input.mode {
+                    input.mode = LayerInputMode::Normal;
+                } else {
+                    input.mode = LayerInputMode::Area;
+                }
+                world.queue_trigger(input.handle(), ValChanged);
             });
         }
         {

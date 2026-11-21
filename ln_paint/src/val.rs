@@ -4,6 +4,7 @@ type GetFunc<T> = Box<dyn Fn(&World) -> &T + Send + 'static>;
 type SetFunc<T> = Box<dyn Fn(&World, T) + Send + 'static>;
 type TransFunc<T> = Box<dyn Fn(&World) -> T + Send + 'static>;
 
+/// simple field for data, without any insert/remove behavior
 pub struct Val<T> {
     pub val: T,
 }
@@ -14,7 +15,7 @@ pub struct ValProp<T> {
     pub set: SetFunc<T>,
 }
 
-/// maybe change, maybe not
+/// Not guaranteed changes. May be triggered on Elements other than Val/ValProp.
 pub struct ValChanged;
 
 /// Binding a function for data, and listen to nodes.
@@ -55,6 +56,7 @@ impl<'w, T: Send + 'static> ValBind<'w, T, Val<T>> {
         ValBind { world, handle, fun }
     }
 
+    /// standard val bind transfer
     pub fn transfer<U: Send + 'static, UG: ValGeneric<U> + Element>(
         world: &World,
         src: Handle<UG>,
@@ -64,6 +66,21 @@ impl<'w, T: Send + 'static> ValBind<'w, T, Val<T>> {
             let src = world.fetch(src);
             let src = src.get(world);
             let val = fun(src);
+            val
+        })
+        .listen(src)
+        .finish()
+    }
+
+    /// any elements
+    pub fn fetch<U: Element>(
+        world: &World,
+        src: Handle<U>,
+        fun: impl Fn(&U, &World) -> T + Send + 'static,
+    ) -> Handle<Val<T>> {
+        ValBind::new(world, move |world| {
+            let src = world.fetch(src);
+            let val = fun(&src, world);
             val
         })
         .listen(src)
@@ -81,9 +98,9 @@ impl<'w, T: Send + 'static, TG: ValGeneric<T> + Element> ValBind<'w, T, TG> {
         world.queue(move |world| {
             let fun = world.fetch(fun);
             let val = (fun.val)(world);
-            let mut that = world.fetch_mut(handle);
-            that.set(world, val);
-            world.queue_trigger(that.handle(), ValChanged);
+            let mut dst = world.fetch_mut(handle);
+            dst.set(world, val);
+            world.queue_trigger(dst.handle(), ValChanged);
         });
         ValBind { world, handle, fun }
     }
@@ -94,9 +111,9 @@ impl<'w, T: Send + 'static, TG: ValGeneric<T> + Element> ValBind<'w, T, TG> {
         world.observer(this, move |ValChanged, world| {
             let fun = world.fetch(fun);
             let val = (fun.val)(world);
-            let mut that = world.fetch_mut(handle);
-            that.set(world, val);
-            world.queue_trigger(that.handle(), ValChanged);
+            let mut dst = world.fetch_mut(handle);
+            dst.set(world, val);
+            world.queue_trigger(dst.handle(), ValChanged);
         });
         self
     }
@@ -110,9 +127,9 @@ impl<'w, T: Send + 'static, TG: ValGeneric<T> + Element> ValBind<'w, T, TG> {
         let ValBind { world, handle, .. } = self;
         world.observer(this, move |event: &E, world| {
             let val = (action)(event, world);
-            let mut that = world.fetch_mut(handle);
-            that.set(world, val);
-            world.queue_trigger(that.handle(), ValChanged);
+            let mut dst = world.fetch_mut(handle);
+            dst.set(world, val);
+            world.queue_trigger(dst.handle(), ValChanged);
         });
         self
     }

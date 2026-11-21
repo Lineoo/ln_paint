@@ -279,7 +279,7 @@ impl Element for LayerInput {
                     } else {
                         *theme = Theme::dark_mode();
                     }
-                    theme.sync(world);
+                    world.queue_trigger(theme.handle(), ValChanged);
                 }
                 _ => (),
             }
@@ -735,6 +735,7 @@ impl Element for LayerInput {
                 (LayerInputState::PickColor, MultiTouchStatus::Release) => {
                     page.pick_color(event.active.position + this.input_offset_main, world);
                     this.mode = LayerInputMode::Normal;
+                    world.queue_trigger(this.handle(), ValChanged);
                     world.queue_trigger(world.single::<LayerPage>(), BrushConfigurationChanged);
                     LayerInputState::None
                 }
@@ -779,6 +780,7 @@ impl Element for LayerInput {
                     world.queue_trigger(rect.handle(), ValChanged);
                     world.queue_trigger(mode.handle(), ValChanged);
                     this.mode = LayerInputMode::Normal;
+                    world.queue_trigger(this.handle(), ValChanged);
                     LayerInputState::None
                 }
 

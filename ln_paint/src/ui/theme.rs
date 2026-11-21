@@ -8,7 +8,7 @@ use crate::{
     },
     ui::widget::button::ButtonTheme,
     unit::Axis,
-    val::{Val, ValChanged},
+    val::{Val, ValBind},
 };
 
 pub struct Theme {
@@ -83,50 +83,25 @@ impl Theme {
             anim_factor: 30.0,
         }
     }
-
-    pub fn bind(&self, world: &World) -> ThemeVal {
-        ThemeVal {
-            gray0: world.insert(Val::new(self.gray0)),
-            gray1: world.insert(Val::new(self.gray1)),
-            gray2: world.insert(Val::new(self.gray2)),
-            gray3: world.insert(Val::new(self.gray3)),
-            gray4: world.insert(Val::new(self.gray4)),
-            theme: world.insert(Val::new(self.theme)),
-            distinct: world.insert(Val::new(self.distinct)),
-            c0: world.insert(Val::new(self.c0)),
-            c1: world.insert(Val::new(self.c1)),
-            shadow_color: world.insert(Val::new(self.shadow_color)),
-        }
-    }
-
-    pub fn sync(&self, world: &World) {
-        let bind = world.single_fetch::<ThemeVal>();
-
-        world.fetch_mut(bind.gray0).val = self.gray0;
-        world.fetch_mut(bind.gray1).val = self.gray1;
-        world.fetch_mut(bind.gray2).val = self.gray2;
-        world.fetch_mut(bind.gray3).val = self.gray3;
-        world.fetch_mut(bind.gray4).val = self.gray4;
-        world.fetch_mut(bind.theme).val = self.theme;
-        world.fetch_mut(bind.distinct).val = self.distinct;
-        world.fetch_mut(bind.c0).val = self.c0;
-        world.fetch_mut(bind.c1).val = self.c1;
-        world.fetch_mut(bind.shadow_color).val = self.shadow_color;
-
-        world.queue_trigger(bind.gray0, ValChanged);
-        world.queue_trigger(bind.gray1, ValChanged);
-        world.queue_trigger(bind.gray2, ValChanged);
-        world.queue_trigger(bind.gray3, ValChanged);
-        world.queue_trigger(bind.gray4, ValChanged);
-        world.queue_trigger(bind.theme, ValChanged);
-        world.queue_trigger(bind.distinct, ValChanged);
-        world.queue_trigger(bind.c0, ValChanged);
-        world.queue_trigger(bind.c1, ValChanged);
-        world.queue_trigger(bind.shadow_color, ValChanged);
-    }
 }
 
 impl ThemeVal {
+    pub fn bind(world: &World, theme: Handle<Theme>) -> ThemeVal {
+        let bind = |f: fn(&Theme) -> Vec4| ValBind::fetch(world, theme, move |theme, _| f(theme));
+        ThemeVal {
+            gray0: bind(|t| t.gray0),
+            gray1: bind(|t| t.gray1),
+            gray2: bind(|t| t.gray2),
+            gray3: bind(|t| t.gray3),
+            gray4: bind(|t| t.gray4),
+            theme: bind(|t| t.theme),
+            distinct: bind(|t| t.distinct),
+            c0: bind(|t| t.c0),
+            c1: bind(|t| t.c1),
+            shadow_color: bind(|t| t.shadow_color),
+        }
+    }
+
     pub fn button(&self) -> ButtonTheme {
         ButtonTheme {
             idle_color: self.gray1,
