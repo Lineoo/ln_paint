@@ -308,15 +308,6 @@ impl IRect {
         delta.x < self.extend.x && delta.y < self.extend.y
     }
 
-    pub fn axis_new(start: i32, right: i32, end: i32, left: i32, axis: Axis) -> IRect {
-        match axis {
-            Axis::Right => IRect::new(start, right, end, left),
-            Axis::Down => IRect::new(right, end, left, start),
-            Axis::Left => IRect::new(end, left, start, right),
-            Axis::Up => IRect::new(left, start, right, end),
-        }
-    }
-
     pub fn axis_start(self, axis: Axis) -> i32 {
         self.axis_end(axis.flip())
     }

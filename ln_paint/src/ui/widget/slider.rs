@@ -1,5 +1,5 @@
 use cosmic_text::{Align, Metrics};
-use glam::{IVec2, UVec2};
+use glam::UVec2;
 use ln_world::{Element, Handle, HandleGeneric, World};
 
 use crate::{
@@ -146,12 +146,8 @@ impl Element for Slider {
             let mut this = world.fetch_mut(handle);
             let rect = world.fetch(this.rect).val;
 
-            let position = match this.axis.is_vertical() {
-                true => event.position.q32_round().y,
-                false => event.position.q32_round().x,
-            };
-
-            let value = from_position_pressed(rect, this.axis, position);
+            let position = (event.position.q32_round() - rect.center()).dot(this.axis.direction());
+            let value = from_position(rect, this.axis, position);
             world.queue_trigger(handle, SliderValue(value));
 
             if let PointerHitStatus::Press = event.status {
@@ -181,10 +177,7 @@ impl Element for Slider {
             let mut knob = world.fetch_mut(knob_rect_val);
             let mut knob_split = world.fetch_mut(knob_split_rect_val);
 
-            let position = match this.pressed {
-                true => into_position_pressed(rect, this.axis, value),
-                false => into_position(rect, this.axis, value),
-            };
+            let position = into_position(rect, this.axis, value);
 
             front.val = front_rect(rect, this.axis, position);
             knob_split.val = knob_split_rect(rect, this.axis, position);
@@ -278,7 +271,7 @@ impl Element for SliderLabel {
             let rect = world.fetch(source.rect).val;
             let value = world.fetch(source.value).val;
             let mut label_rect = world.fetch_mut(label_rect);
-            let position = into_position_pressed(rect, source.axis, value);
+            let position = into_position(rect, source.axis, value);
             label_rect.val = label_back_rect(rect, source.axis, this.clockwise, position);
             world.queue_trigger(label_rect.handle(), ValChanged);
         });
@@ -289,7 +282,7 @@ impl Element for SliderLabel {
             let rect = world.fetch(source.rect).val;
             let value = world.fetch(source.value).val;
             let mut label_rect = world.fetch_mut(label_rect);
-            let position = into_position_pressed(rect, source.axis, value);
+            let position = into_position(rect, source.axis, value);
             label_rect.val = label_back_rect(rect, source.axis, this.clockwise, position);
             world.queue_trigger(label_rect.handle(), ValChanged);
         });
@@ -298,14 +291,17 @@ impl Element for SliderLabel {
 
 const BAR_EX: i32 = 5;
 const BAR_HW: i32 = 6;
-const KNOB_SIZE: UVec2 = UVec2::new(8, 16);
-const KNOB_SIZE_PRESSED: UVec2 = UVec2::new(7, 16);
-const KNOB_SPLIT_SIZE: UVec2 = UVec2::new(5, 2);
+const KNOB_HALF: UVec2 = UVec2::new(16, 8);
+const KNOB_HALF_PRESSED: UVec2 = UVec2::new(16, 7);
+const KNOB_SPLIT_HALF: UVec2 = UVec2::new(2, 5);
 const LABEL_GAP: i32 = 2;
 const LABEL_HALF: UVec2 = UVec2::new(30, 12);
 
 fn back_rect(rect: IRect, axis: Axis) -> IRect {
-    front_rect(rect, axis, rect.axis_end(axis))
+    IRect::new_half(
+        rect.center(),
+        axis.half(rect.axis_length(axis) / 2, BAR_HW as u32),
+    )
 }
 
 fn back_rect_pressed(rect: IRect, axis: Axis) -> IRect {
@@ -313,63 +309,41 @@ fn back_rect_pressed(rect: IRect, axis: Axis) -> IRect {
 }
 
 fn front_rect(rect: IRect, axis: Axis, position: i32) -> IRect {
-    IRect::axis_new(
-        rect.axis_start(axis),
-        rect.axis_center(axis.rotate_cw()) - BAR_HW * axis.sign(),
-        position,
-        rect.axis_center(axis.rotate_cw()) + BAR_HW * axis.sign(),
-        axis,
+    let length = position + rect.axis_length(axis) as i32 / 2;
+    IRect::new_half(
+        rect.center() + axis.direction() * (position - length / 2),
+        axis.half((length as u32).div_ceil(2), BAR_HW as u32),
     )
 }
 
 fn knob_rect(rect: IRect, axis: Axis, position: i32) -> IRect {
-    IRect::new_half(
-        axis.vertical_ivec2(IVec2::new(rect.axis_center(axis.rotate_cw()), position)),
-        axis.vertical_uvec2(KNOB_SIZE),
-    )
+    knob_half_rect(rect, axis, KNOB_HALF, position)
 }
 
 fn knob_rect_pressed(rect: IRect, axis: Axis, position: i32) -> IRect {
-    IRect::new_half(
-        axis.vertical_ivec2(IVec2::new(rect.axis_center(axis.rotate_cw()), position)),
-        axis.vertical_uvec2(KNOB_SIZE_PRESSED),
-    )
+    knob_half_rect(rect, axis, KNOB_HALF_PRESSED, position)
 }
 
 fn knob_split_rect(rect: IRect, axis: Axis, position: i32) -> IRect {
-    IRect::new_half(
-        axis.vertical_ivec2(IVec2::new(rect.axis_center(axis.rotate_cw()), position)),
-        axis.vertical_uvec2(KNOB_SPLIT_SIZE),
-    )
+    knob_half_rect(rect, axis, KNOB_SPLIT_HALF, position)
+}
+
+fn knob_half_rect(rect: IRect, axis: Axis, half: UVec2, position: i32) -> IRect {
+    IRect::new_half(rect.center(), axis.half(half.x, half.y)) + axis.direction() * position
 }
 
 fn into_position(rect: IRect, axis: Axis, value: f32) -> i32 {
-    let (knob_max, knob_min) = knob_limit(rect, axis);
-    (value * (knob_max - knob_min) as f32).round() as i32 + knob_min
+    let reach = knob_reach(rect, axis, KNOB_HALF.x);
+    ((value - 0.5) * (reach * 2) as f32).round() as i32
 }
 
-fn into_position_pressed(rect: IRect, axis: Axis, value: f32) -> i32 {
-    let (knob_max, knob_min) = knob_limit_pressed(rect, axis);
-    (value * (knob_max - knob_min) as f32).round() as i32 + knob_min
+fn from_position(rect: IRect, axis: Axis, position: i32) -> f32 {
+    let reach = knob_reach(rect, axis, KNOB_HALF.x);
+    (position as f32 / (reach * 2) as f32 + 0.5).clamp(0.0, 1.0)
 }
 
-fn from_position_pressed(rect: IRect, axis: Axis, position: i32) -> f32 {
-    let (knob_max, knob_min) = knob_limit_pressed(rect, axis);
-    ((position - knob_min) as f32 / (knob_max - knob_min) as f32).clamp(0.0, 1.0)
-}
-
-fn knob_limit(rect: IRect, axis: Axis) -> (i32, i32) {
-    (
-        rect.axis_end(axis) - KNOB_SIZE.y as i32 * axis.sign(),
-        rect.axis_start(axis) + KNOB_SIZE.y as i32 * axis.sign(),
-    )
-}
-
-fn knob_limit_pressed(rect: IRect, axis: Axis) -> (i32, i32) {
-    (
-        rect.axis_end(axis) - KNOB_SIZE_PRESSED.y as i32 * axis.sign(),
-        rect.axis_start(axis) + KNOB_SIZE_PRESSED.y as i32 * axis.sign(),
-    )
+fn knob_reach(rect: IRect, axis: Axis, half: u32) -> i32 {
+    rect.axis_length(axis) as i32 / 2 - half as i32
 }
 
 fn label_back_rect(rect: IRect, axis: Axis, clockwise: bool, position: i32) -> IRect {
@@ -377,10 +351,11 @@ fn label_back_rect(rect: IRect, axis: Axis, clockwise: bool, position: i32) -> I
         true => axis.rotate_cw(),
         false => axis.rotate_ccw(),
     };
-    let offset = BAR_HW + BAR_EX + LABEL_GAP + axis.horizontal_uvec2(LABEL_HALF).y as i32;
-    IRect::new_half(
-        axis.horizontal_ivec2(IVec2::new(position, rect.axis_center(axis.rotate_cw())))
-            + raxis.direction() * offset,
-        LABEL_HALF,
-    )
+    let half = match raxis.is_horizontal() {
+        true => LABEL_HALF.x,
+        false => LABEL_HALF.y,
+    } as i32;
+    IRect::new_half(rect.center(), LABEL_HALF)
+        + axis.direction() * position
+        + raxis.direction() * (BAR_HW + BAR_EX + LABEL_GAP + half)
 }

@@ -112,44 +112,4 @@ impl Axis {
             false => UVec2::new(cross, main),
         }
     }
-
-    #[deprecated]
-    pub fn sign(self) -> i32 {
-        match self.is_positive() {
-            true => 1,
-            false => -1,
-        }
-    }
-
-    #[deprecated]
-    pub fn horizontal_uvec2(self, extend: UVec2) -> UVec2 {
-        match self.is_horizontal() {
-            true => extend,
-            false => UVec2::new(extend.y, extend.x),
-        }
-    }
-
-    #[deprecated]
-    pub fn vertical_uvec2(self, extend: UVec2) -> UVec2 {
-        match self.is_vertical() {
-            true => extend,
-            false => UVec2::new(extend.y, extend.x),
-        }
-    }
-
-    #[deprecated]
-    pub fn horizontal_ivec2(self, position: IVec2) -> IVec2 {
-        match self.is_horizontal() {
-            true => position,
-            false => IVec2::new(position.y, position.x),
-        }
-    }
-
-    #[deprecated]
-    pub fn vertical_ivec2(self, position: IVec2) -> IVec2 {
-        match self.is_vertical() {
-            true => position,
-            false => IVec2::new(position.y, position.x),
-        }
-    }
 }
