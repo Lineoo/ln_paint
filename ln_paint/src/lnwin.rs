@@ -17,7 +17,7 @@ use winit::{
 };
 
 use crate::{
-    input::{focus::FocusTool, mouse::MouseTool, pointer::PointerTool, touch::MultiTouchTool},
+    input::{mouse::MouseTool, pointer::PointerTool, touch::MultiTouchTool},
     render::{
         Render,
         camera::{Camera, CameraDescriptor, UICamera},
@@ -222,7 +222,6 @@ impl Element for Lnwindow {
             world.insert(MouseTool::default());
             world.insert(PointerTool::default());
             world.insert(MultiTouchTool::default());
-            world.insert(FocusTool::default());
 
             world.flush();
 
