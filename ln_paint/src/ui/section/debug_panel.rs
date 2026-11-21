@@ -3,7 +3,7 @@ use glam::I64Vec2;
 use ln_world::{Element, Handle, World};
 
 use crate::{
-    paint::wrapper::{LayerDebugMessage, LayerPage},
+    paint::wrapper::LayerPage,
     render::{
         Render,
         nest::{NestAttr, NestBuilder, NestRect},
@@ -76,22 +76,19 @@ impl Element for DebugPanel {
             }
         });
 
-        world.observer(
-            world.single::<LayerPage>(),
-            move |LayerDebugMessage(msg), world| {
-                let render = world.single_fetch::<Render>();
-                if render.timestamp_poll {
-                    return;
-                }
+        world.observer(world.single::<LayerPage>(), move |msg: &String, world| {
+            let render = world.single_fetch::<Render>();
+            if render.timestamp_poll {
+                return;
+            }
 
-                let text = world.fetch(debug_text).text;
-                let mut text = world.fetch_mut(text);
-                if text.val != *msg {
-                    text.val.clone_from(msg);
-                    world.queue_trigger(text.handle(), ValChanged);
-                }
-            },
-        );
+            let text = world.fetch(debug_text).text;
+            let mut text = world.fetch_mut(text);
+            if text.val != *msg {
+                text.val.clone_from(msg);
+                world.queue_trigger(text.handle(), ValChanged);
+            }
+        });
 
         let docker_button = |rect: Handle<Val<IRect>>, image_bytes: &[u8]| {
             world.insert(Button {

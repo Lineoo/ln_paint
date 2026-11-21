@@ -7,7 +7,7 @@ use crate::{
             BrushParams,
             param::{BrushParamKey, BrushValue, BrushValueMut},
         },
-        wrapper::{BrushConfigurationChanged, LayerPage},
+        wrapper::LayerPage,
     },
     render::nest::{NestAttr, NestBuilder, NestRect},
     ui::{
@@ -77,12 +77,7 @@ impl Element for SettingPanel {
             let fallback = world.fetch(theme.gray4).val;
             page.active().color().unwrap_or(fallback)
         })
-        .observer(page.handle(), move |&BrushConfigurationChanged, world| {
-            let page = world.single_fetch::<LayerPage>();
-            let theme = world.single_fetch::<ThemeVal>();
-            let fallback = world.fetch(theme.gray4).val;
-            page.active().color().unwrap_or(fallback)
-        })
+        .listen(page.handle())
         .finish();
 
         let preview = world.insert(world.build(BrushPreviewDescriptor {
@@ -110,7 +105,7 @@ impl Element for SettingPanel {
 
         world.insert(luni);
 
-        world.observer(page.handle(), move |&BrushConfigurationChanged, world| {
+        world.observer(page.handle(), move |&ValChanged, world| {
             let mut preview = world.fetch_mut(preview);
             let layer_instance = world.single_fetch::<LayerPage>();
             preview.outdated = true;
@@ -277,7 +272,7 @@ impl Element for TextSettingPanel {
             world.observer(slider, move |&SliderValue(value), world| {
                 let mut layer = world.fetch_mut(layer);
                 apply_option(layer.active_mut(), key, value);
-                world.queue_trigger(layer.handle(), BrushConfigurationChanged);
+                world.queue_trigger(layer.handle(), ValChanged);
             });
             options.push(OptionRow {
                 key,
@@ -341,7 +336,7 @@ impl Element for TextSettingPanel {
         luni.children = option_children(&options, brush_title_frame, page_title_frame, zoom_frame);
         let luni_handle = world.insert(luni);
 
-        world.observer(layer, move |&BrushConfigurationChanged, world| {
+        world.observer(layer, move |&ValChanged, world| {
             let layer = world.fetch(layer);
 
             for &(key, slider) in &sliders {

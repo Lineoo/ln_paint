@@ -34,7 +34,7 @@ use crate::{
     save::{Autosave, Save, object::Objects},
     ui::{common::WidgetCommon, renderer::rrect::RRect},
     unit::{FI64Ext, IRect},
-    val::Val,
+    val::{Val, ValChanged},
 };
 
 const BRIDGE_CHUNK_SIZE: UVec2 = UVec2::splat(1024);
@@ -43,11 +43,7 @@ const DEFAULT_ZOOM_OFFSET: f64 = 0.0;
 
 // TODO rename module to `page`
 
-pub struct LayerDebugMessage(pub String);
-
 pub const BRUSH_PREVIEW_SHADOW_BLUR: i32 = 30;
-
-pub struct BrushConfigurationChanged;
 
 /// A named brush stored in the preset registry.
 pub struct BrushPreset {
@@ -485,9 +481,9 @@ impl LayerPage {
         self.lp
             .pick_color(&self.raw, &self.cache, cursor.q32_floor(), move |color| {
                 cmd.queue(move |world| {
-                    let mut wrapper = world.single_fetch_mut::<LayerPage>();
-                    wrapper.set_color(color.with_w(1.0));
-                    world.queue_trigger(wrapper.handle(), BrushConfigurationChanged);
+                    let mut page = world.single_fetch_mut::<LayerPage>();
+                    page.set_color(color.with_w(1.0));
+                    world.queue_trigger(page.handle(), ValChanged);
                 });
             });
     }
@@ -516,7 +512,7 @@ impl LayerPage {
         while let Ok(output) = self.thread_rx.try_recv() {
             match output {
                 ThreadOutput::ThreadDebugMessage(msg) => {
-                    world.queue_trigger(world.single::<LayerPage>(), LayerDebugMessage(msg));
+                    world.queue_trigger(world.single::<LayerPage>(), msg);
                 }
                 ThreadOutput::RawInsert(key, chunk) => {
                     self.raw.chunks.insert(key, chunk);

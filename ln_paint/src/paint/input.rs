@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 
-use glam::{DVec2, I64Vec2, Mat3, UVec2, Vec4};
+use glam::{DVec2, I64Vec2, Mat3, UVec2};
 use ln_world::{Element, Handle, HandleGeneric, World};
 use winit::{
     cursor::{Cursor, CursorIcon},
@@ -17,12 +17,12 @@ use crate::{
     lnwin::Lnwindow,
     paint::{
         brush::{Dab, param::BrushParamKey},
-        wrapper::{BrushConfigurationChanged, LayerPage},
+        wrapper::LayerPage,
     },
     render::{RenderPrepareControl, camera::UICamera},
     save::Save,
     ui::{
-        theme::Theme,
+        theme::{Theme, ThemeVal},
         widget::area::{Area, AreaMode},
     },
     unit::{FI64Ext, IRect},
@@ -258,7 +258,7 @@ impl Element for LayerInput {
                     let active = page.active_mut();
                     let is_erase = active.toggle(BrushParamKey::Erase).unwrap_or_default();
                     active.set_toggle(BrushParamKey::Erase, !is_erase);
-                    world.queue_trigger(page.handle(), BrushConfigurationChanged);
+                    world.queue_trigger(page.handle(), ValChanged);
                 }
                 KeyCode::Space => {
                     this.space = press;
@@ -431,17 +431,17 @@ impl Element for LayerInput {
                     (LayerInputMode::Area, _) => {
                         let container = world.fetch(container);
                         let camera = world.fetch(container.child);
+                        let theme = world.single_fetch::<ThemeVal>();
                         let start_position = camera.screen_to_world(center);
                         let rect = world.insert(Val::new(IRect::new_half(
                             start_position.q32_round(),
                             UVec2::ZERO,
                         )));
-                        let color = world.insert(Val::new(Vec4::new(0.3, 0.3, 0.3, 1.0)));
                         let mode = world.insert(Val::new(AreaMode::None));
                         let area = world.insert(Area {
                             common: page.common,
                             rect,
-                            color,
+                            color: theme.theme,
                             mode,
                         });
                         LayerInputState::CreateArea {
@@ -736,7 +736,7 @@ impl Element for LayerInput {
                     page.pick_color(event.active.position + this.input_offset_main, world);
                     this.mode = LayerInputMode::Normal;
                     world.queue_trigger(this.handle(), ValChanged);
-                    world.queue_trigger(world.single::<LayerPage>(), BrushConfigurationChanged);
+                    world.queue_trigger(world.single::<LayerPage>(), ValChanged);
                     LayerInputState::None
                 }
 

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use cosmic_text::{Align, Attrs, Family, Metrics};
 use ln_paint::{
-    lnwin::{Lnwin, LnwindowRect},
+    lnwin::Lnwin,
     ui::{
         common::WidgetCommon,
         layout::transform::Transform,
@@ -23,7 +23,7 @@ use ln_paint::{
     unit::{Axis, IRect},
     val::Val,
 };
-use ln_world::{Element, World};
+use ln_world::{Element, Handle, World};
 use winit::event_loop::EventLoop;
 
 const FONT_SANS: &str = "Source Han Sans CN";
@@ -35,8 +35,8 @@ fn main() {
     env_logger::init();
 
     let lnwin = Lnwin {
-        payload: Some(Arc::new(|world, common| {
-            world.insert(WidgetShowcase { common });
+        payload: Some(Arc::new(|world, common, rect| {
+            world.insert(WidgetShowcase { common, rect });
         })),
         ..Default::default()
     };
@@ -48,6 +48,7 @@ fn main() {
 /// Widget gallery. Empty cards are kept as slots for upcoming widgets.
 pub struct WidgetShowcase {
     pub common: WidgetCommon,
+    pub rect: Handle<Val<IRect>>,
 }
 
 impl Element for WidgetShowcase {
@@ -56,14 +57,13 @@ impl Element for WidgetShowcase {
         world.set_autodeps(Some(this));
         world.dependency(this, self.common.visible);
 
-        let root = world.single_fetch::<LnwindowRect>().0;
         let theme = world.single_fetch::<ThemeVal>();
         let metric_theme = world.single_fetch::<Theme>();
         let roundness = metric_theme.roundness;
 
         world.insert(RRect {
             common: self.common,
-            rect: root,
+            rect: self.rect,
             order: -200,
             color: theme.gray0,
             radius: 0.0,
@@ -73,7 +73,7 @@ impl Element for WidgetShowcase {
         let title_rect = world.build(Transform::anchor(
             (0.0, 1.0),
             IRect::new(24, -58, 720, -20),
-            root,
+            self.rect,
         ));
         world.insert(Text {
             text: world.insert(Val::new("组件展示 / Widget Gallery".to_string())),
@@ -93,7 +93,7 @@ impl Element for WidgetShowcase {
             let outer = world.build(Transform::anchor(
                 (0.0, 1.0),
                 IRect::new(left, -down - CARD_HEIGHT, left + CARD_WIDTH, -down),
-                root,
+                self.rect,
             ));
             world.insert(RRect {
                 common: self.common,

@@ -9,7 +9,7 @@ use crate::{
         oklab::{linear_srgb_to_oklab, oklab_to_linear_srgb},
         srgb::{mul_alpha, srgb_gamma_decode, srgb_gamma_encode},
     },
-    paint::wrapper::{BrushConfigurationChanged, LayerPage},
+    paint::wrapper::LayerPage,
     render::nest::{NestAttr, NestBuilder, NestRect},
     ui::{
         common::WidgetCommon,
@@ -29,7 +29,7 @@ use crate::{
         },
     },
     unit::{FI64Ext, IRect},
-    val::{Val, ValChanged},
+    val::{Val, ValBind, ValChanged},
 };
 
 pub struct ColorPickerPanel {
@@ -163,7 +163,12 @@ impl Element for ColorPickerButton {
         let icon_transform =
             TransformValue::anchor((0.5, 0.5), IRect::new_half(IVec2::ZERO, UVec2::splat(10)));
         let icon_rect = world.build(Transform::new(icon_transform, self.rect));
-        let color = world.insert(Val::new(mul_alpha(srgb_gamma_decode(page.color()))));
+        let color = ValBind::new(world, |world| {
+            let layer = world.single_fetch::<LayerPage>();
+            mul_alpha(srgb_gamma_decode(layer.color()))
+        })
+        .listen(page.handle())
+        .finish();
 
         world.insert(RRect {
             common: self.common,
@@ -172,14 +177,6 @@ impl Element for ColorPickerButton {
             color,
             radius: 10.0,
             width: 0.0,
-        });
-
-        world.observer(page.handle(), move |&BrushConfigurationChanged, world| {
-            let layer = world.single_fetch::<LayerPage>();
-            let next = mul_alpha(srgb_gamma_decode(layer.color()));
-            let mut current = world.fetch_mut(color);
-            current.val = next;
-            world.queue_trigger(color, ValChanged);
         });
 
         let mut dragging = None;
@@ -286,14 +283,14 @@ impl Element for LayerHslPalette {
         world.observer(ring, move |&ColorHsla(hsla), world| {
             let mut layer = world.fetch_mut(layer);
             layer.set_color(hsl_to_srgb(hsla));
-            world.queue_trigger(layer.handle(), BrushConfigurationChanged);
+            world.queue_trigger(layer.handle(), ValChanged);
         });
         world.observer(square, move |&ColorHsla(hsla), world| {
             let mut layer = world.fetch_mut(layer);
             layer.set_color(hsl_to_srgb(hsla));
-            world.queue_trigger(layer.handle(), BrushConfigurationChanged);
+            world.queue_trigger(layer.handle(), ValChanged);
         });
-        world.observer(layer, move |&BrushConfigurationChanged, world| {
+        world.observer(layer, move |&ValChanged, world| {
             let layer = world.fetch(layer);
             let hsla = srgb_to_hsl(layer.color());
             world.trigger(ring, &SetColorHsla(hsla));
@@ -357,14 +354,14 @@ impl Element for LayerOklabPalette {
         world.observer(polar, move |&ColorOklab(color), world| {
             let mut layer = world.fetch_mut(layer);
             layer.set_color(srgb_gamma_encode(oklab_to_linear_srgb(color)));
-            world.queue_trigger(layer.handle(), BrushConfigurationChanged);
+            world.queue_trigger(layer.handle(), ValChanged);
         });
         world.observer(bar, move |&ColorOklab(color), world| {
             let mut layer = world.fetch_mut(layer);
             layer.set_color(srgb_gamma_encode(oklab_to_linear_srgb(color)));
-            world.queue_trigger(layer.handle(), BrushConfigurationChanged);
+            world.queue_trigger(layer.handle(), ValChanged);
         });
-        world.observer(layer, move |&BrushConfigurationChanged, world| {
+        world.observer(layer, move |&ValChanged, world| {
             let layer = world.fetch(layer);
             let oklab = linear_srgb_to_oklab(srgb_gamma_decode(layer.color()));
             world.trigger(polar, &SetColorOklab(oklab));

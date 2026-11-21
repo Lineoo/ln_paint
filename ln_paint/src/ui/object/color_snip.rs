@@ -7,10 +7,7 @@ use crate::{
         mouse::MouseMenu,
         pointer::{PointerHover, PointerScroll},
     },
-    paint::{
-        input::LayerInput,
-        wrapper::{BrushConfigurationChanged, LayerPage},
-    },
+    paint::{input::LayerInput, wrapper::LayerPage},
     ui::{
         common::WidgetCommon,
         layout::transform::{Transform, TransformValue},
@@ -88,7 +85,7 @@ impl Element for ColorSnip {
             let mut page = world.single_fetch_mut::<LayerPage>();
             let this = world.fetch(this);
             page.set_color(this.attr.color);
-            world.queue_trigger(page.handle(), BrushConfigurationChanged);
+            world.queue_trigger(page.handle(), ValChanged);
         });
 
         world.observer(button, move |&MouseMenu(_), world| {

@@ -10,7 +10,7 @@ use crate::{
     },
     ui::common::WidgetCommon,
     unit::{FI64Ext, IRect},
-    val::{Val, ValChanged},
+    val::{Val, ValBind, ValChanged},
 };
 
 /// separated coordination
@@ -278,26 +278,24 @@ impl Descriptor for NestRect {
 
     fn when_build(self, world: &World) -> Self::Target {
         let container = self.source;
-        let inner = world.insert(Val::new(IRect::default()));
+        let inner = ValBind::new(world, move |world| {
+            let container = world.fetch(container);
+            let parent = world.fetch(container.common.camera);
+            let child = world.fetch(container.child);
+            let rect = world.fetch(container.rect).val;
+            let zoom = child.zoom - parent.zoom;
+            container.inner_rect(rect, I64Vec2::ZERO, zoom)
+        });
 
+        let bind = inner.pack();
         world.queue(move |world| {
             world.scope("container_echo");
             world.set_autodeps(Some(container));
 
             let container_rect = world.fetch(container).rect;
-            world.observer(container_rect, move |ValChanged, world| {
-                let container = world.fetch(container);
-                let parent = world.fetch(container.common.camera);
-                let child = world.fetch(container.child);
-                let rect = world.fetch(container.rect).val;
-                let zoom = child.zoom - parent.zoom;
-                let mut inner = world.fetch_mut(inner);
-
-                inner.val = container.inner_rect(rect, I64Vec2::ZERO, zoom);
-                world.queue_trigger(inner.handle(), ValChanged);
-            });
+            bind(world).listen(container_rect);
         });
 
-        inner
+        inner.finish()
     }
 }

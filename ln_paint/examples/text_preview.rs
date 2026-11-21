@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use cosmic_text::{Align, Attrs, Family, Metrics};
 use ln_paint::{
-    lnwin::{Lnwin, LnwindowRect},
+    lnwin::Lnwin,
     ui::{
         common::WidgetCommon,
         layout::transform::{Transform, TransformValue},
@@ -24,8 +24,8 @@ fn main() {
     env_logger::init();
 
     let lnwin = Lnwin {
-        payload: Some(Arc::new(|world, common| {
-            world.insert(TextPreview { common });
+        payload: Some(Arc::new(|world, common, rect| {
+            world.insert(TextPreview { common, rect });
         })),
         ..Default::default()
     };
@@ -36,6 +36,7 @@ fn main() {
 
 pub struct TextPreview {
     pub common: WidgetCommon,
+    pub rect: Handle<Val<IRect>>,
 }
 
 impl Element for TextPreview {
@@ -44,14 +45,13 @@ impl Element for TextPreview {
         world.set_autodeps(Some(this));
         world.dependency(this, self.common.visible);
 
-        let root = world.single_fetch::<LnwindowRect>().0;
         let theme = world.single_fetch::<ThemeVal>();
 
         let row = |top: i32, height: i32| {
             world.build(Transform::anchor(
                 (0.0, 1.0),
                 IRect::new(40, -top - height, 760, -top),
-                root,
+                self.rect,
             ))
         };
 
@@ -61,15 +61,15 @@ impl Element for TextPreview {
         let emoji = row(296, 84);
         let left = world.build(Transform::new(
             TransformValue::anchor((0.0, 1.0), IRect::new(40, -470, 260, -400)),
-            root,
+            self.rect,
         ));
         let center = world.build(Transform::new(
             TransformValue::anchor((0.0, 1.0), IRect::new(280, -470, 500, -400)),
-            root,
+            self.rect,
         ));
         let right = world.build(Transform::new(
             TransformValue::anchor((0.0, 1.0), IRect::new(520, -470, 760, -400)),
-            root,
+            self.rect,
         ));
         let small = row(490, 50);
 

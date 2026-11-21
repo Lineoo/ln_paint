@@ -5,7 +5,7 @@ use crate::{
     paint::{
         brush::param::BrushParamKey,
         input::{LayerInput, LayerInputMode},
-        wrapper::{BrushConfigurationChanged, LayerPage},
+        wrapper::LayerPage,
     },
     ui::{
         common::WidgetCommon,
@@ -134,7 +134,14 @@ impl Element for SideDocker {
             });
         }
         {
-            let eraser_selected = world.insert(Val::new(false));
+            let eraser_selected = ValBind::new(world, move |world| {
+                let page = world.fetch(page);
+                page.active()
+                    .toggle(BrushParamKey::Erase)
+                    .unwrap_or_default()
+            })
+            .listen(page)
+            .finish();
             let eraser = world.insert(Button {
                 common: self.common,
                 rect: world.build(luni.child(LuniChild::default())),
@@ -155,15 +162,7 @@ impl Element for SideDocker {
                     .unwrap_or_default();
                 page.active_mut()
                     .set_toggle(BrushParamKey::Erase, !is_erase);
-                world.queue_trigger(page.handle(), BrushConfigurationChanged);
-            });
-            world.observer(page, move |&BrushConfigurationChanged, world| {
-                let mut selected = world.fetch_mut(eraser_selected);
-                let page = world.fetch(page);
-                selected.val = page
-                    .active()
-                    .toggle(BrushParamKey::Erase)
-                    .unwrap_or_default()
+                world.queue_trigger(page.handle(), ValChanged);
             });
         }
         {
@@ -259,7 +258,17 @@ impl Element for SideDocker {
                 }),
                 ..Default::default()
             }));
-            let slider_value = world.insert(Val::new(0.67));
+            let slider_value = ValBind::new(world, move |world| {
+                let page = world.fetch(page);
+                let curr = page
+                    .active()
+                    .scalar(BrushParamKey::Size)
+                    .map(|param| param.scale)
+                    .unwrap_or(0.0);
+                ((curr - 0.5) / 127.5 + 1.).log2()
+            })
+            .listen(page)
+            .finish();
             let slider = world.insert(Slider {
                 common: self.common,
                 rect: slider_rect,
@@ -284,23 +293,7 @@ impl Element for SideDocker {
                 if let Some(param) = layer.active_mut().scalar_mut(BrushParamKey::Size) {
                     param.scale = scale;
                 }
-
-                world.queue_trigger(layer.handle(), BrushConfigurationChanged);
-            });
-            world.observer(page, move |&BrushConfigurationChanged, world| {
-                let page = world.fetch(page);
-                let handle = world.fetch(slider).value;
-                let mut value = world.fetch_mut(handle);
-                let curr = page
-                    .active()
-                    .scalar(BrushParamKey::Size)
-                    .map(|param| param.scale)
-                    .unwrap_or(0.0);
-                let display = ((curr - 0.5) / 127.5 + 1.).log2();
-                if value.val != display {
-                    value.val = display;
-                    world.queue_trigger(handle, ValChanged);
-                }
+                world.queue_trigger(layer.handle(), ValChanged);
             });
         }
         {

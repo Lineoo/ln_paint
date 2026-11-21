@@ -2,10 +2,7 @@ use cosmic_text::{Attrs, Metrics};
 use ln_world::{Element, Handle, World};
 
 use crate::{
-    input::pointer::{PointerHit, PointerHover, PointerScroll},
-    paint::wrapper::{BrushConfigurationChanged, LayerPage},
-    render::nest::{NestAttr, NestBuilder},
-    ui::{
+    input::pointer::{PointerHit, PointerHover, PointerScroll}, paint::wrapper::LayerPage, render::nest::{NestAttr, NestBuilder}, ui::{
         common::WidgetCommon,
         i18n::tr,
         layout::{
@@ -29,9 +26,7 @@ use crate::{
             container::Container,
             tabs::{TabEntry, Tabs},
         },
-    },
-    unit::IRect,
-    val::{Val, ValBind},
+    }, unit::IRect, val::{Val, ValBind, ValChanged},
 };
 
 const ITEM_HEIGHT: i32 = 80;
@@ -161,9 +156,7 @@ impl Element for BrushListPanel {
             let selected = ValBind::new(world, move |world| {
                 world.single_fetch::<LayerPage>().active_brush == i
             })
-            .observer(page.handle(), move |&BrushConfigurationChanged, world| {
-                world.single_fetch::<LayerPage>().active_brush == i
-            })
+            .listen(page.handle())
             .finish();
             let button = world.insert(Button {
                 common,
@@ -276,7 +269,7 @@ impl Element for BrushListPanel {
             world.observer(button, move |&ButtonClick, world| {
                 let mut page = world.single_fetch_mut::<LayerPage>();
                 page.select_brush(i);
-                world.queue_trigger(page.handle(), BrushConfigurationChanged);
+                world.queue_trigger(page.handle(), ValChanged);
             });
 
             world.observer(button, move |drag: &ButtonDrag, world| match drag.status {

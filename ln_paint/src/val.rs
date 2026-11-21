@@ -134,7 +134,13 @@ impl<'w, T: Send + 'static, TG: ValGeneric<T> + Element> ValBind<'w, T, TG> {
         self
     }
 
-    pub fn finish(self) -> Handle<TG> {
+    /// useful for queue
+    pub fn pack(&self) -> impl FnOnce(&World) -> ValBind<'_, T, TG> + Send + 'static {
+        let &ValBind { handle, fun, .. } = self;
+        move |world| ValBind { world, handle, fun }
+    }
+
+    pub fn finish(&self) -> Handle<TG> {
         self.handle
     }
 }

@@ -17,26 +17,37 @@ use winit::{
 };
 
 use crate::{
-    input::{focus::FocusTool, mouse::MouseTool, pointer::PointerTool, touch::MultiTouchTool}, render::{
+    input::{focus::FocusTool, mouse::MouseTool, pointer::PointerTool, touch::MultiTouchTool},
+    render::{
         Render,
         camera::{Camera, CameraDescriptor, UICamera},
         nest::Nest,
-    }, save::{Autosave, AutosaveScheduler, Save}, ui::{
-        common::WidgetCommon, renderer::{
+    },
+    save::{Autosave, AutosaveScheduler, Save},
+    ui::{
+        common::WidgetCommon,
+        renderer::{
             canvas::CanvasPipeline, quad::QuadMeshPipeline, rrect::RRectMaterial,
             text::TextPipeline, vtor::VtorPipeline, wireframe::WireframePipeline,
-        }, section::{desktop_ui::DesktopUi, mobile_ui::MobileUi}, theme::{Theme, ThemeVal}, widget::palette::{
+        },
+        section::{desktop_ui::DesktopUi, mobile_ui::MobileUi},
+        theme::{Theme, ThemeVal},
+        widget::palette::{
             hsl::{HslRingMaterial, HslSquareMaterial},
             oklab::{OklabBarMaterial, OklabPolarMaterial},
         },
-    }, unit::{FI64Ext, IRect, URect}, val::{Val, ValChanged},
+    },
+    unit::{FI64Ext, IRect, URect},
+    val::{Val, ValChanged},
 };
+
+type Payload = Arc<dyn Fn(&World, WidgetCommon, Handle<Val<IRect>>) + Send + Sync>;
 
 #[derive(Default)]
 pub struct Lnwin {
     pub world: World,
     pub windows: HashMap<WindowId, Handle<Lnwindow>>,
-    pub payload: Option<Arc<dyn Fn(&World, WidgetCommon) + Send + Sync>>,
+    pub payload: Option<Payload>,
 }
 
 impl ApplicationHandler for Lnwin {
@@ -158,11 +169,9 @@ impl ApplicationHandler for Lnwin {
 /// The main window.
 pub struct Lnwindow {
     pub window: Arc<dyn Window>,
-    pub payload: Option<Arc<dyn Fn(&World, WidgetCommon) + Send + Sync>>,
+    pub payload: Option<Payload>,
     pub scale_factor_override: Option<f64>,
 }
-
-pub struct LnwindowRect(pub Handle<Val<IRect>>);
 
 impl Element for Lnwindow {
     fn when_insert(&mut self, world: &World, this: Handle<Self>) {
@@ -218,14 +227,16 @@ impl Element for Lnwindow {
             world.flush();
 
             let lnwindow = world.fetch(this);
-            let window_rect = world.insert(Val::new(lnwindow.window_rect()));
-            world.insert(LnwindowRect(window_rect));
-            let ui_camera = world.insert(world.build(CameraDescriptor {
+            let rect = world.insert(Val::new(lnwindow.window_rect()));
+            let camera = world.insert(world.build(CameraDescriptor {
                 center: lnwindow.surface_center(),
                 zoom: i64::q32_from_f64(lnwindow.scale_factor().log2()),
             }));
-            world.insert(UICamera(ui_camera));
+            let visible = world.insert(Val::new(true));
+            let common = WidgetCommon { camera, visible };
+            world.insert(UICamera(camera));
             drop(lnwindow);
+
             world.observer(this, move |event: &WindowEvent, world| {
                 if let WindowEvent::CloseRequested = event {
                     Autosave::autosave_all(world);
@@ -238,8 +249,8 @@ impl Element for Lnwindow {
             world.observer(this, move |event: &WindowEvent, world| {
                 if let WindowEvent::SurfaceResized(_) = event {
                     let lnwindow = world.fetch(this);
-                    let mut rect = world.fetch_mut(window_rect);
-                    let mut camera = world.fetch_mut(ui_camera);
+                    let mut rect = world.fetch_mut(rect);
+                    let mut camera = world.fetch_mut(camera);
 
                     let scale = lnwindow.scale_factor();
                     let next = lnwindow.window_rect();
@@ -260,17 +271,11 @@ impl Element for Lnwindow {
                 }
             });
 
-            let visible = world.insert(Val::new(true));
-            let common = WidgetCommon {
-                camera: ui_camera,
-                visible,
-            };
-
             world.flush();
 
             let this = world.fetch(this);
             if let Some(payload) = &this.payload {
-                payload(world, common);
+                payload(world, common, rect);
             } else {
                 let save = world.single_fetch::<Save>();
                 let use_desktop = std::env::var_os("LNPAINT_DESKTOP_UI").is_some()
@@ -279,9 +284,9 @@ impl Element for Lnwindow {
 
                 if use_desktop {
                     log::warn!("using experimental desktop ui");
-                    world.insert(DesktopUi { common });
+                    world.insert(DesktopUi { common, rect });
                 } else {
-                    world.insert(MobileUi { common });
+                    world.insert(MobileUi { common, rect });
                 }
             }
         });
@@ -357,8 +362,6 @@ impl Lnwindow {
         I64Vec2::q32_from_f64(size / scale / 2.0)
     }
 }
-
-impl Element for LnwindowRect {}
 
 pub struct Task {
     pub instant: Instant,

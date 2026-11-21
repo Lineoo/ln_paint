@@ -92,6 +92,7 @@
     - `export` 无头导出
 - `shaders/` 着色器编译
 - `unit/` 单位
+- `val` 数据绑定
 
 ### `ln_world/` 管理系统
 

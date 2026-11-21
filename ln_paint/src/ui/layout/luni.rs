@@ -365,6 +365,7 @@ impl Descriptor for LuniFlexChildBuilder<'_> {
     type Target = Handle<Val<IRect>>;
 
     fn when_build(self, world: &World) -> Self::Target {
+        // FIXME invalid data may leak
         let rect = world.insert(Val::new(IRect::default()));
         self.luni.children.push((rect, self.child));
         rect

@@ -34,23 +34,24 @@ impl<T: AnimationType> Animator<T> {
     }
 }
 
-impl<T: AnimationType + Default> Descriptor for Animator<T> {
+impl<T: AnimationType> Descriptor for Animator<T> {
     type Target = Handle<Val<T>>;
 
     fn when_build(self, world: &World) -> Self::Target {
-        let result = world.insert(Val::new(T::default()));
-        world.queue(move |world| {
+        let result = world.insert_with(move |world| {
             let value = world.fetch(self.target).val;
-            let mut result = world.fetch_mut(result);
-            result.val = value;
-            world.insert(AnimationCore {
-                src: result.handle(),
+            Val::new(value)
+        });
+        world.insert_with(move |world| {
+            let value = world.fetch(self.target).val;
+            AnimationCore {
+                src: result,
                 dst: self.target,
                 src_st: value.into_storage(),
                 dst_st: value.into_storage(),
                 factor: self.factor,
                 last_update: Instant::now(),
-            });
+            }
         });
         result
     }

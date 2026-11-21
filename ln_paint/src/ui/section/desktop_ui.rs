@@ -3,12 +3,7 @@ use glam::{IVec2, UVec2, Vec4};
 use ln_world::{Element, Handle, World};
 
 use crate::{
-    lnwin::LnwindowRect,
-    paint::{
-        brush::param::BrushParamKey,
-        input::LayerInput,
-        wrapper::{BrushConfigurationChanged, LayerPage},
-    },
+    paint::{brush::param::BrushParamKey, input::LayerInput, wrapper::LayerPage},
     render::nest::{NestAttr, NestBuilder},
     ui::{
         common::WidgetCommon,
@@ -42,6 +37,7 @@ use crate::{
 
 pub struct DesktopUi {
     pub common: WidgetCommon,
+    pub rect: Handle<Val<IRect>>,
 }
 
 impl Element for DesktopUi {
@@ -50,10 +46,8 @@ impl Element for DesktopUi {
         world.set_autodeps(Some(this));
         world.dependency(this, self.common.visible);
 
-        let root = world.single_fetch::<LnwindowRect>().0;
-
         let mut luni = LuniFlex::new(
-            root,
+            self.rect,
             LuniParent {
                 axis: LuniAxis::Column,
                 distribution: LuniDistribution::FlexStart,
@@ -96,10 +90,6 @@ impl Element for DesktopUi {
         });
 
         world.insert(luni);
-
-        world.queue(|world| {
-            world.trigger(world.single::<LayerPage>(), &BrushConfigurationChanged);
-        });
     }
 }
 
@@ -215,15 +205,7 @@ impl Element for ToolBar {
                 Some(true)
             )
         })
-        .observer(page, move |&BrushConfigurationChanged, world| {
-            matches!(
-                world
-                    .single_fetch::<LayerPage>()
-                    .active()
-                    .toggle(BrushParamKey::Erase),
-                Some(true)
-            )
-        })
+        .listen(page)
         .finish();
 
         let mut luni = LuniFlex::new(
@@ -267,7 +249,17 @@ impl Element for ToolBar {
             shrink: Some(1.0),
             ..Default::default()
         }));
-        let value = world.insert(Val::new(0.67));
+        let value = ValBind::new(world, |world| {
+            let page = world.single_fetch::<LayerPage>();
+            let value = page
+                .active()
+                .scalar(BrushParamKey::Size)
+                .map(|param| param.scale)
+                .unwrap_or(0.0);
+            ((value - 0.5) / 127.5 + 1.).log2()
+        })
+        .listen(page)
+        .finish();
         let slider = world.insert(Slider {
             common: WidgetCommon {
                 camera: common.camera,
@@ -311,7 +303,7 @@ impl Element for ToolBar {
             let is_erase = matches!(page.active().toggle(BrushParamKey::Erase), Some(true));
             page.active_mut()
                 .set_toggle(BrushParamKey::Erase, !is_erase);
-            world.queue_trigger(page.handle(), BrushConfigurationChanged);
+            world.queue_trigger(page.handle(), ValChanged);
         });
 
         world.insert(ButtonToggle { source: touch });
@@ -342,21 +334,7 @@ impl Element for ToolBar {
             if let Some(param) = page.active_mut().scalar_mut(BrushParamKey::Size) {
                 param.scale = scale;
             }
-
-            world.queue_trigger(page.handle(), BrushConfigurationChanged);
-        });
-
-        world.observer(page, move |&BrushConfigurationChanged, world| {
-            let page = world.single_fetch::<LayerPage>();
-            let slider = world.fetch(slider);
-            let mut slider_value = world.fetch_mut(slider.value);
-            let value = page
-                .active()
-                .scalar(BrushParamKey::Size)
-                .map(|param| param.scale)
-                .unwrap_or(0.0);
-            slider_value.val = ((value - 0.5) / 127.5 + 1.).log2();
-            world.queue_trigger(slider_value.handle(), ValChanged);
+            world.queue_trigger(page.handle(), ValChanged);
         });
     }
 }

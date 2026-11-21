@@ -1,15 +1,15 @@
 use ln_world::{Element, Handle, World};
 
 use crate::{
-    lnwin::LnwindowRect,
-    paint::wrapper::{BrushConfigurationChanged, LayerPage},
+    paint::wrapper::LayerPage,
     ui::{common::WidgetCommon, section::side_docker::SideDocker},
-    unit::Axis,
+    unit::{Axis, IRect},
     val::Val,
 };
 
 pub struct MobileUi {
     pub common: WidgetCommon,
+    pub rect: Handle<Val<IRect>>,
 }
 
 impl Element for MobileUi {
@@ -18,16 +18,11 @@ impl Element for MobileUi {
         world.set_autodeps(Some(this));
         world.dependency(this, self.common.visible);
 
-        let rect = world.single_fetch::<LnwindowRect>().0;
-
-        let page = world.insert(LayerPage::new(world, self.common, rect));
+        world.insert(LayerPage::new(world, self.common, self.rect));
         world.insert(SideDocker {
             common: self.common,
-            rect,
+            rect: self.rect,
             axis: world.insert(Val::new(Axis::Left)),
         });
-
-        world.scope("layer_init");
-        world.queue_trigger(page, BrushConfigurationChanged);
     }
 }
