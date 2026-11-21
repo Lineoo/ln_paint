@@ -33,6 +33,7 @@ Documents in `docs/`. Most of them are in Chinese if not specially marked with l
 - `index.md` - The overall codebase architecture.
 - `style.en.md` - The coding style instructions, `rg "###" docs/style.en.md` for a quick peak.
 - `world.md` - About how to use `ln_world`.
+- `val.md` - How to use `Val`-related types.
 - `composite.md` - Color-space notation for rendering and drawing. Important when treating color conventions.
 - `paint.md` - Draw call pipeline: batch-draw, stroke-submit, stroke-discard, undo/redo, failure paths, stream-thread synchronization.
 - `render.md` - Rendering architecture: render camera, controls, pipeline, instances, redraw rules.
