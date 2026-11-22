@@ -254,7 +254,7 @@ impl PointerTool {
         }
 
         let pointer = self.pointers[&kind].pointer;
-        let Some(hit) = ToolControl::intersect_main(world, pointer.screen) else {
+        let Some(hit) = ToolControl::intersect_main(world, &pointer) else {
             return;
         };
 
@@ -335,7 +335,7 @@ impl PointerTool {
 
         let pointer = self.pointers[&kind].pointer;
         let previous = self.pointers[&kind].hover;
-        let hit = ToolControl::intersect_main(world, pointer.screen).map(|hit| {
+        let hit = ToolControl::intersect_main(world, &pointer).map(|hit| {
             let position = world.fetch(hit.camera).screen_to_world(pointer.screen);
             (hit.handle, position)
         });

@@ -1,8 +1,13 @@
-use glam::IVec2;
+use glam::{IVec2, Vec2};
 use ln_world::{Element, Handle, World};
-use winit::event::{ButtonSource, ElementState, MouseButton, WindowEvent};
+use winit::event::{ButtonSource, ElementState, MouseButton, PointerKind, WindowEvent};
 
-use crate::{input::collider::ToolControl, lnwin::Lnwindow, unit::FI64Ext};
+use crate::{
+    input::{collider::ToolControl, pointer::Pointer},
+    lnwin::Lnwindow,
+    render::camera::UICamera,
+    unit::FI64Ext,
+};
 
 /// Mouse-specific operations like right-click and middle-click.
 #[derive(Default)]
@@ -28,7 +33,16 @@ impl Element for MouseTool {
                 let screen = lnwindow.cursor_to_screen(*position);
                 drop(lnwindow);
 
-                let Some(hit) = ToolControl::intersect_main(world, screen) else {
+                let ui = world.single_fetch::<UICamera>().0;
+                let pointer = Pointer {
+                    screen,
+                    kind: PointerKind::Mouse,
+                    tilt: Vec2::ZERO,
+                    force: Some(1.0),
+                    position: world.fetch(ui).screen_to_world(screen),
+                };
+
+                let Some(hit) = ToolControl::intersect_main(world, &pointer) else {
                     return;
                 };
 

@@ -1,7 +1,7 @@
 use std::time::{Duration, Instant};
 
 use glam::{DVec2, I64Vec2, Mat3, UVec2};
-use ln_world::{Element, Handle, HandleGeneric, World};
+use ln_world::{Element, Handle, HandleAny, HandleGeneric, World};
 use winit::{
     cursor::{Cursor, CursorIcon},
     event::{ButtonSource, ElementState, MouseButton, PointerKind, PointerSource, WindowEvent},
@@ -9,13 +9,20 @@ use winit::{
 };
 
 use crate::{
-    input::{collider::ToolRectCollider, pointer::PointerEvent},
+    input::{
+        collider::{ToolControl, ToolHitResult},
+        pointer::{Pointer, PointerCapture, PointerEvent},
+    },
     lnwin::Lnwindow,
     paint::{
         brush::{Dab, param::BrushParamKey},
         wrapper::LayerPage,
     },
-    render::{RenderPrepareControl, camera::UICamera},
+    render::{
+        RenderPrepareControl,
+        camera::{CameraUtils, UICamera},
+        nest::Nest,
+    },
     save::Save,
     ui::{
         theme::{Theme, ThemeVal},
@@ -26,7 +33,8 @@ use crate::{
 };
 
 const DRAG_DISTANCE: f64 = 0.005;
-const ERASE_TIMER: f64 = 0.4;
+const TOUCH_SLOP: f64 = 0.02;
+const HOLD_TIME: Duration = Duration::from_millis(400);
 
 pub struct LayerInput {
     pub velocity: DVec2,
@@ -53,6 +61,15 @@ pub enum LayerInputMode {
 #[derive(Debug)]
 enum LayerInputState {
     None,
+    /// control group press, waiting to decide between drag and object
+    Pending {
+        press: PointerCapture,
+        target: Option<HandleAny>,
+    },
+    Object {
+        target: HandleAny,
+        capture: PointerCapture,
+    },
     Paint,
     PaintNoErase,
     PaintErase,
@@ -116,13 +133,32 @@ impl Element for LayerInput {
         world.scope("layer_input");
         world.set_autodeps(Some(this));
 
-        let page = world.single_fetch::<LayerPage>();
-        let collider_rect = world.insert(Val::new(IRect::FULLSCREEN));
-        world.insert(ToolRectCollider {
-            common: page.common,
-            target: this.untyped(),
-            rect: collider_rect,
+        let (common, rect, child) = {
+            let page = world.single_fetch::<LayerPage>();
+            let nest = world.fetch(page.nest);
+            (nest.common, nest.rect, nest.child)
+        };
+        world.insert(ToolControl {
+            common,
             order: -100,
+            hit: Box::new(move |world, pointer| {
+                let parent = world.fetch(common.camera);
+                let position = parent.screen_to_world(pointer.screen);
+                if !world.fetch(rect).val.contains(position.q32_floor()) {
+                    return None;
+                }
+
+                if draw_group(pointer, &world.fetch(this))
+                    && let Some(hit) = ToolControl::intersect(world, pointer, child)
+                {
+                    return Some(hit);
+                }
+
+                Some(ToolHitResult {
+                    camera: child,
+                    handle: this.untyped(),
+                })
+            }),
         });
 
         let mut timer = None;
@@ -362,6 +398,7 @@ impl Element for LayerInput {
             }
 
             let container = world.single_fetch::<LayerPage>().nest;
+            let child = world.fetch(container).child;
             let utils = world.single_fetch::<LayerPage>().camera_utils;
             let lnwindow = world.fetch(lnwindow);
             let utils = &mut *world.fetch_mut(utils);
@@ -372,36 +409,19 @@ impl Element for LayerInput {
 
             let prev = std::mem::replace(&mut state, LayerInputState::None);
             state = match (prev, event) {
+                (LayerInputState::None, PointerEvent::Press(_)) if this.space => {
+                    grab(&mut this, utils, world, container, center, pinch)
+                }
                 (LayerInputState::None, PointerEvent::Press(capture))
-                    if (!this.touch_draw
-                        && matches!(capture.pointer.kind, PointerKind::Touch(_)))
-                        || this.space =>
+                    if !draw_group(&capture.pointer, &this) =>
                 {
                     this.velocity = DVec2::ZERO;
-                    utils.read_camera(world, container);
-                    utils.anchor_cursor_by_anchor_center(DVec2::ZERO);
-                    utils.camera_cursor_by_anchor_center(center);
-                    if let Some(distance) = pinch {
-                        utils.camera_distance_by_anchor_zoom_cursor(distance);
-                    }
-
-                    if this.ctrl {
-                        utils.camera_distance_by_anchor_zoom_cursor(1.0);
-                        utils.write_camera(world, container);
-                        LayerInputState::Scale {
-                            start_position: center,
-                        }
-                    } else {
-                        utils.write_camera(world, container);
-                        LayerInputState::Grab {
-                            start_position: center,
-                            start_pinch: pinch,
-                            last_center: utils.camera_center(),
-                            last_zoom: utils.camera_zoom(),
-                            last_instant: Instant::now(),
-                            velocity: DVec2::ZERO,
-                            zoom_velocity: 0.0,
-                        }
+                    this.zoom_velocity = 0.0;
+                    let target = ToolControl::intersect(world, &capture.pointer, child)
+                        .map(|hit| hit.handle);
+                    LayerInputState::Pending {
+                        press: capture.clone(),
+                        target,
                     }
                 }
                 (LayerInputState::None, PointerEvent::Press(capture)) => {
@@ -448,7 +468,58 @@ impl Element for LayerInput {
                     }
                 }
 
-                // Grab
+                // Object
+                (LayerInputState::Pending { .. }, PointerEvent::Press(_)) => {
+                    grab(&mut this, utils, world, container, center, pinch)
+                }
+                (LayerInputState::Pending { press, target }, PointerEvent::Move(capture)) => {
+                    let moved = capture.pointer.screen.distance(press.start.screen) > TOUCH_SLOP;
+                    if press.start_instant.elapsed() >= HOLD_TIME {
+                        match target {
+                            Some(target) => {
+                                world.trigger(target, &PointerEvent::Press(press.clone()));
+                                world.trigger(target, &PointerEvent::Move(capture.clone()));
+                                LayerInputState::Object {
+                                    target,
+                                    capture: capture.clone(),
+                                }
+                            }
+                            None => grab(&mut this, utils, world, container, center, pinch),
+                        }
+                    } else if moved {
+                        grab(&mut this, utils, world, container, center, pinch)
+                    } else {
+                        LayerInputState::Pending {
+                            press: press.clone(),
+                            target,
+                        }
+                    }
+                }
+                (LayerInputState::Pending { press, target }, PointerEvent::Release(capture)) => {
+                    let moved = capture.pointer.screen.distance(press.start.screen) > TOUCH_SLOP;
+                    if !moved && let Some(target) = target {
+                        world.trigger(target, &PointerEvent::Press(press));
+                        world.trigger(target, &PointerEvent::Release(capture.clone()));
+                    }
+                    LayerInputState::None
+                }
+                (LayerInputState::Object { target, capture }, PointerEvent::Press(_)) => {
+                    world.trigger(target, &PointerEvent::Release(capture));
+                    grab(&mut this, utils, world, container, center, pinch)
+                }
+                (LayerInputState::Object { target, .. }, PointerEvent::Move(capture)) => {
+                    world.trigger(target, &PointerEvent::Move(capture.clone()));
+                    LayerInputState::Object {
+                        target,
+                        capture: capture.clone(),
+                    }
+                }
+                (LayerInputState::Object { target, .. }, PointerEvent::Release(capture)) => {
+                    world.trigger(target, &PointerEvent::Release(capture.clone()));
+                    LayerInputState::None
+                }
+
+                // Drag
                 (
                     LayerInputState::Grab {
                         last_center,
@@ -629,7 +700,7 @@ impl Element for LayerInput {
                     }
                 }
 
-                // Paint
+                // Draw
                 (
                     LayerInputState::Paint
                     | LayerInputState::PaintErase
@@ -637,23 +708,7 @@ impl Element for LayerInput {
                     PointerEvent::Press(_),
                 ) => {
                     page.discard();
-
-                    utils.read_camera(world, container);
-                    utils.camera_cursor_by_anchor_center(center);
-                    if let Some(distance) = pinch {
-                        utils.camera_distance_by_anchor_zoom_cursor(distance);
-                    }
-                    utils.write_camera(world, container);
-
-                    LayerInputState::Grab {
-                        start_position: center,
-                        start_pinch: pinch,
-                        last_center: utils.camera_center(),
-                        last_zoom: utils.camera_zoom(),
-                        last_instant: Instant::now(),
-                        velocity: DVec2::ZERO,
-                        zoom_velocity: 0.0,
-                    }
+                    grab(&mut this, utils, world, container, center, pinch)
                 }
                 (LayerInputState::Paint, PointerEvent::Move(capture)) => {
                     let draw = Dab {
@@ -666,8 +721,7 @@ impl Element for LayerInput {
 
                     if capture.pointer.screen.distance(capture.start.screen) > DRAG_DISTANCE {
                         LayerInputState::PaintNoErase
-                    } else if capture.start_instant.elapsed() > Duration::from_secs_f64(ERASE_TIMER)
-                    {
+                    } else if capture.start_instant.elapsed() > HOLD_TIME {
                         page.discard();
                         if this.hold_pick {
                             LayerInputState::PickColor
@@ -829,6 +883,50 @@ fn update_icon(this: &LayerInput, state: &LayerInputState, lnwindow: &Lnwindow) 
             lnwindow
                 .window
                 .set_cursor(Cursor::Icon(CursorIcon::Default));
+        }
+    }
+}
+
+fn draw_group(pointer: &Pointer, input: &LayerInput) -> bool {
+    match pointer.kind {
+        PointerKind::Mouse | PointerKind::TabletTool(_) => true,
+        PointerKind::Touch(_) => input.touch_draw,
+        PointerKind::Unknown => false,
+    }
+}
+
+fn grab(
+    this: &mut LayerInput,
+    utils: &mut CameraUtils,
+    world: &World,
+    container: Handle<Nest>,
+    center: DVec2,
+    pinch: Option<f64>,
+) -> LayerInputState {
+    this.velocity = DVec2::ZERO;
+    utils.read_camera(world, container);
+    utils.anchor_cursor_by_anchor_center(DVec2::ZERO);
+    utils.camera_cursor_by_anchor_center(center);
+    if let Some(distance) = pinch {
+        utils.camera_distance_by_anchor_zoom_cursor(distance);
+    }
+
+    if this.ctrl {
+        utils.camera_distance_by_anchor_zoom_cursor(1.0);
+        utils.write_camera(world, container);
+        LayerInputState::Scale {
+            start_position: center,
+        }
+    } else {
+        utils.write_camera(world, container);
+        LayerInputState::Grab {
+            start_position: center,
+            start_pinch: pinch,
+            last_center: utils.camera_center(),
+            last_zoom: utils.camera_zoom(),
+            last_instant: Instant::now(),
+            velocity: DVec2::ZERO,
+            zoom_velocity: 0.0,
         }
     }
 }

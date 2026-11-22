@@ -105,13 +105,13 @@ impl Descriptor for NestTool {
             ToolControl {
                 common: nest.common,
                 order: nest.order,
-                hit: Box::new(move |world, screen| {
+                hit: Box::new(move |world, pointer| {
                     let source = world.fetch(source);
                     let parent = world.fetch(source.common.camera);
-                    let position = parent.screen_to_world(screen);
+                    let position = parent.screen_to_world(pointer.screen);
                     let rect = world.fetch(source.rect).val;
                     if rect.contains(position.q32_floor()) {
-                        if let Some(hit) = ToolControl::intersect(world, screen, source.child) {
+                        if let Some(hit) = ToolControl::intersect(world, pointer, source.child) {
                             Some(hit)
                         } else {
                             Some(ToolHitResult {

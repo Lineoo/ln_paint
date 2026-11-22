@@ -29,7 +29,7 @@ use crate::{
     render::{
         Render, RenderDrawControl, RenderPrepareControl,
         camera::{CameraBind, CameraUtils, UICamera},
-        nest::{Nest, NestAttr, NestTool},
+        nest::{Nest, NestAttr},
     },
     save::{Autosave, Save, object::Objects},
     ui::{common::WidgetCommon, renderer::rrect::RRect},
@@ -178,7 +178,6 @@ impl LayerPage {
             attr,
         });
         let common = WidgetCommon { camera, ..common };
-        world.build(NestTool { source: nest });
         let camera_utils = world.insert_with(move |world| {
             let camera = world.fetch(common.camera);
             CameraUtils::new(&camera)

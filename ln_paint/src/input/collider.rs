@@ -1,7 +1,8 @@
-use glam::{DVec2, Vec2};
+use glam::Vec2;
 use ln_world::{Element, Handle, HandleAny, World};
 
 use crate::{
+    input::pointer::Pointer,
     lnwin::Lnwindow,
     render::camera::{Camera, UICamera},
     ui::common::WidgetCommon,
@@ -12,7 +13,7 @@ use crate::{
 pub struct ToolControl {
     pub common: WidgetCommon,
     pub order: isize,
-    pub hit: Box<dyn Fn(&World, DVec2) -> Option<ToolHitResult> + Send + Sync>,
+    pub hit: Box<dyn Fn(&World, &Pointer) -> Option<ToolHitResult> + Send + Sync>,
 }
 
 #[derive(Clone, Copy)]
@@ -25,10 +26,10 @@ pub struct ToolHitResult {
 pub struct ToolControlUpdate;
 
 impl ToolControl {
-    pub fn intersect_main(world: &World, screen: DVec2) -> Option<ToolHitResult> {
+    pub fn intersect_main(world: &World, pointer: &Pointer) -> Option<ToolHitResult> {
         let ui = world.single_fetch::<UICamera>().0;
 
-        if let Some(value) = Self::intersect(world, screen, ui) {
+        if let Some(value) = Self::intersect(world, pointer, ui) {
             return Some(value);
         }
 
@@ -37,14 +38,14 @@ impl ToolControl {
 
     pub fn intersect(
         world: &World,
-        screen: DVec2,
+        pointer: &Pointer,
         camera: Handle<Camera>,
     ) -> Option<ToolHitResult> {
         let camera = world.fetch(camera);
         for &control in camera.colliders.iter().rev() {
             let control = world.fetch(control);
             if world.fetch(control.common.visible).val
-                && let Some(hit) = (control.hit)(world, screen)
+                && let Some(hit) = (control.hit)(world, pointer)
             {
                 return Some(hit);
             }
@@ -102,10 +103,10 @@ impl Element for ToolRectCollider {
         world.insert(ToolControl {
             common: self.common,
             order: self.order,
-            hit: Box::new(move |world, screen| {
+            hit: Box::new(move |world, pointer| {
                 let this = world.fetch(this);
                 let camera = world.fetch(this.common.camera);
-                let position = camera.screen_to_world(screen);
+                let position = camera.screen_to_world(pointer.screen);
                 let rect = world.fetch(this.rect).val;
                 if rect.contains(position.q32_floor()) {
                     Some(ToolHitResult {
@@ -145,10 +146,10 @@ impl Element for ToolRingCollider {
         world.insert(ToolControl {
             common: self.common,
             order: self.order,
-            hit: Box::new(move |world, screen| {
+            hit: Box::new(move |world, pointer| {
                 let this = world.fetch(this);
                 let camera = world.fetch(this.common.camera);
-                let position = camera.screen_to_world(screen);
+                let position = camera.screen_to_world(pointer.screen);
                 let rect = world.fetch(this.rect).val;
                 let delta = (position.q32_floor() - rect.origin).as_vec2() / rect.extend.as_vec2()
                     - Vec2::splat(0.5);
