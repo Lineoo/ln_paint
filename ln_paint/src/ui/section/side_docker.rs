@@ -4,7 +4,7 @@ use ln_world::{Element, Handle, World};
 use crate::{
     paint::{
         brush::param::BrushParamKey,
-        input::{LayerInput, LayerInputMode},
+        input::{LayerDrag, LayerDraw, LayerInputMode},
         wrapper::LayerPage,
     },
     ui::{
@@ -192,9 +192,9 @@ impl Element for SideDocker {
         }
         {
             let rect = world.build(luni.child(LuniChild::default()));
-            let input = world.single::<LayerInput>();
+            let input = world.single::<LayerDraw>();
             let selected = ValBind::new(world, |world| {
-                let input = world.single_fetch::<LayerInput>();
+                let input = world.single_fetch::<LayerDraw>();
                 matches!(input.mode, LayerInputMode::Area)
             })
             .listen(input)
@@ -212,7 +212,7 @@ impl Element for SideDocker {
                 hovering: world.insert(Val::new(false)),
             });
             world.observer(selection, move |&ButtonClick, world| {
-                let mut input = world.single_fetch_mut::<LayerInput>();
+                let mut input = world.single_fetch_mut::<LayerDraw>();
                 if let LayerInputMode::Area = input.mode {
                     input.mode = LayerInputMode::Normal;
                 } else {
@@ -303,7 +303,7 @@ impl Element for SideDocker {
             ));
             world.insert(ButtonToggle { source: touch });
             world.observer(touch, move |&ButtonClick, world| {
-                let mut input = world.single_fetch_mut::<LayerInput>();
+                let mut input = world.single_fetch_mut::<LayerDrag>();
                 input.touch_draw = !input.touch_draw;
             });
         }
@@ -314,7 +314,7 @@ impl Element for SideDocker {
             ));
             world.insert(ButtonToggle { source: pipette });
             world.observer(pipette, move |&ButtonClick, world| {
-                let mut input = world.single_fetch_mut::<LayerInput>();
+                let mut input = world.single_fetch_mut::<LayerDraw>();
                 input.hold_pick = !input.hold_pick;
             });
         }

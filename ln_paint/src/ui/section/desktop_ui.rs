@@ -3,7 +3,11 @@ use glam::{IVec2, UVec2, Vec4};
 use ln_world::{Element, Handle, World};
 
 use crate::{
-    paint::{brush::param::BrushParamKey, input::LayerInput, wrapper::LayerPage},
+    paint::{
+        brush::param::BrushParamKey,
+        input::{LayerDrag, LayerDraw},
+        wrapper::LayerPage,
+    },
     render::nest::{NestAttr, NestBuilder},
     ui::{
         common::WidgetCommon,
@@ -308,13 +312,13 @@ impl Element for ToolBar {
 
         world.insert(ButtonToggle { source: touch });
         world.observer(touch, move |&ButtonClick, world| {
-            let mut input = world.single_fetch_mut::<LayerInput>();
+            let mut input = world.single_fetch_mut::<LayerDrag>();
             input.touch_draw = !input.touch_draw;
         });
 
         world.insert(ButtonToggle { source: pipette });
         world.observer(pipette, move |&ButtonClick, world| {
-            let mut input = world.single_fetch_mut::<LayerInput>();
+            let mut input = world.single_fetch_mut::<LayerDraw>();
             input.hold_pick = !input.hold_pick;
         });
 

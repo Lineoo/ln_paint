@@ -20,7 +20,7 @@ use crate::{
             BrushParams, Dab, Stroke, blur::BlurBrush, param::BrushParam, pixel::PixelBrush,
             round::RoundBrush, smudge::SmudgeBrush, tint::TintBrush,
         },
-        input::LayerInput,
+        input::{LayerDrag, LayerDraw},
         rect_chunks_stack_layer_iter,
         stream::{StreamConfig, StreamThread, ThreadInput, ThreadOutput},
         traveler::Traveler,
@@ -649,7 +649,8 @@ impl Element for LayerPage {
 
         // Interaction //
 
-        world.insert(LayerInput::default());
+        world.insert(LayerDraw::default());
+        world.insert(LayerDrag::default());
         world.insert(Objects {
             common: self.common,
         });

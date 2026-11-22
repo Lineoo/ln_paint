@@ -8,7 +8,7 @@ use crate::{
         mouse::MouseMenu,
         pointer::PointerEvent,
     },
-    paint::{input::LayerInput, wrapper::LayerPage},
+    paint::{input::LayerDrag, wrapper::LayerPage},
     ui::{
         common::WidgetCommon,
         layout::transform::{Transform, TransformValue},
@@ -38,7 +38,7 @@ impl Element for ColorSnip {
         world.set_autodeps(Some(this));
 
         let theme = world.single_fetch::<ThemeVal>();
-        let input = world.single::<LayerInput>();
+        let input = world.single::<LayerDrag>();
 
         let button = world.insert(Button {
             common: self.common,
