@@ -2,7 +2,10 @@ use cosmic_text::{Attrs, Metrics};
 use ln_world::{Element, Handle, World};
 
 use crate::{
-    input::pointer::{PointerHit, PointerHover, PointerScroll}, paint::wrapper::LayerPage, render::nest::{NestAttr, NestBuilder}, ui::{
+    input::pointer::PointerEvent,
+    paint::wrapper::LayerPage,
+    render::nest::{NestAttr, NestBuilder},
+    ui::{
         common::WidgetCommon,
         i18n::tr,
         layout::{
@@ -26,7 +29,9 @@ use crate::{
             container::Container,
             tabs::{TabEntry, Tabs},
         },
-    }, unit::IRect, val::{Val, ValBind, ValChanged},
+    },
+    unit::IRect,
+    val::{Val, ValBind, ValChanged},
 };
 
 const ITEM_HEIGHT: i32 = 80;
@@ -272,45 +277,25 @@ impl Element for BrushListPanel {
                 world.queue_trigger(page.handle(), ValChanged);
             });
 
-            world.observer(button, move |drag: &ButtonDrag, world| match drag.status {
-                ButtonDragStatus::Start => {
-                    world.trigger(
-                        container,
-                        &PointerHit {
-                            position: drag.here.position,
-                            pointer: drag.here.pointer,
-                            status: drag.from.status,
-                            data: drag.here.data,
-                        },
-                    );
-                }
-                ButtonDragStatus::Dragging | ButtonDragStatus::End => {
-                    world.trigger(
-                        container,
-                        &PointerHit {
-                            position: drag.here.position,
-                            pointer: drag.here.pointer,
-                            status: drag.here.status,
-                            data: drag.here.data,
-                        },
-                    );
-                }
+            world.observer(button, move |drag: &ButtonDrag, world| {
+                let event = match drag.status {
+                    ButtonDragStatus::Start => PointerEvent::Press(drag.capture.clone()),
+                    ButtonDragStatus::Dragging => PointerEvent::Move(drag.capture.clone()),
+                    ButtonDragStatus::End => PointerEvent::Release(drag.capture.clone()),
+                };
+                world.trigger(container, &event);
             });
 
-            world.observer(button, move |event: &PointerScroll, world| {
-                world.queue_trigger(container, *event);
+            world.observer(button, move |event: &PointerEvent, world| {
+                if let PointerEvent::Scroll { .. } = event {
+                    world.queue_trigger(container, event.clone());
+                }
             });
 
             // TODO temporary: `Container` couples render order with collider order, so the preview
             // captures pointer events. Forward them to the button until that is decoupled.
-            world.observer(preview, move |event: &PointerHit, world| {
-                world.queue_trigger(button, *event);
-            });
-            world.observer(preview, move |event: &PointerHover, world| {
-                world.queue_trigger(button, *event);
-            });
-            world.observer(preview, move |event: &PointerScroll, world| {
-                world.queue_trigger(button, *event);
+            world.observer(preview, move |event: &PointerEvent, world| {
+                world.queue_trigger(button, event.clone());
             });
         }
 

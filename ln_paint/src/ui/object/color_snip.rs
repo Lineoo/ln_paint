@@ -3,10 +3,7 @@ use ln_world::{Element, Handle, World};
 
 use crate::{
     color::srgb::{mul_alpha, srgb_gamma_decode},
-    input::{
-        mouse::MouseMenu,
-        pointer::{PointerHover, PointerScroll},
-    },
+    input::{mouse::MouseMenu, pointer::PointerEvent},
     paint::{input::LayerInput, wrapper::LayerPage},
     ui::{
         common::WidgetCommon,
@@ -58,11 +55,16 @@ impl Element for ColorSnip {
             width: 0.0,
         });
 
-        world.observer(button, move |event: &PointerScroll, world| {
-            world.queue_trigger(input, *event);
-        });
-        world.observer(button, move |event: &PointerHover, world| {
-            world.queue_trigger(input, *event);
+        world.observer(button, move |event: &PointerEvent, world| {
+            if matches!(
+                event,
+                PointerEvent::Enter(_)
+                    | PointerEvent::Leave(_)
+                    | PointerEvent::Hover(_)
+                    | PointerEvent::Scroll { .. }
+            ) {
+                world.queue_trigger(input, event.clone());
+            }
         });
 
         let mut from = None;
@@ -70,7 +72,7 @@ impl Element for ColorSnip {
             let this = world.fetch(this);
             let mut rect = world.fetch_mut(this.rect);
             let source = from.get_or_insert(this.attr.position);
-            let delta = drag.here.position - drag.from.position;
+            let delta = drag.capture.pointer.position - drag.capture.start.position;
             let destination = *source + delta.q32_round();
 
             rect.val = IRect::new_half(destination, UVec2::splat(24));

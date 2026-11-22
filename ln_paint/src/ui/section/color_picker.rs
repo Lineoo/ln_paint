@@ -187,7 +187,7 @@ impl Element for ColorPickerButton {
             let page = world.single_fetch::<LayerPage>();
             let snip_rect = *dragging.get_or_insert_with(|| {
                 let position = page_camera
-                    .screen_to_world(drag.here.pointer.screen)
+                    .screen_to_world(drag.capture.pointer.screen)
                     .q32_round();
                 let rect = world.insert(Val::new(IRect::new_half(position, UVec2::splat(24))));
 
@@ -208,7 +208,7 @@ impl Element for ColorPickerButton {
 
             let next = IRect::new_half(
                 page_camera
-                    .screen_to_world(drag.here.pointer.screen)
+                    .screen_to_world(drag.capture.pointer.screen)
                     .q32_round(),
                 UVec2::splat(24),
             );

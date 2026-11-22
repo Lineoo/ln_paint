@@ -3,10 +3,7 @@ use glam::UVec2;
 use ln_world::{Element, Handle, HandleGeneric, World};
 
 use crate::{
-    input::{
-        collider::ToolRectCollider,
-        pointer::{PointerHit, PointerHitStatus, PointerHover, PointerHoverStatus},
-    },
+    input::{collider::ToolRectCollider, pointer::PointerEvent},
     ui::{
         common::WidgetCommon,
         layout::anim::{Animator, AnimatorSnap},
@@ -131,41 +128,43 @@ impl Element for Slider {
             order: 10,
         });
 
-        world.observer(handle, move |event: &PointerHover, world| {
-            let this = world.fetch(handle);
-            let hover = match event.status {
-                PointerHoverStatus::Enter => true,
-                PointerHoverStatus::Leave => false,
-                _ => return,
-            };
-            world.fetch_mut(this.hover).val = hover;
-            world.queue_trigger(this.hover, ValChanged);
-        });
-
-        world.observer(handle, move |event: &PointerHit, world| {
+        world.observer(handle, move |event: &PointerEvent, world| {
             let mut this = world.fetch_mut(handle);
             let rect = world.fetch(this.rect).val;
 
-            let position = (event.position.q32_round() - rect.center()).dot(this.axis.direction());
-            let value = from_position(rect, this.axis, position);
-            world.queue_trigger(handle, SliderValue(value));
+            match event {
+                PointerEvent::Enter(_) | PointerEvent::Leave(_) => {
+                    let hover = matches!(event, PointerEvent::Enter(_));
+                    world.fetch_mut(this.hover).val = hover;
+                    world.queue_trigger(this.hover, ValChanged);
+                }
+                PointerEvent::Press(capture)
+                | PointerEvent::Move(capture)
+                | PointerEvent::Release(capture) => {
+                    let position = (capture.pointer.position.q32_round() - rect.center())
+                        .dot(this.axis.direction());
+                    let value = from_position(rect, this.axis, position);
+                    world.queue_trigger(handle, SliderValue(value));
 
-            if let PointerHitStatus::Press = event.status {
-                this.pressed = true;
-                let mut back = world.fetch_mut(back_rect_anim);
-                let mut pressed = world.fetch_mut(pressed);
-                back.val = back_rect_pressed(rect, this.axis);
-                pressed.val = true;
-                world.queue_trigger(back.handle(), ValChanged);
-                world.queue_trigger(pressed.handle(), ValChanged);
-            } else if let PointerHitStatus::Release = event.status {
-                this.pressed = false;
-                let mut back = world.fetch_mut(back_rect_anim);
-                let mut pressed = world.fetch_mut(pressed);
-                back.val = back_rect(rect, this.axis);
-                pressed.val = false;
-                world.queue_trigger(back.handle(), ValChanged);
-                world.queue_trigger(pressed.handle(), ValChanged);
+                    if matches!(event, PointerEvent::Press(_)) {
+                        this.pressed = true;
+                        let mut back = world.fetch_mut(back_rect_anim);
+                        let mut pressed = world.fetch_mut(pressed);
+                        back.val = back_rect_pressed(rect, this.axis);
+                        pressed.val = true;
+                        world.queue_trigger(back.handle(), ValChanged);
+                        world.queue_trigger(pressed.handle(), ValChanged);
+                    } else if matches!(event, PointerEvent::Release(_)) {
+                        this.pressed = false;
+                        let mut back = world.fetch_mut(back_rect_anim);
+                        let mut pressed = world.fetch_mut(pressed);
+                        back.val = back_rect(rect, this.axis);
+                        pressed.val = false;
+                        world.queue_trigger(back.handle(), ValChanged);
+                        world.queue_trigger(pressed.handle(), ValChanged);
+                    }
+                }
+                _ => {}
             }
         });
 

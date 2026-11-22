@@ -10,7 +10,7 @@ use crate::{
     },
     input::{
         collider::{ToolRectCollider, ToolRingCollider},
-        pointer::PointerHit,
+        pointer::PointerEvent,
     },
     shaders::shader_compile,
     ui::{
@@ -141,10 +141,14 @@ impl HslSquare {
             order: 100,
         });
 
-        world.observer(this, move |event: &PointerHit, world| {
+        world.observer(this, move |event: &PointerEvent, world| {
+            let Some(capture) = event.capture() else {
+                return;
+            };
+
             let mut this = world.fetch_mut(this);
             let rect = world.fetch(this.rect).val;
-            let delta = event.position - I64Vec2::q32_from_i32(rect.origin);
+            let delta = capture.pointer.position - I64Vec2::q32_from_i32(rect.origin);
             let uv = (delta.q32_as_f64() / rect.extend.as_dvec2()).as_vec2();
 
             this.hsl.y = uv.x.clamp(0.0, 1.0);
@@ -236,10 +240,14 @@ impl HslRing {
             order: 100,
         });
 
-        world.observer(this, move |event: &PointerHit, world| {
+        world.observer(this, move |event: &PointerEvent, world| {
+            let Some(capture) = event.capture() else {
+                return;
+            };
+
             let mut this = world.fetch_mut(this);
             let rect = world.fetch(this.rect).val;
-            let delta = event.position - I64Vec2::q32_from_i32(rect.origin);
+            let delta = capture.pointer.position - I64Vec2::q32_from_i32(rect.origin);
             let uv = (delta.q32_as_f64() / rect.extend.as_dvec2()).as_vec2();
             let delta = uv - Vec2::splat(0.5);
 

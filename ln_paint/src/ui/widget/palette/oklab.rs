@@ -10,7 +10,7 @@ use crate::{
         oklab::{find_gamut_intersection, oklab_to_linear_srgb},
         srgb::mul_alpha,
     },
-    input::{collider::ToolRectCollider, pointer::PointerHit},
+    input::{collider::ToolRectCollider, pointer::PointerEvent},
     shaders::shader_compile,
     ui::{
         common::WidgetCommon,
@@ -162,10 +162,14 @@ impl OklabPolar {
             order: 100,
         });
 
-        world.observer(this, move |event: &PointerHit, world| {
+        world.observer(this, move |event: &PointerEvent, world| {
+            let Some(capture) = event.capture() else {
+                return;
+            };
+
             let mut this = world.fetch_mut(this);
             let rect = world.fetch(this.rect).val;
-            let delta = event.position - I64Vec2::q32_from_i32(rect.origin);
+            let delta = capture.pointer.position - I64Vec2::q32_from_i32(rect.origin);
             let uv = (delta.q32_as_f64() / rect.extend.as_dvec2()).as_vec2();
 
             this.oklab.y = (uv.x * 0.8 - 0.4).clamp(-0.4, 0.4);
@@ -255,10 +259,14 @@ impl OklabBar {
             order: 100,
         });
 
-        world.observer(this, move |event: &PointerHit, world| {
+        world.observer(this, move |event: &PointerEvent, world| {
+            let Some(capture) = event.capture() else {
+                return;
+            };
+
             let mut this = world.fetch_mut(this);
             let rect = world.fetch(this.rect).val;
-            let delta = event.position - I64Vec2::q32_from_i32(rect.origin);
+            let delta = capture.pointer.position - I64Vec2::q32_from_i32(rect.origin);
             let uv = (delta.q32_as_f64() / rect.extend.as_dvec2()).as_vec2();
 
             this.oklab.x = uv.y.clamp(0.0, 1.0);

@@ -74,11 +74,9 @@
     - `wrapper` 总汇
 - `input/` 输入系统
     - `collider` 核心交互体
-    - `focus`
     - `mouse`
-    - `pointer`
+    - `pointer` 统一的指针事件与捕获
     - `timer`
-    - `touch`
 - `color/` 颜色系统
     - `hsl`
     - `oklab`
