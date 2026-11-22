@@ -9,6 +9,7 @@ use crate::{
         oklab::{linear_srgb_to_oklab, oklab_to_linear_srgb},
         srgb::{mul_alpha, srgb_gamma_decode, srgb_gamma_encode},
     },
+    input::drag::{DragEvent, DragStatus},
     paint::wrapper::LayerPage,
     render::nest::{NestAttr, NestBuilder, NestRect},
     ui::{
@@ -19,7 +20,7 @@ use crate::{
         section::{debug_panel::DebugPanel, layer_selection::LayerSelectionPanel},
         theme::ThemeVal,
         widget::{
-            button::{Button, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonToggle},
+            button::{Button, ButtonImage, ButtonToggle},
             container::Container,
             palette::{
                 hsl::{ColorHsla, HslRing, HslSquare, INNER_RADIUS, SetColorHsla},
@@ -180,7 +181,7 @@ impl Element for ColorPickerButton {
         });
 
         let mut dragging = None;
-        world.observer(button, move |drag: &ButtonDrag, world| {
+        world.observer(button, move |drag: &DragEvent, world| {
             let this = world.fetch(this);
             let page_camera = world.single_fetch::<LayerPage>().common.camera;
             let page_camera = world.fetch(page_camera);
@@ -218,7 +219,7 @@ impl Element for ColorPickerButton {
                 world.queue_trigger(rect.handle(), ValChanged);
             });
 
-            if drag.status == ButtonDragStatus::End {
+            if drag.status == DragStatus::End {
                 dragging = None;
             }
         });

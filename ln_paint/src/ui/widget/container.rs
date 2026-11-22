@@ -2,7 +2,7 @@ use glam::I64Vec2;
 use ln_world::{Element, Handle, World};
 
 use crate::{
-    input::pointer::PointerEvent,
+    input::{drag::Drag, pointer::PointerEvent},
     render::nest::Nest,
     ui::{
         renderer::rrect::RRect,
@@ -38,42 +38,30 @@ impl Element for Container {
             width: 0.0,
         });
 
-        let mut last = None;
-        world.observer(self.nest, move |event: &PointerEvent, world| match event {
-            PointerEvent::Press(capture) => last = Some(capture.pointer.screen),
-            PointerEvent::Move(capture) | PointerEvent::Release(capture) => {
-                let position = last.unwrap();
-                let this = world.fetch(this);
-                let mut nest = world.fetch_mut(this.nest);
-                let rect = world.fetch(nest.rect).val;
-                let restriction = world.fetch(this.restriction).val;
-                let parent_camera = world.fetch(nest.common.camera);
-                let delta =
-                    parent_camera.screen_to_world_relative(capture.pointer.screen - position);
+        let mut drag = Drag::new(0.0);
+        world.observer(self.nest, move |event: &PointerEvent, world| {
+            let delta = match event {
+                PointerEvent::Scroll { delta, .. } => I64Vec2::q32_from_f64(*delta),
+                _ => {
+                    let Some(drag) = drag.update(event) else {
+                        return;
+                    };
+                    let this = world.fetch(this);
+                    let nest = world.fetch(this.nest);
+                    let parent_camera = world.fetch(nest.common.camera);
+                    parent_camera.screen_to_world_relative(drag.delta)
+                }
+            };
 
-                nest.attr.center -= delta;
-                nest.clamp_scroll(rect, restriction);
-                let nest = nest.handle();
-                world.queue(move |world| Nest::refresh_camera(world, nest));
+            let this = world.fetch(this);
+            let mut nest = world.fetch_mut(this.nest);
+            let rect = world.fetch(nest.rect).val;
+            let restriction = world.fetch(this.restriction).val;
 
-                last = match event {
-                    PointerEvent::Release(_) => None,
-                    _ => Some(capture.pointer.screen),
-                };
-            }
-            PointerEvent::Scroll { delta, .. } => {
-                let this = world.fetch(this);
-                let mut nest = world.fetch_mut(this.nest);
-                let rect = world.fetch(nest.rect).val;
-                let restriction = world.fetch(this.restriction).val;
-
-                let delta = I64Vec2::q32_from_f64(*delta);
-                nest.attr.center -= delta;
-                nest.clamp_scroll(rect, restriction);
-                let nest = nest.handle();
-                world.queue(move |world| Nest::refresh_camera(world, nest));
-            }
-            _ => {}
+            nest.attr.center -= delta;
+            nest.clamp_scroll(rect, restriction);
+            let nest = nest.handle();
+            world.queue(move |world| Nest::refresh_camera(world, nest));
         });
 
         world.observer(nest.rect, move |ValChanged, world| {

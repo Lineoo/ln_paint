@@ -55,7 +55,11 @@ impl Element for Objects {
                 let data = match obj.handle {
                     ObjectHandle::ColorSnip(handle) => {
                         let snip = world.fetch(handle);
-                        ObjectData::ColorSnip(snip.attr)
+                        let rect = world.fetch(snip.rect).val;
+                        ObjectData::ColorSnip(ColorSnipAttr {
+                            position: rect.center(),
+                            color: snip.attr.color,
+                        })
                     }
                 };
                 let bytes = serde_json::to_vec(&data).unwrap();

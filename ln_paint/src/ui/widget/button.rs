@@ -2,10 +2,7 @@ use glam::{IVec2, UVec2, Vec4};
 use ln_world::{Element, Handle, HandleGeneric, World};
 
 use crate::{
-    input::{
-        collider::ToolRectCollider,
-        pointer::{PointerCapture, PointerEvent},
-    },
+    input::{collider::ToolRectCollider, drag::Drag, pointer::PointerEvent},
     ui::{
         common::WidgetCommon,
         layout::{
@@ -15,7 +12,7 @@ use crate::{
         renderer::{canvas::Canvas, rrect::RRect, svg::PixImage},
         theme::Theme,
     },
-    unit::{FI64Ext, IRect},
+    unit::IRect,
     val::{Val, ValBind, ValChanged},
 };
 
@@ -46,23 +43,11 @@ pub struct ButtonToggle {
     pub source: Handle<Button>,
 }
 
-pub struct ButtonDrag {
-    pub capture: PointerCapture,
-    pub status: ButtonDragStatus,
-}
-
 pub struct ButtonClick;
 
 pub enum ButtonAction {
     Press,
     Release,
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub enum ButtonDragStatus {
-    Start,
-    Dragging,
-    End,
 }
 
 impl ButtonImage {
@@ -150,13 +135,8 @@ impl Element for Button {
 
         const DRAG_DISTANCE: f64 = 30.0;
 
+        let mut drag = Drag::new(DRAG_DISTANCE);
         let mut dragging = false;
-        let dragged = |capture: &PointerCapture| {
-            (capture.pointer.position - capture.start.position)
-                .q32_as_f64()
-                .length()
-                > DRAG_DISTANCE
-        };
         world.observer(this, move |event: &PointerEvent, world| match event {
             PointerEvent::Enter(_) | PointerEvent::Leave(_) => {
                 let hover = matches!(event, PointerEvent::Enter(_));
@@ -164,37 +144,21 @@ impl Element for Button {
                 world.queue_trigger(hovering, ValChanged);
             }
             PointerEvent::Press(_) => {
-                world.trigger(this, &ButtonAction::Press);
                 dragging = false;
+                world.trigger(this, &ButtonAction::Press);
             }
-            PointerEvent::Move(capture) => {
-                if dragged(capture) {
-                    let status = match dragging {
-                        true => ButtonDragStatus::Dragging,
-                        false => ButtonDragStatus::Start,
-                    };
+            PointerEvent::Move(_) => {
+                if let Some(event) = drag.update(event) {
                     dragging = true;
-                    world.trigger(
-                        this,
-                        &ButtonDrag {
-                            capture: capture.clone(),
-                            status,
-                        },
-                    );
+                    world.trigger(this, &event);
                 }
             }
-            PointerEvent::Release(capture) => {
-                if dragging {
-                    dragging = false;
-                    world.trigger(
-                        this,
-                        &ButtonDrag {
-                            capture: capture.clone(),
-                            status: ButtonDragStatus::End,
-                        },
-                    );
-                } else {
+            PointerEvent::Release(_) => {
+                if !dragging {
                     world.queue_trigger(this, ButtonClick);
+                }
+                if let Some(event) = drag.update(event) {
+                    world.trigger(this, &event);
                 }
                 world.trigger(this, &ButtonAction::Release);
             }

@@ -2,7 +2,10 @@ use cosmic_text::{Attrs, Metrics};
 use ln_world::{Element, Handle, World};
 
 use crate::{
-    input::pointer::PointerEvent,
+    input::{
+        drag::{DragEvent, DragStatus},
+        pointer::PointerEvent,
+    },
     paint::wrapper::LayerPage,
     render::nest::{NestAttr, NestBuilder},
     ui::{
@@ -25,7 +28,7 @@ use crate::{
         section::settings::SettingPanel,
         theme::{Theme, ThemeVal},
         widget::{
-            button::{Button, ButtonClick, ButtonDrag, ButtonDragStatus, ButtonImage, ButtonTheme},
+            button::{Button, ButtonClick, ButtonImage, ButtonTheme},
             container::Container,
             tabs::{TabEntry, Tabs},
         },
@@ -277,11 +280,11 @@ impl Element for BrushListPanel {
                 world.queue_trigger(page.handle(), ValChanged);
             });
 
-            world.observer(button, move |drag: &ButtonDrag, world| {
+            world.observer(button, move |drag: &DragEvent, world| {
                 let event = match drag.status {
-                    ButtonDragStatus::Start => PointerEvent::Press(drag.capture.clone()),
-                    ButtonDragStatus::Dragging => PointerEvent::Move(drag.capture.clone()),
-                    ButtonDragStatus::End => PointerEvent::Release(drag.capture.clone()),
+                    DragStatus::Start => PointerEvent::Press(drag.capture.clone()),
+                    DragStatus::Dragging => PointerEvent::Move(drag.capture.clone()),
+                    DragStatus::End => PointerEvent::Release(drag.capture.clone()),
                 };
                 world.trigger(container, &event);
             });

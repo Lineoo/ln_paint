@@ -3,14 +3,18 @@ use ln_world::{Element, Handle, World};
 
 use crate::{
     color::srgb::{mul_alpha, srgb_gamma_decode},
-    input::{mouse::MouseMenu, pointer::PointerEvent},
+    input::{
+        drag::{DragEvent, DragStatus},
+        mouse::MouseMenu,
+        pointer::PointerEvent,
+    },
     paint::{input::LayerInput, wrapper::LayerPage},
     ui::{
         common::WidgetCommon,
         layout::transform::{Transform, TransformValue},
         renderer::rrect::RRect,
         theme::ThemeVal,
-        widget::button::{Button, ButtonClick, ButtonDrag, ButtonDragStatus},
+        widget::button::{Button, ButtonClick},
     },
     unit::{FI64Ext, IRect},
     val::{Val, ValChanged},
@@ -56,29 +60,22 @@ impl Element for ColorSnip {
         });
 
         world.observer(button, move |event: &PointerEvent, world| {
-            if matches!(
-                event,
-                PointerEvent::Enter(_)
-                    | PointerEvent::Leave(_)
-                    | PointerEvent::Hover(_)
-                    | PointerEvent::Scroll { .. }
-            ) {
+            if let PointerEvent::Scroll { .. } = event {
                 world.queue_trigger(input, event.clone());
             }
         });
 
         let mut from = None;
-        world.observer(button, move |drag: &ButtonDrag, world| {
+        world.observer(button, move |drag: &DragEvent, world| {
             let this = world.fetch(this);
             let mut rect = world.fetch_mut(this.rect);
-            let source = from.get_or_insert(this.attr.position);
+            let source = *from.get_or_insert(rect.val.center());
             let delta = drag.capture.pointer.position - drag.capture.start.position;
-            let destination = *source + delta.q32_round();
 
-            rect.val = IRect::new_half(destination, UVec2::splat(24));
+            rect.val = IRect::new_half(source + delta.q32_round(), UVec2::splat(24));
             world.queue_trigger(rect.handle(), ValChanged);
 
-            if drag.status == ButtonDragStatus::End {
+            if drag.status == DragStatus::End {
                 from = None;
             }
         });

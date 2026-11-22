@@ -309,7 +309,7 @@ impl Element for LayerInput {
             let mut this = world.fetch_mut(this);
             let pointer = event.pointer();
 
-            if !matches!(pointer.kind, PointerKind::Touch(_)) {
+            if draw_group(&pointer, &this) {
                 let page_camera = world.single_fetch::<LayerPage>().common.camera;
                 let page_camera = world.fetch(page_camera);
                 let ui_camera = world.single_fetch::<UICamera>().0;
