@@ -156,14 +156,6 @@ impl ApplicationHandler for Lnwin {
             event_loop.exit()
         }
     }
-
-    fn suspended(&mut self, _event_loop: &dyn ActiveEventLoop) {
-        for &view in self.windows.values() {
-            self.world.enter(view, || {
-                Autosave::autosave_all(&self.world);
-            });
-        }
-    }
 }
 
 /// The main window.
@@ -235,17 +227,16 @@ impl Element for Lnwindow {
             world.insert(UICamera(camera));
             drop(lnwindow);
 
-            world.observer(this, move |event: &WindowEvent, world| {
-                if let WindowEvent::CloseRequested = event {
+            world.observer(this, move |event: &WindowEvent, world| match event {
+                WindowEvent::CloseRequested => {
                     Autosave::autosave_all(world);
                     world.queue(|world| {
                         world.clear();
                     });
                 }
-            });
-
-            world.observer(this, move |event: &WindowEvent, world| {
-                if let WindowEvent::SurfaceResized(_) = event {
+                #[cfg(target_os = "android")]
+                WindowEvent::Focused(false) => Autosave::autosave_all(world),
+                WindowEvent::SurfaceResized(_) => {
                     let lnwindow = world.fetch(this);
                     let mut rect = world.fetch_mut(rect);
                     let mut camera = world.fetch_mut(camera);
@@ -267,6 +258,7 @@ impl Element for Lnwindow {
                         world.queue(move |world| Nest::refresh_camera(world, nest));
                     }
                 }
+                _ => (),
             });
 
             world.flush();
