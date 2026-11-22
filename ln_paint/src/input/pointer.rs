@@ -43,6 +43,11 @@ pub struct PointerCapture {
     pub members: Vec<Pointer>,
 }
 
+/// trigger on [PointerTool], release the records of `target` and acquire them again
+pub struct PointerReacquire {
+    pub target: HandleAny,
+}
+
 impl PointerEvent {
     pub fn pointer(&self) -> Pointer {
         match self {
@@ -195,6 +200,25 @@ impl Element for PointerTool {
         });
 
         world.dependency(ob, this);
+
+        world.observer(this, move |PointerReacquire { target }, world| {
+            let mut tool = world.fetch_mut(this);
+            let kinds = tool
+                .pointers
+                .iter()
+                .filter(|(_, state)| {
+                    state.capture.map(|capture| capture.target) == Some(*target)
+                        || state.hover == Some(*target)
+                })
+                .map(|(&kind, _)| kind)
+                .collect::<Vec<_>>();
+            for kind in kinds {
+                match tool.pointers[&kind].capture {
+                    Some(_) => tool.press(world, kind),
+                    None => tool.update_hover(world, kind, false),
+                }
+            }
+        });
     }
 }
 

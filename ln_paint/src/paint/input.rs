@@ -11,7 +11,7 @@ use winit::{
 use crate::{
     input::{
         collider::{ToolControl, ToolControlUpdate, ToolHitResult},
-        pointer::{Pointer, PointerCapture, PointerEvent},
+        pointer::{Pointer, PointerCapture, PointerEvent, PointerReacquire, PointerTool},
     },
     lnwin::Lnwindow,
     paint::{
@@ -46,6 +46,7 @@ pub struct LayerDrag {
     pub space: bool,
     pub ctrl: bool,
     pub shift: bool,
+    pub blocking: bool,
 }
 
 #[derive(Debug)]
@@ -131,6 +132,7 @@ impl Default for LayerDrag {
             space: false,
             ctrl: false,
             shift: false,
+            blocking: false,
         }
     }
 }
@@ -611,6 +613,14 @@ impl Element for LayerDrag {
                 _ => unreachable!(),
             };
 
+            if this.blocking
+                && matches!(event, PointerEvent::Release(_))
+                && matches!(state, LayerDragState::None)
+            {
+                // blocking ends when the handed-over gesture finishes
+                this.blocking = false;
+            }
+
             let mode = world.single_fetch::<LayerDraw>().mode;
             update_drag_icon(&this, &state, mode, &lnwindow);
         });
@@ -652,6 +662,23 @@ impl Element for LayerDraw {
             let container = page.nest;
             let lnwindow = world.fetch(lnwindow);
             let ctrl = world.single_fetch::<LayerDrag>().ctrl;
+
+            if let PointerEvent::Press(capture) = event
+                && !capture.members.is_empty()
+            {
+                // multiple draw pointers: hand the whole gesture over to the drag layer
+                page.discard();
+                state = LayerDrawState::None;
+                world.single_fetch_mut::<LayerDrag>().blocking = true;
+                world.queue_trigger(
+                    world.single::<PointerTool>(),
+                    PointerReacquire {
+                        target: this.handle().untyped(),
+                    },
+                );
+                update_draw_icon(&this, ctrl, &state, &lnwindow);
+                return;
+            }
 
             let page_camera = world.fetch(page.common.camera);
             let ui_camera = world.single_fetch::<UICamera>().0;
@@ -973,7 +1000,7 @@ fn update_draw_icon(this: &LayerDraw, ctrl: bool, state: &LayerDrawState, lnwind
 }
 
 fn draw_group(pointer: &Pointer, input: &LayerDrag) -> bool {
-    if input.space {
+    if input.blocking || input.space {
         return false;
     }
     match pointer.kind {
