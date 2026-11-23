@@ -45,11 +45,6 @@ pub struct ButtonToggle {
 
 pub struct ButtonClick;
 
-pub enum ButtonAction {
-    Press,
-    Release,
-}
-
 impl ButtonImage {
     pub fn new(bmp: PixImage, modulate: Handle<Val<Vec4>>, size: u32) -> Self {
         ButtonImage {
@@ -145,7 +140,8 @@ impl Element for Button {
             }
             PointerEvent::Press(_) => {
                 dragging = false;
-                world.trigger(this, &ButtonAction::Press);
+                world.fetch_mut(pressed).val = true;
+                world.queue_trigger(pressed, ValChanged);
             }
             PointerEvent::Move(_) => {
                 if let Some(event) = drag.update(event) {
@@ -160,15 +156,10 @@ impl Element for Button {
                 if let Some(event) = drag.update(event) {
                     world.trigger(this, &event);
                 }
-                world.trigger(this, &ButtonAction::Release);
+                world.fetch_mut(pressed).val = false;
+                world.queue_trigger(pressed, ValChanged);
             }
             PointerEvent::Hover(_) | PointerEvent::Scroll { .. } => {}
-        });
-
-        world.observer(this, move |event: &ButtonAction, world| {
-            let press = matches!(event, ButtonAction::Press);
-            world.fetch_mut(pressed).val = press;
-            world.queue_trigger(pressed, ValChanged);
         });
     }
 }

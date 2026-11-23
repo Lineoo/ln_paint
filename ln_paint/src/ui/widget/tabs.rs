@@ -14,7 +14,7 @@ use crate::{
         },
         renderer::rrect::RRect,
         theme::{Theme, ThemeVal},
-        widget::button::{Button, ButtonAction, ButtonImage},
+        widget::button::{Button, ButtonClick, ButtonImage},
     },
     unit::IRect,
     val::{Val, ValBind, ValChanged},
@@ -170,13 +170,11 @@ impl Tabs {
             .listen(theme_val.gray4)
             .finish();
 
-            world.observer(button, move |action: &ButtonAction, world| {
-                if let ButtonAction::Press = action {
-                    let this = world.fetch(handle);
-                    let mut active = world.fetch_mut(this.active);
-                    active.val = i;
-                    world.queue_trigger(active.handle(), ValChanged);
-                }
+            world.observer(button, move |&ButtonClick, world| {
+                let this = world.fetch(handle);
+                let mut active = world.fetch_mut(this.active);
+                active.val = i;
+                world.queue_trigger(active.handle(), ValChanged);
             });
         }
 
