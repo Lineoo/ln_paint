@@ -128,9 +128,7 @@ impl Element for Button {
             });
         }
 
-        const DRAG_DISTANCE: f64 = 30.0;
-
-        let mut drag = Drag::new(DRAG_DISTANCE);
+        let mut drag = Drag::default();
         let mut dragging = false;
         world.observer(this, move |event: &PointerEvent, world| match event {
             PointerEvent::Enter(_) | PointerEvent::Leave(_) => {

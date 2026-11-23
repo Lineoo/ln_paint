@@ -1,4 +1,4 @@
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use glam::{DVec2, I64Vec2, Mat3, UVec2};
 use ln_world::{Element, Handle, HandleAny, HandleGeneric, World};
@@ -11,6 +11,8 @@ use winit::{
 use crate::{
     input::{
         collider::{ToolControl, ToolControlUpdate, ToolHitResult},
+        drag::Drag,
+        hold::Hold,
         pointer::{Pointer, PointerCapture, PointerEvent, PointerReacquire, PointerTool},
     },
     lnwin::Lnwindow,
@@ -31,10 +33,6 @@ use crate::{
     unit::{FI64Ext, IRect},
     val::{Val, ValChanged},
 };
-
-const DRAG_DISTANCE: f64 = 0.005;
-const TOUCH_SLOP: f64 = 0.02;
-const HOLD_TIME: Duration = Duration::from_millis(400);
 
 /// drag layer, always owns the control group
 pub struct LayerDrag {
@@ -324,6 +322,8 @@ impl Element for LayerDrag {
             _ => {}
         });
 
+        let mut drag = Drag::default();
+        let hold = Hold::default();
         let mut state = LayerDragState::None;
         world.observer(this, move |event: &PointerEvent, world| {
             let mut this = world.fetch_mut(this);
@@ -362,6 +362,9 @@ impl Element for LayerDrag {
             let center = group_center(event);
             let pinch = group_pinch(event, center);
 
+            let dragged = drag.update(event).is_some();
+            let held = hold.reached(event);
+
             let prev = std::mem::replace(&mut state, LayerDragState::None);
             state = match (prev, event) {
                 (LayerDragState::None, PointerEvent::Press(capture)) => {
@@ -383,8 +386,7 @@ impl Element for LayerDrag {
                     grab(&mut this, utils, world, container, center, pinch)
                 }
                 (LayerDragState::Pending { press, target }, PointerEvent::Move(capture)) => {
-                    let moved = capture.pointer.screen.distance(press.start.screen) > TOUCH_SLOP;
-                    if press.start_instant.elapsed() >= HOLD_TIME {
+                    if held {
                         match target {
                             Some(target) => {
                                 world.trigger(target, &PointerEvent::Press(press.clone()));
@@ -396,7 +398,7 @@ impl Element for LayerDrag {
                             }
                             None => grab(&mut this, utils, world, container, center, pinch),
                         }
-                    } else if moved {
+                    } else if dragged {
                         grab(&mut this, utils, world, container, center, pinch)
                     } else {
                         LayerDragState::Pending {
@@ -406,8 +408,7 @@ impl Element for LayerDrag {
                     }
                 }
                 (LayerDragState::Pending { press, target }, PointerEvent::Release(capture)) => {
-                    let moved = capture.pointer.screen.distance(press.start.screen) > TOUCH_SLOP;
-                    if !moved && let Some(target) = target {
+                    if !dragged && let Some(target) = target {
                         world.trigger(target, &PointerEvent::Press(press));
                         world.trigger(target, &PointerEvent::Release(capture.clone()));
                     }
@@ -649,12 +650,17 @@ impl Element for LayerDraw {
         });
 
         let lnwindow = world.single::<Lnwindow>();
+        let mut drag = Drag::default();
+        let hold = Hold::default();
         let mut state = LayerDrawState::None;
         world.observer(this, move |event: &PointerEvent, world| {
             if let PointerEvent::Scroll { .. } = event {
                 world.queue_trigger(world.single::<LayerDrag>(), event.clone());
                 return;
             }
+
+            let dragged = drag.update(event).is_some();
+            let held = hold.reached(event);
 
             let mut this = world.fetch_mut(this);
             let pointer = event.pointer();
@@ -804,9 +810,9 @@ impl Element for LayerDraw {
                     page.draw_active(draw);
                     lnwindow.window.request_redraw();
 
-                    if capture.pointer.screen.distance(capture.start.screen) > DRAG_DISTANCE {
+                    if dragged {
                         LayerDrawState::PaintNoErase
-                    } else if capture.start_instant.elapsed() > HOLD_TIME {
+                    } else if held {
                         page.discard();
                         if this.hold_pick {
                             LayerDrawState::PickColor

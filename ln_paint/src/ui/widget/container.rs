@@ -38,7 +38,7 @@ impl Element for Container {
             width: 0.0,
         });
 
-        let mut drag = Drag::new(0.0);
+        let mut drag = Drag::default();
         world.observer(self.nest, move |event: &PointerEvent, world| {
             let delta = match event {
                 PointerEvent::Scroll { delta, .. } => I64Vec2::q32_from_f64(*delta),

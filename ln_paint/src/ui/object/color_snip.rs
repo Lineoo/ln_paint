@@ -113,7 +113,7 @@ impl Element for ColorSnip {
             order: 10,
         });
 
-        let mut drag = Drag::new(30.0);
+        let mut drag = Drag::default();
         let mut source = None;
         world.observer(this, move |event: &PointerEvent, world| match event {
             PointerEvent::Enter(_) | PointerEvent::Leave(_) => {

@@ -1,13 +1,13 @@
 use glam::DVec2;
 
-use crate::{
-    input::pointer::{PointerCapture, PointerEvent},
-    unit::FI64Ext,
-};
+use crate::input::pointer::{PointerCapture, PointerEvent};
+
+/// Screen-space distance from the press point that starts a drag.
+const THRESHOLD: f64 = 0.005;
 
 /// Drag gesture state, fed with pointer events.
 ///
-/// `threshold` is compared against the world-space distance from the press point.
+/// `threshold` is compared against the screen-space distance from the press point.
 pub struct Drag {
     threshold: f64,
     last: DVec2,
@@ -50,9 +50,7 @@ impl Drag {
             PointerEvent::Move(_) => match self.active {
                 true => DragStatus::Dragging,
                 false => {
-                    let distance = (capture.pointer.position - capture.start.position)
-                        .q32_as_f64()
-                        .length();
+                    let distance = (capture.pointer.screen - capture.start.screen).length();
                     if distance <= self.threshold {
                         return None;
                     }
@@ -77,5 +75,11 @@ impl Drag {
             status,
             delta,
         })
+    }
+}
+
+impl Default for Drag {
+    fn default() -> Self {
+        Self::new(THRESHOLD)
     }
 }
