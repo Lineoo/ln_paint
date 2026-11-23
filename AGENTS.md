@@ -23,7 +23,7 @@ GPU-accelerated drawing app featured infinite canvas in Rust (winit + wgpu). Car
 
 - **Minimalistic.** Shorter is better. Always thinking about less API, less types and less functions. This project encourages to remove codes or simplify logics.
 - **Don't comment bullshits.** Comments should not exceed one line, and are carefully designed for significant gotchas, otherwise it's only a waste of attention. Keep minimalistic. Don't leave any outdated, unrelated or redundant information.
-- **Never defaulting.** Don't introduce unintended default values or behaviors. Default-value related codes like `unwrap_or_*()` should not be used unless users explicit allow it.
+- **No defaulting, leave it blank.** We are not talking about `Default` trait, but default-value related codes like `unwrap_or_*()`, which introduce unintended default values or behaviors. Don't do that unless the user is pretty sure about the default value.
 - **Panicking, not skipping.** Never handle errors if users not mentioning. Don't use `try_*` family functions in `ln_world`. Use `unwrap()` if `Result`s are returned. If you thoroughly understand the error and *really* need to handle it, ask user first and make sure they are *fully* aware of the error and intended to handle it.
 
 ## Documents
