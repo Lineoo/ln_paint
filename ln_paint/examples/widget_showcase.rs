@@ -13,7 +13,7 @@ use ln_paint::{
             vtor::{Vtor, logo},
             wireframe::Wireframe,
         },
-        theme::{Theme, ThemeVal},
+        theme::{LegacyTheme, LegacyThemeVal},
         widget::{
             area::{Area, AreaMode},
             button::{Button, ButtonImage},
@@ -57,8 +57,8 @@ impl Element for WidgetShowcase {
         world.set_autodeps(Some(this));
         world.dependency(this, self.common.visible);
 
-        let theme = world.single_fetch::<ThemeVal>();
-        let metric_theme = world.single_fetch::<Theme>();
+        let theme = world.single_fetch::<LegacyThemeVal>();
+        let metric_theme = world.single_fetch::<LegacyTheme>();
         let roundness = metric_theme.roundness;
 
         world.insert(RRect {

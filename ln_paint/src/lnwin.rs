@@ -31,7 +31,7 @@ use crate::{
             text::TextPipeline, vtor::VtorPipeline, wireframe::WireframePipeline,
         },
         section::{desktop_ui::DesktopUi, mobile_ui::MobileUi},
-        theme::{Theme, ThemeVal},
+        theme::{LegacyTheme, LegacyThemeVal},
         widget::palette::{
             hsl::{HslRingMaterial, HslSquareMaterial},
             oklab::{OklabBarMaterial, OklabPolarMaterial},
@@ -202,11 +202,11 @@ impl Element for Lnwindow {
             world.insert(TextPipeline::from_world(world));
             let save = world.single_fetch::<Save>();
             let theme = match save.sn().dark_mode {
-                None | Some(true) => Theme::dark_mode(),
-                Some(false) => Theme::light_mode(),
+                None | Some(true) => LegacyTheme::dark_mode(),
+                Some(false) => LegacyTheme::light_mode(),
             };
             let theme = world.insert(theme);
-            world.insert(ThemeVal::bind(world, theme));
+            world.insert(LegacyThemeVal::bind(world, theme));
             drop(save);
 
             world.flush();

@@ -26,7 +26,7 @@ use crate::{
             text::{Text, TextAttr},
         },
         section::settings::SettingPanel,
-        theme::{Theme, ThemeVal},
+        theme::{LegacyTheme, LegacyThemeVal},
         widget::{
             button::{Button, ButtonClick, ButtonImage, ButtonTheme},
             container::Container,
@@ -51,7 +51,7 @@ impl Element for BrushPanel {
         world.scope("brush_panel");
         world.set_autodeps(Some(this));
 
-        let theme = world.single_fetch::<ThemeVal>();
+        let theme = world.single_fetch::<LegacyThemeVal>();
 
         let list_rect = world.insert(Val::new(IRect::default()));
         let list_visible = world.insert(Val::new(false));
@@ -111,8 +111,8 @@ impl Element for BrushListPanel {
         world.scope("brush_list_panel");
         world.set_autodeps(Some(this));
 
-        let theme = world.single_fetch::<Theme>();
-        let theme_val = world.single_fetch::<ThemeVal>();
+        let theme = world.single_fetch::<LegacyTheme>();
+        let theme_val = world.single_fetch::<LegacyThemeVal>();
         let page = world.single_fetch::<LayerPage>();
 
         let count = page.brushes.len();
@@ -183,7 +183,7 @@ impl Element for BrushListPanel {
             let outline_rect =
                 world.build(Transform::new(TransformValue::shrink(-2, -2), button_rect));
             let outline_color_anim = ValBind::new(world, move |world| {
-                let theme = world.single_fetch::<ThemeVal>();
+                let theme = world.single_fetch::<LegacyThemeVal>();
                 let selected_val = world.fetch(selected).val;
                 match selected_val {
                     true => world.fetch(theme.theme).val,

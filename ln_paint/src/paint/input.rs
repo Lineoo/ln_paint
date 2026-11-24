@@ -27,7 +27,7 @@ use crate::{
     },
     save::Save,
     ui::{
-        theme::{Theme, ThemeVal},
+        theme::{LegacyTheme, LegacyThemeVal},
         widget::area::{Area, AreaMode},
     },
     unit::{FI64Ext, IRect},
@@ -251,11 +251,11 @@ impl Element for LayerDrag {
                     log::debug!("{}", world.stat_deps());
                 }
                 KeyCode::F5 if press => {
-                    let mut theme = world.single_fetch_mut::<Theme>();
+                    let mut theme = world.single_fetch_mut::<LegacyTheme>();
                     if theme.distinct.x == 1.0 {
-                        *theme = Theme::light_mode();
+                        *theme = LegacyTheme::light_mode();
                     } else {
-                        *theme = Theme::dark_mode();
+                        *theme = LegacyTheme::dark_mode();
                     }
                     world.queue_trigger(theme.handle(), ValChanged);
                 }
@@ -771,7 +771,7 @@ impl Element for LayerDraw {
                     (LayerInputMode::Area, _) => {
                         let container = world.fetch(container);
                         let camera = world.fetch(container.child);
-                        let theme = world.single_fetch::<ThemeVal>();
+                        let theme = world.single_fetch::<LegacyThemeVal>();
                         let start_position = camera.screen_to_world(center);
                         let rect = world.insert(Val::new(IRect::new_half(
                             start_position.q32_round(),

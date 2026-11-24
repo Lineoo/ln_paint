@@ -6,7 +6,7 @@ use crate::{
     render::nest::Nest,
     ui::{
         renderer::rrect::RRect,
-        theme::{Theme, ThemeVal},
+        theme::{LegacyTheme, LegacyThemeVal},
     },
     unit::{FI64Ext, IRect},
     val::{Val, ValChanged},
@@ -25,8 +25,8 @@ impl Element for Container {
         world.scope("container_deco");
         world.set_autodeps(Some(this));
 
-        let theme = world.single_fetch::<Theme>();
-        let theme_val = world.single_fetch::<ThemeVal>();
+        let theme = world.single_fetch::<LegacyTheme>();
+        let theme_val = world.single_fetch::<LegacyThemeVal>();
         let nest = world.fetch(self.nest);
 
         world.insert(RRect {

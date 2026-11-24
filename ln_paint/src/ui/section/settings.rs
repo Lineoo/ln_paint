@@ -24,7 +24,7 @@ use crate::{
             brush_preview::BrushPreviewDescriptor,
             text::{Text, TextAttr},
         },
-        theme::ThemeVal,
+        theme::LegacyThemeVal,
         widget::{
             container::Container,
             slider::{Slider, SliderLabel, SliderValue},
@@ -47,7 +47,7 @@ impl Element for SettingPanel {
         world.dependency(this, self.common.visible);
 
         let page = world.single_fetch::<LayerPage>();
-        let theme = world.single_fetch::<ThemeVal>();
+        let theme = world.single_fetch::<LegacyThemeVal>();
 
         let attr = NestAttr::default();
         let (_, inner, common) = world.build(NestBuilder {
@@ -73,7 +73,7 @@ impl Element for SettingPanel {
 
         let active_bc = ValBind::new(world, move |world| {
             let page = world.single_fetch::<LayerPage>();
-            let theme = world.single_fetch::<ThemeVal>();
+            let theme = world.single_fetch::<LegacyThemeVal>();
             let fallback = world.fetch(theme.gray4).val;
             page.active().color().unwrap_or(fallback)
         })
@@ -174,7 +174,7 @@ impl Element for TextSettingPanel {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let theme = world.single_fetch::<ThemeVal>();
+        let theme = world.single_fetch::<LegacyThemeVal>();
         let layer = world.single_fetch::<LayerPage>();
         let supported_keys = layer.active().list_params();
         let layer = layer.retrieve();
@@ -490,7 +490,7 @@ fn format_option(key: BrushParamKey, value: f32) -> String {
 }
 
 fn option_label(world: &World, text: String, frame: Handle<Val<IRect>>, common: WidgetCommon) {
-    let theme = world.single_fetch::<ThemeVal>();
+    let theme = world.single_fetch::<LegacyThemeVal>();
 
     let rect = world.build(Transform::new(
         TransformValue {
@@ -534,7 +534,7 @@ fn option_label(world: &World, text: String, frame: Handle<Val<IRect>>, common: 
 }
 
 fn option_desc(world: &World, text: String, frame: Handle<Val<IRect>>, common: WidgetCommon) {
-    let theme = world.single_fetch::<ThemeVal>();
+    let theme = world.single_fetch::<LegacyThemeVal>();
 
     let rect = world.build(Transform::new(
         TransformValue {

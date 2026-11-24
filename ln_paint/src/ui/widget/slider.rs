@@ -11,7 +11,7 @@ use crate::{
             rrect::RRect,
             text::{Text, TextAttr},
         },
-        theme::{Theme, ThemeVal},
+        theme::{LegacyTheme, LegacyThemeVal},
     },
     unit::{Axis, FI64Ext, IRect},
     val::{Val, ValBind, ValChanged},
@@ -42,8 +42,8 @@ impl Element for Slider {
         world.dependency(handle, self.rect);
         world.dependency(handle, self.common.visible);
 
-        let theme = world.single_fetch::<Theme>();
-        let theme_val = world.single_fetch::<ThemeVal>();
+        let theme = world.single_fetch::<LegacyTheme>();
+        let theme_val = world.single_fetch::<LegacyThemeVal>();
         let rect = world.fetch(self.rect).val;
         let value = world.fetch(self.value).val;
 
@@ -57,7 +57,7 @@ impl Element for Slider {
         let pressed = world.insert(Val::new(false));
 
         let knob_color_anim = ValBind::new(world, move |world| {
-            let theme = world.single_fetch::<ThemeVal>();
+            let theme = world.single_fetch::<LegacyThemeVal>();
             let pressed_val = world.fetch(pressed).val;
             match pressed_val {
                 true => world.fetch(theme.gray1).val,
@@ -71,7 +71,7 @@ impl Element for Slider {
         let knob_color_val = world.build(Animator::new(knob_color_anim, theme.anim_factor));
 
         let knob_split_color_anim = ValBind::new(world, move |world| {
-            let theme = world.single_fetch::<ThemeVal>();
+            let theme = world.single_fetch::<LegacyThemeVal>();
             let pressed_val = world.fetch(pressed).val;
             match pressed_val {
                 true => world.fetch(theme.theme).val,
@@ -225,7 +225,7 @@ impl Element for SliderLabel {
         world.set_autodeps(Some(this));
 
         let source = world.fetch(self.source);
-        let theme = world.single_fetch::<ThemeVal>();
+        let theme = world.single_fetch::<LegacyThemeVal>();
         let rect = world.fetch(source.rect).val;
         let value = world.fetch(source.value).val;
 

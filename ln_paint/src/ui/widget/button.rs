@@ -10,7 +10,7 @@ use crate::{
             transform::{Transform, TransformValue},
         },
         renderer::{canvas::Canvas, rrect::RRect, svg::PixImage},
-        theme::Theme,
+        theme::LegacyTheme,
     },
     unit::IRect,
     val::{Val, ValBind, ValChanged},
@@ -65,7 +65,7 @@ impl Element for Button {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let theme = world.single_fetch::<Theme>();
+        let theme = world.single_fetch::<LegacyTheme>();
 
         let selected = self.selected;
         let hovering = self.hovering;

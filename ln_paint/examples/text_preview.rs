@@ -7,7 +7,7 @@ use ln_paint::{
         common::WidgetCommon,
         layout::transform::{Transform, TransformValue},
         renderer::text::{Text, TextAttr},
-        theme::ThemeVal,
+        theme::LegacyThemeVal,
     },
     unit::IRect,
     val::Val,
@@ -45,7 +45,7 @@ impl Element for TextPreview {
         world.set_autodeps(Some(this));
         world.dependency(this, self.common.visible);
 
-        let theme = world.single_fetch::<ThemeVal>();
+        let theme = world.single_fetch::<LegacyThemeVal>();
 
         let row = |top: i32, height: i32| {
             world.build(Transform::anchor(

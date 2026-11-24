@@ -132,7 +132,7 @@ impl ThemeColor {
     }
 }
 
-pub struct Theme {
+pub struct LegacyTheme {
     pub gray0: Vec4,
     pub gray1: Vec4,
     pub gray2: Vec4,
@@ -151,7 +151,7 @@ pub struct Theme {
     pub anim_factor: f32,
 }
 
-pub struct ThemeVal {
+pub struct LegacyThemeVal {
     pub gray0: Handle<Val<Vec4>>,
     pub gray1: Handle<Val<Vec4>>,
     pub gray2: Handle<Val<Vec4>>,
@@ -164,9 +164,9 @@ pub struct ThemeVal {
     pub shadow_color: Handle<Val<Vec4>>,
 }
 
-impl Theme {
+impl LegacyTheme {
     pub fn dark_mode() -> Self {
-        Theme {
+        LegacyTheme {
             gray0: srgb_gamma_decode(hex_to_srgb("#1f1f1f")),
             gray1: srgb_gamma_decode(hex_to_srgb("#3e3e3e")),
             gray2: srgb_gamma_decode(hex_to_srgb("#454545")),
@@ -186,7 +186,7 @@ impl Theme {
     }
 
     pub fn light_mode() -> Self {
-        Theme {
+        LegacyTheme {
             gray0: srgb_gamma_decode(hex_to_srgb("#ffffff")),
             gray1: srgb_gamma_decode(hex_to_srgb("#f2f2f2")),
             gray2: srgb_gamma_decode(hex_to_srgb("#e5e5e5")),
@@ -206,10 +206,11 @@ impl Theme {
     }
 }
 
-impl ThemeVal {
-    pub fn bind(world: &World, theme: Handle<Theme>) -> ThemeVal {
-        let bind = |f: fn(&Theme) -> Vec4| ValBind::fetch(world, theme, move |theme, _| f(theme));
-        ThemeVal {
+impl LegacyThemeVal {
+    pub fn bind(world: &World, theme: Handle<LegacyTheme>) -> LegacyThemeVal {
+        let bind =
+            |f: fn(&LegacyTheme) -> Vec4| ValBind::fetch(world, theme, move |theme, _| f(theme));
+        LegacyThemeVal {
             gray0: bind(|t| t.gray0),
             gray1: bind(|t| t.gray1),
             gray2: bind(|t| t.gray2),
@@ -242,5 +243,5 @@ impl ThemeVal {
     }
 }
 
-impl Element for Theme {}
-impl Element for ThemeVal {}
+impl Element for LegacyTheme {}
+impl Element for LegacyThemeVal {}

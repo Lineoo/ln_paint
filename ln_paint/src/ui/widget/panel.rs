@@ -6,7 +6,7 @@ use crate::{
         common::WidgetCommon,
         layout::transform::{Transform, TransformValue},
         renderer::rrect::RRect,
-        theme::{Theme, ThemeVal},
+        theme::{LegacyTheme, LegacyThemeVal},
     },
     unit::IRect,
     val::Val,
@@ -30,8 +30,8 @@ impl Panel {
         world.dependency(handle, self.rect);
         world.dependency(handle, self.common.visible);
 
-        let theme = world.single_fetch::<Theme>();
-        let theme_val = world.single_fetch::<ThemeVal>();
+        let theme = world.single_fetch::<LegacyTheme>();
+        let theme_val = world.single_fetch::<LegacyThemeVal>();
         let shadow_offset = theme.shadow_offset.as_ivec2();
         let shadow_blur = theme.shadow_blur;
         let roundness = match self.attr.round {

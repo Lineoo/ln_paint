@@ -12,7 +12,7 @@ use crate::{
             transform::{Transform, TransformValue},
         },
         renderer::{canvas::Canvas, rrect::RRect, svg::svg_render},
-        theme::{Theme, ThemeVal},
+        theme::{LegacyTheme, LegacyThemeVal},
     },
     unit::{FI64Ext, IRect},
     val::{Val, ValBind, ValChanged},
@@ -37,8 +37,8 @@ impl Element for ColorSnip {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let theme = world.single_fetch::<Theme>();
-        let theme_val = world.single_fetch::<ThemeVal>();
+        let theme = world.single_fetch::<LegacyTheme>();
+        let theme_val = world.single_fetch::<LegacyThemeVal>();
         let input = world.single::<LayerDrag>();
         let visible = self.common.visible;
         let base = mul_alpha(srgb_gamma_decode(self.attr.color));

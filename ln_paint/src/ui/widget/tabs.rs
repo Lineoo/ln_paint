@@ -13,7 +13,7 @@ use crate::{
             transform::{Transform, TransformEdge, TransformValue},
         },
         renderer::rrect::RRect,
-        theme::{Theme, ThemeVal},
+        theme::{LegacyTheme, LegacyThemeVal},
         widget::button::{Button, ButtonClick, ButtonImage},
     },
     unit::IRect,
@@ -40,8 +40,8 @@ impl Tabs {
         world.dependency(handle, self.rect);
         world.dependency(handle, self.common.visible);
 
-        let theme = world.single_fetch::<Theme>();
-        let theme_val = world.single_fetch::<ThemeVal>();
+        let theme = world.single_fetch::<LegacyTheme>();
+        let theme_val = world.single_fetch::<LegacyThemeVal>();
 
         let roundness = theme.roundness;
         let shadow_offset = theme.shadow_offset.as_ivec2();
@@ -159,7 +159,7 @@ impl Tabs {
             .finish();
 
             ValBind::attach(world, entry_icon_modulate, move |world| {
-                let theme = world.single_fetch::<ThemeVal>();
+                let theme = world.single_fetch::<LegacyThemeVal>();
                 match world.fetch(button_selected).val {
                     true => world.fetch(theme.distinct).val,
                     false => world.fetch(theme.gray4).val,

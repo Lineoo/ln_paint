@@ -20,7 +20,7 @@ use crate::{
             brush_panel::BrushPanel,
             color_picker::{ColorPickerButton, ColorPickerPanel},
         },
-        theme::ThemeVal,
+        theme::LegacyThemeVal,
         widget::{
             button::{Button, ButtonClick, ButtonImage, ButtonToggle},
             panel::{Panel, PanelAttr},
@@ -42,7 +42,7 @@ impl Element for SideDocker {
         world.scope("side_docker");
         world.set_autodeps(Some(this));
 
-        let theme = world.single_fetch::<ThemeVal>();
+        let theme = world.single_fetch::<LegacyThemeVal>();
         let page = world.single::<LayerPage>();
 
         let axis = world.fetch(self.axis).val;

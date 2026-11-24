@@ -18,7 +18,7 @@ use crate::{
         object::color_snip::{ColorSnip, ColorSnipAttr},
         renderer::{rrect::RRect, svg::svg_render},
         section::{debug_panel::DebugPanel, layer_selection::LayerSelectionPanel},
-        theme::ThemeVal,
+        theme::LegacyThemeVal,
         widget::{
             button::{Button, ButtonImage, ButtonToggle},
             container::Container,
@@ -45,7 +45,7 @@ impl Element for ColorPickerPanel {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let theme = world.single_fetch::<ThemeVal>();
+        let theme = world.single_fetch::<LegacyThemeVal>();
 
         let hsl_rect = world.insert(Val::new(IRect::default()));
         let hsl_visible = world.insert(Val::new(false));
@@ -149,7 +149,7 @@ impl Element for ColorPickerButton {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let theme = world.single_fetch::<ThemeVal>();
+        let theme = world.single_fetch::<LegacyThemeVal>();
         let page = world.single_fetch::<LayerPage>();
         let button = world.insert(Button {
             common: self.common,

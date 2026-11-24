@@ -16,7 +16,7 @@ use crate::{
             svg::svg_render,
             text::{Text, TextAttr},
         },
-        theme::ThemeVal,
+        theme::LegacyThemeVal,
         widget::{
             button::{Button, ButtonClick, ButtonImage, ButtonToggle},
             container::Container,
@@ -38,7 +38,7 @@ impl Element for DebugPanel {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let theme = world.single_fetch::<ThemeVal>();
+        let theme = world.single_fetch::<LegacyThemeVal>();
 
         let attr = NestAttr::default();
         let (container, inner, common) = world.build(NestBuilder {

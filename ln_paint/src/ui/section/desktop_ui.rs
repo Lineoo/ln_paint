@@ -27,7 +27,7 @@ use crate::{
             brush_panel::BrushListPanel, color_picker::LayerOklabPalette, debug_panel::DebugPanel,
             layer_selection::LayerSelectionPanel, settings::SettingPanel,
         },
-        theme::ThemeVal,
+        theme::LegacyThemeVal,
         widget::{
             button::{Button, ButtonClick, ButtonImage, ButtonToggle},
             panel::{Panel, PanelAttr},
@@ -166,7 +166,7 @@ impl Element for ToolBar {
         world.dependency(this, self.common.visible);
 
         let page = world.single::<LayerPage>();
-        let theme = world.single_fetch::<ThemeVal>();
+        let theme = world.single_fetch::<LegacyThemeVal>();
 
         let attr = NestAttr {
             // cause we need the slider label to display
@@ -356,7 +356,7 @@ impl Element for StatusBar {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let theme = world.single_fetch::<ThemeVal>();
+        let theme = world.single_fetch::<LegacyThemeVal>();
 
         let attr = NestAttr::default();
         let (_, inner, common) = world.build(NestBuilder {
@@ -499,7 +499,7 @@ impl Element for VerbosePanel {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let theme = world.single_fetch::<ThemeVal>();
+        let theme = world.single_fetch::<LegacyThemeVal>();
 
         let brush_rect = world.insert(Val::new(IRect::default()));
         let brush_visible = world.insert(Val::new(false));
