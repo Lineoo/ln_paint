@@ -7,7 +7,7 @@ use lyon::{
 
 use crate::{
     color::{
-        oklab::{find_gamut_intersection, oklab_to_linear_srgb},
+        oklab::{oklab_clip_to_srgb_gamut, oklab_to_linear_srgb},
         srgb::mul_alpha,
     },
     input::{collider::ToolRectCollider, pointer::PointerEvent},
@@ -81,19 +81,6 @@ fn chroma_to_path(c: f32) -> Path {
     builder.add_circle(Point::new(0.5, 0.5), c / 0.8 + 0.005, Winding::Positive);
     builder.add_circle(Point::new(0.5, 0.5), c / 0.8 - 0.005, Winding::Negative);
     builder.build()
-}
-
-fn clip_to_srgb_gamut(oklab: Vec4) -> Vec4 {
-    let l = oklab.x.clamp(0.0, 1.0);
-    let (a, b) = (oklab.y, oklab.z);
-    let c = (a * a + b * b).sqrt();
-    if !c.is_normal() {
-        return oklab;
-    }
-    let t = find_gamut_intersection(a / c, b / c, l, c, l)
-        .min(1.0)
-        .max(0.0);
-    Vec4::new(l, t * a, t * b, oklab.w)
 }
 
 impl OklabPolar {
@@ -174,7 +161,7 @@ impl OklabPolar {
 
             this.oklab.y = (uv.x * 0.8 - 0.4).clamp(-0.4, 0.4);
             this.oklab.z = (uv.y * 0.8 - 0.4).clamp(-0.4, 0.4);
-            this.oklab = clip_to_srgb_gamut(this.oklab);
+            this.oklab = oklab_clip_to_srgb_gamut(this.oklab);
             world.queue_trigger(this.handle(), ColorOklab(this.oklab));
         });
 
@@ -270,7 +257,7 @@ impl OklabBar {
             let uv = (delta.q32_as_f64() / rect.extend.as_dvec2()).as_vec2();
 
             this.oklab.x = uv.y.clamp(0.0, 1.0);
-            this.oklab = clip_to_srgb_gamut(this.oklab);
+            this.oklab = oklab_clip_to_srgb_gamut(this.oklab);
             world.queue_trigger(this.handle(), ColorOklab(this.oklab));
         });
 

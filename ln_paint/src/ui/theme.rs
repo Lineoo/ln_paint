@@ -3,13 +3,134 @@ use ln_world::{Element, Handle, World};
 
 use crate::{
     color::{
-        oklab::oklab_to_linear_srgb,
+        oklab::{oklab_clip_to_srgb_gamut, oklab_to_linear_srgb, oklch_to_oklab},
         srgb::{hex_to_srgb, srgb_gamma_decode},
     },
     ui::widget::button::ButtonTheme,
     unit::Axis,
     val::{Val, ValBind},
 };
+
+#[rustfmt::skip]
+pub struct ThemeColor {
+    pub primary:                    Handle<Val<Vec4>>,
+    pub on_primary:                 Handle<Val<Vec4>>,
+    pub primary_container:          Handle<Val<Vec4>>,
+    pub on_primary_container:       Handle<Val<Vec4>>,
+    pub secondary:                  Handle<Val<Vec4>>,
+    pub on_secondary:               Handle<Val<Vec4>>,
+    pub secondary_container:        Handle<Val<Vec4>>,
+    pub on_secondary_container:     Handle<Val<Vec4>>,
+    pub tertiary:                   Handle<Val<Vec4>>,
+    pub on_tertiary:                Handle<Val<Vec4>>,
+    pub tertiary_container:         Handle<Val<Vec4>>,
+    pub on_tertiary_container:      Handle<Val<Vec4>>,
+    pub surface:                    Handle<Val<Vec4>>,
+    pub on_surface:                 Handle<Val<Vec4>>,
+    pub surface_variant:            Handle<Val<Vec4>>,
+    pub on_surface_variant:         Handle<Val<Vec4>>,
+    pub surface_container_highest:  Handle<Val<Vec4>>,
+    pub surface_container_high:     Handle<Val<Vec4>>,
+    pub surface_container:          Handle<Val<Vec4>>,
+    pub surface_container_low:      Handle<Val<Vec4>>,
+    pub surface_container_lowest:   Handle<Val<Vec4>>,
+    pub inverse_surface:            Handle<Val<Vec4>>,
+    pub inverse_on_surface:         Handle<Val<Vec4>>,
+    pub outline:                    Handle<Val<Vec4>>,
+    pub outline_variant:            Handle<Val<Vec4>>,
+}
+
+#[rustfmt::skip]
+mod consts {
+    use std::f32::consts::TAU;
+
+    pub const PRIMARY                   : f32 = 0.131;
+    pub const SECONDARY                 : f32 = 0.044;
+    pub const TERTIARY                  : f32 = 0.065;
+    pub const NEUTRAL_VARIANT           : f32 = 0.022;
+    pub const NEUTRAL                   : f32 = 0.011;
+
+    pub const COLOR                     : (f32, f32) = (0.40, 0.80);
+    pub const ON_COLOR                  : (f32, f32) = (1.00, 0.20);
+    pub const COLOR_CONTAINER           : (f32, f32) = (0.90, 0.30);
+    pub const ON_COLOR_CONTAINER        : (f32, f32) = (0.30, 0.90);
+    pub const SURFACE                   : (f32, f32) = (0.98, 0.06);
+    pub const ON_SURFACE                : (f32, f32) = (0.10, 0.90);
+    pub const SURFACE_VARIANT           : (f32, f32) = (0.90, 0.30);
+    pub const ON_SURFACE_VARIANT        : (f32, f32) = (0.30, 0.80);
+    pub const SURFACE_CONTAINER_HIGHEST : (f32, f32) = (0.90, 0.22);
+    pub const SURFACE_CONTAINER_HIGH    : (f32, f32) = (0.92, 0.17);
+    pub const SURFACE_CONTAINER         : (f32, f32) = (0.94, 0.12);
+    pub const SURFACE_CONTAINER_LOW     : (f32, f32) = (0.96, 0.10);
+    pub const SURFACE_CONTAINER_LOWEST  : (f32, f32) = (1.00, 0.04);
+    pub const INVERSE_SURFACE           : (f32, f32) = (0.20, 0.90);
+    pub const INVERSE_ON_SURFACE        : (f32, f32) = (0.95, 0.20);
+    pub const OUTLINE                   : (f32, f32) = (0.50, 0.60);
+    pub const OUTLINE_VARIANT           : (f32, f32) = (0.80, 0.30);
+
+    pub const TERTIARY_HUE              : f32 = TAU / 6.;
+}
+
+impl ThemeColor {
+    pub fn from_world(world: &World) -> Self {
+        ThemeColor::source(
+            world,
+            world.insert(Val::new(0.67)),
+            world.insert(Val::new(true)),
+        )
+    }
+
+    pub fn source(world: &World, hue: Handle<Val<f32>>, dark: Handle<Val<bool>>) -> Self {
+        use consts::*;
+
+        let bind = |(l_light, l_dark), c, h| {
+            ValBind::new(world, move |world| {
+                let hue = world.fetch(hue).val;
+                let dark = world.fetch(dark).val;
+                let mut oklch = Vec4::ONE;
+                oklch.x = match dark {
+                    true => l_light,
+                    false => l_dark,
+                };
+                oklch.y = c;
+                oklch.z = hue + h;
+                oklab_to_linear_srgb(oklab_clip_to_srgb_gamut(oklch_to_oklab(oklch)))
+            })
+            .listen(hue)
+            .listen(dark)
+            .finish()
+        };
+
+        #[cfg_attr(rustfmt, rustfmt::skip)]
+        ThemeColor {
+            primary:                    bind(COLOR,                     PRIMARY,            0.0         ),
+            on_primary:                 bind(ON_COLOR,                  PRIMARY,            0.0         ),
+            primary_container:          bind(COLOR_CONTAINER,           PRIMARY,            0.0         ),
+            on_primary_container:       bind(ON_COLOR_CONTAINER,        PRIMARY,            0.0         ),
+            secondary:                  bind(COLOR,                     SECONDARY,          0.0         ),
+            on_secondary:               bind(ON_COLOR,                  SECONDARY,          0.0         ),
+            secondary_container:        bind(COLOR_CONTAINER,           SECONDARY,          0.0         ),
+            on_secondary_container:     bind(ON_COLOR_CONTAINER,        SECONDARY,          0.0         ),
+            tertiary:                   bind(COLOR,                     TERTIARY,           TERTIARY_HUE),
+            on_tertiary:                bind(ON_COLOR,                  TERTIARY,           TERTIARY_HUE),
+            tertiary_container:         bind(COLOR_CONTAINER,           TERTIARY,           TERTIARY_HUE),
+            on_tertiary_container:      bind(ON_COLOR_CONTAINER,        TERTIARY,           TERTIARY_HUE),
+            surface:                    bind(SURFACE,                   NEUTRAL,            0.0         ),
+            on_surface:                 bind(ON_SURFACE,                NEUTRAL,            0.0         ),
+            surface_variant:            bind(SURFACE_VARIANT,           NEUTRAL_VARIANT,    0.0         ),
+            on_surface_variant:         bind(ON_SURFACE_VARIANT,        NEUTRAL_VARIANT,    0.0         ),
+            surface_container_highest:  bind(SURFACE_CONTAINER_HIGHEST, NEUTRAL,            0.0         ),
+            surface_container_high:     bind(SURFACE_CONTAINER_HIGH,    NEUTRAL,            0.0         ),
+            surface_container:          bind(SURFACE_CONTAINER,         NEUTRAL,            0.0         ),
+            surface_container_low:      bind(SURFACE_CONTAINER_LOW,     NEUTRAL,            0.0         ),
+            surface_container_lowest:   bind(SURFACE_CONTAINER_LOWEST,  NEUTRAL,            0.0         ),
+            inverse_surface:            bind(INVERSE_SURFACE,           NEUTRAL,            0.0         ),
+            inverse_on_surface:         bind(INVERSE_ON_SURFACE,        NEUTRAL,            0.0         ),
+            outline:                    bind(OUTLINE,                   NEUTRAL_VARIANT,    0.0         ),
+            outline_variant:            bind(OUTLINE_VARIANT,           NEUTRAL_VARIANT,    0.0         ),
+        }
+    }
+}
 
 pub struct Theme {
     pub gray0: Vec4,
