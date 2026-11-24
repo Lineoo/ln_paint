@@ -11,6 +11,12 @@ use crate::{
     val::{Val, ValBind},
 };
 
+pub struct Theme {
+    pub color: ThemeColor,
+    pub state: ThemeState,
+    pub shape: ThemeShape,
+}
+
 #[rustfmt::skip]
 pub struct ThemeColor {
     pub primary:                    Handle<Val<Vec4>>,
@@ -38,18 +44,43 @@ pub struct ThemeColor {
     pub inverse_on_surface:         Handle<Val<Vec4>>,
     pub outline:                    Handle<Val<Vec4>>,
     pub outline_variant:            Handle<Val<Vec4>>,
+    pub scrim:                      Handle<Val<Vec4>>,
+    pub shadow:                     Handle<Val<Vec4>>,
+}
+
+pub struct ThemeState {
+    pub hover: Handle<Val<f32>>,
+    pub focus: Handle<Val<f32>>,
+    pub press: Handle<Val<f32>>,
+    pub drag: Handle<Val<f32>>,
+}
+
+pub struct ThemeShape {
+    pub shadow_width: Handle<Val<f32>>,
+    pub roundness: Handle<Val<f32>>,
 }
 
 #[rustfmt::skip]
 mod consts {
     use std::f32::consts::TAU;
 
-    pub const PRIMARY                   : f32 = 0.131;
-    pub const SECONDARY                 : f32 = 0.044;
-    pub const TERTIARY                  : f32 = 0.065;
-    pub const NEUTRAL_VARIANT           : f32 = 0.022;
-    pub const NEUTRAL                   : f32 = 0.011;
+    // Chroma
+    pub const PRIMARY           : f32 = 0.131;
+    pub const SECONDARY         : f32 = 0.044;
+    pub const TERTIARY          : f32 = 0.065;
+    pub const NEUTRAL_VARIANT   : f32 = 0.022;
+    pub const NEUTRAL           : f32 = 0.011;
 
+    // Hue
+    pub const TERTIARY_HUE      : f32 = TAU / 6.;
+
+    // State Layer Opacity
+    pub const HOVER             : f32 = 0.08;
+    pub const FOCUS             : f32 = 0.10;
+    pub const PRESS             : f32 = 0.10;
+    pub const DRAG              : f32 = 0.16;
+
+    // Lightness (Tone)
     pub const COLOR                     : (f32, f32) = (0.40, 0.80);
     pub const ON_COLOR                  : (f32, f32) = (1.00, 0.20);
     pub const COLOR_CONTAINER           : (f32, f32) = (0.90, 0.30);
@@ -67,8 +98,18 @@ mod consts {
     pub const INVERSE_ON_SURFACE        : (f32, f32) = (0.95, 0.20);
     pub const OUTLINE                   : (f32, f32) = (0.50, 0.60);
     pub const OUTLINE_VARIANT           : (f32, f32) = (0.80, 0.30);
+    pub const SCRIM                     : (f32, f32) = (0.00, 0.00);
+    pub const SHADOW                    : (f32, f32) = (0.00, 0.00);
+}
 
-    pub const TERTIARY_HUE              : f32 = TAU / 6.;
+impl Theme {
+    pub fn from_world(world: &World) -> Self {
+        Theme {
+            color: ThemeColor::from_world(world),
+            state: ThemeState::from_world(world),
+            shape: ThemeShape::from_world(world),
+        }
+    }
 }
 
 impl ThemeColor {
@@ -128,6 +169,30 @@ impl ThemeColor {
             inverse_on_surface:         bind(INVERSE_ON_SURFACE,        NEUTRAL,            0.0         ),
             outline:                    bind(OUTLINE,                   NEUTRAL_VARIANT,    0.0         ),
             outline_variant:            bind(OUTLINE_VARIANT,           NEUTRAL_VARIANT,    0.0         ),
+            scrim:                      bind(SCRIM,                     NEUTRAL,            0.0         ),
+            shadow:                     bind(SHADOW,                    NEUTRAL,            0.0         ),
+        }
+    }
+}
+
+impl ThemeState {
+    pub fn from_world(world: &World) -> Self {
+        use consts::*;
+
+        ThemeState {
+            hover: world.insert(Val::new(HOVER)),
+            focus: world.insert(Val::new(FOCUS)),
+            press: world.insert(Val::new(PRESS)),
+            drag: world.insert(Val::new(DRAG)),
+        }
+    }
+}
+
+impl ThemeShape {
+    pub fn from_world(world: &World) -> Self {
+        ThemeShape {
+            shadow_width: world.insert(Val::new(4.0)),
+            roundness: world.insert(Val::new(4.0)),
         }
     }
 }
