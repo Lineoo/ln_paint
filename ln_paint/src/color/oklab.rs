@@ -1,5 +1,74 @@
 use glam::{Mat3, Vec2, Vec4};
 
+use crate::color::srgb::{SrgbLinear, SrgbLinearUnmultiplied};
+
+/// **`L_oklab`**
+#[repr(transparent)]
+#[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct Oklab(pub Vec4);
+
+/// **`L_oklch`**
+///
+/// hue in radians.
+#[repr(transparent)]
+#[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct Oklch(pub Vec4);
+
+impl Oklab {
+    pub fn clip_srgb(self) -> Self {
+        let l = self.0.x.clamp(0.0, 1.0);
+        let (a, b) = (self.0.y, self.0.z);
+        let c = (a * a + b * b).sqrt();
+        if !c.is_normal() {
+            return self;
+        }
+        let t = find_gamut_intersection(a / c, b / c, l, c, l)
+            .min(1.0)
+            .max(0.0);
+        Oklab(Vec4::new(l, t * a, t * b, self.0.w))
+    }
+
+    pub fn from_srgb_linear(srgb: SrgbLinear) -> Self {
+        Oklab::from_srgb_linear_unmultiplied(srgb.to_unmultiplied())
+    }
+
+    pub fn from_srgb_linear_unmultiplied(srgb: SrgbLinearUnmultiplied) -> Self {
+        let lms = RGB2LMS * srgb.0.truncate();
+        let lms_ = lms.powf(1. / 3.);
+        Oklab((LMS2OKLAB * lms_).extend(srgb.0.w))
+    }
+
+    pub fn to_srgb_linear(self) -> SrgbLinear {
+        self.to_srgb_linear_unmultiplied().to_multiplied()
+    }
+
+    pub fn to_srgb_linear_unmultiplied(self) -> SrgbLinearUnmultiplied {
+        let lms_ = OKLAB2LMS * self.0.truncate();
+        let lms = lms_ * lms_ * lms_;
+        SrgbLinearUnmultiplied((LMS2RGB * lms).extend(self.0.w))
+    }
+
+    pub fn to_oklch(self) -> Oklch {
+        Oklch(Vec4::new(
+            self.0.x,
+            Vec2::new(self.0.y, self.0.z).length(),
+            f32::atan2(self.0.z, self.0.y),
+            self.0.w,
+        ))
+    }
+}
+
+impl Oklch {
+    pub fn to_oklab(self) -> Oklab {
+        Oklab(Vec4::new(
+            self.0.x,
+            self.0.y * self.0.z.cos(),
+            self.0.y * self.0.z.sin(),
+            self.0.w,
+        ))
+    }
+}
+
 const OKLAB2LMS: Mat3 = Mat3::from_cols_array_2d(&[
     [1.0000000000, 1.0000000000, 1.0000000000],
     [0.3963377774, -0.1055613458, -0.0894841775],
@@ -25,6 +94,7 @@ const LMS2OKLAB: Mat3 = Mat3::from_cols_array_2d(&[
 ]);
 
 /// L_oklab -> L_srgb
+#[deprecated]
 pub fn oklab_to_linear_srgb(oklab: Vec4) -> Vec4 {
     let lms_ = OKLAB2LMS * oklab.truncate();
     let lms = lms_ * lms_ * lms_;
@@ -32,6 +102,7 @@ pub fn oklab_to_linear_srgb(oklab: Vec4) -> Vec4 {
 }
 
 /// L_oklab -> L_srgb
+#[deprecated]
 pub fn linear_srgb_to_oklab(rgba: Vec4) -> Vec4 {
     let lms = RGB2LMS * rgba.truncate();
     let lms_ = lms.powf(1. / 3.);
@@ -39,6 +110,7 @@ pub fn linear_srgb_to_oklab(rgba: Vec4) -> Vec4 {
 }
 
 /// L_oklab -> L_oklch
+#[deprecated]
 pub fn oklab_to_oklch(oklab: Vec4) -> Vec4 {
     Vec4::new(
         oklab.x,
@@ -49,6 +121,7 @@ pub fn oklab_to_oklch(oklab: Vec4) -> Vec4 {
 }
 
 /// L_oklch -> L_oklab
+#[deprecated]
 pub fn oklch_to_oklab(oklch: Vec4) -> Vec4 {
     Vec4::new(
         oklch.x,
@@ -58,6 +131,7 @@ pub fn oklch_to_oklab(oklch: Vec4) -> Vec4 {
     )
 }
 
+#[deprecated]
 pub fn oklab_clip_to_srgb_gamut(oklab: Vec4) -> Vec4 {
     let l = oklab.x.clamp(0.0, 1.0);
     let (a, b) = (oklab.y, oklab.z);
@@ -151,7 +225,7 @@ pub fn find_gamut_intersection(a: f32, b: f32, l1: f32, c1: f32, l0: f32) -> f32
 
 fn find_cusp(a: f32, b: f32) -> (f32, f32) {
     let s_cusp = compute_max_saturation(a, b);
-    let rgba = oklab_to_linear_srgb(Vec4::new(1.0, s_cusp * a, s_cusp * b, 1.0));
+    let SrgbLinear(rgba) = Oklab(Vec4::new(1.0, s_cusp * a, s_cusp * b, 1.0)).to_srgb_linear();
     let (r, g, b) = (rgba.x, rgba.y, rgba.z);
     let l_cusp = (1.0 / r.max(g).max(b)).cbrt();
     let c_cusp = l_cusp * s_cusp;
@@ -222,25 +296,4 @@ fn compute_max_saturation(a: f32, b: f32) -> f32 {
     let f2 = wl * l_ds2 + wm * m_ds2 + ws * s_ds2;
 
     s - f * f1 / (f1 * f1 - 0.5 * f * f2)
-}
-
-#[cfg(test)]
-mod test {
-    use glam::Vec4;
-
-    use crate::color::{
-        oklab::{oklab_to_linear_srgb, oklch_to_oklab},
-        srgb::srgb_gamma_encode,
-    };
-
-    #[test]
-    fn general() {
-        let surf = Vec4::new(0.06, 0.0, 0.0, 1.0);
-        let surfc = Vec4::new(0.12, 0.0, 0.0, 1.0);
-        println!(
-            "{} {}",
-            srgb_gamma_encode(oklab_to_linear_srgb(oklch_to_oklab(surf))),
-            srgb_gamma_encode(oklab_to_linear_srgb(oklch_to_oklab(surfc)))
-        )
-    }
 }
