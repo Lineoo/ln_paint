@@ -73,9 +73,9 @@ mod consts {
     use std::f32::consts::TAU;
 
     // Chroma (standard, neutral)
-    pub const PRIMARY           : (f32, f32) = (0.131, 0.044);
-    pub const SECONDARY         : (f32, f32) = (0.044, 0.022);
-    pub const TERTIARY          : (f32, f32) = (0.065, 0.065);
+    pub const PRIMARY           : (f32, f32) = (0.131, 0.022);
+    pub const SECONDARY         : (f32, f32) = (0.044, 0.011);
+    pub const TERTIARY          : (f32, f32) = (0.065, 0.022);
     pub const NEUTRAL_VARIANT   : (f32, f32) = (0.022, 0.011);
     pub const NEUTRAL           : (f32, f32) = (0.011, 0.000);
 
@@ -89,23 +89,23 @@ mod consts {
     pub const DRAG              : f32 = 0.16;
 
     // Tone (Light, Dark, Neutral)
-    pub const COLOR                     : (f32, f32, f32) = (0.40, 0.80, 0.30);
-    pub const ON_COLOR                  : (f32, f32, f32) = (1.00, 0.20, 0.90);
-    pub const COLOR_CONTAINER           : (f32, f32, f32) = (0.90, 0.30, 0.80);
-    pub const ON_COLOR_CONTAINER        : (f32, f32, f32) = (0.30, 0.90, 0.30);
-    pub const SURFACE                   : (f32, f32, f32) = (0.98, 0.06, 0.50);
+    pub const COLOR                     : (f32, f32, f32) = (0.40, 0.80, 0.80);
+    pub const ON_COLOR                  : (f32, f32, f32) = (1.00, 0.20, 0.20);
+    pub const COLOR_CONTAINER           : (f32, f32, f32) = (0.90, 0.30, 0.50);
+    pub const ON_COLOR_CONTAINER        : (f32, f32, f32) = (0.30, 0.90, 1.00);
+    pub const SURFACE                   : (f32, f32, f32) = (0.98, 0.06, 0.30);
     pub const ON_SURFACE                : (f32, f32, f32) = (0.10, 0.90, 1.00);
-    pub const SURFACE_VARIANT           : (f32, f32, f32) = (0.90, 0.30, 0.40);
-    pub const ON_SURFACE_VARIANT        : (f32, f32, f32) = (0.30, 0.80, 0.90);
-    pub const SURFACE_CONTAINER_HIGHEST : (f32, f32, f32) = (0.90, 0.22, 0.30);
-    pub const SURFACE_CONTAINER_HIGH    : (f32, f32, f32) = (0.92, 0.17, 0.35);
+    pub const SURFACE_VARIANT           : (f32, f32, f32) = (0.90, 0.30, 0.55);
+    pub const ON_SURFACE_VARIANT        : (f32, f32, f32) = (0.30, 0.80, 1.00);
+    pub const SURFACE_CONTAINER_HIGHEST : (f32, f32, f32) = (0.90, 0.22, 0.32);
+    pub const SURFACE_CONTAINER_HIGH    : (f32, f32, f32) = (0.92, 0.17, 0.36);
     pub const SURFACE_CONTAINER         : (f32, f32, f32) = (0.94, 0.12, 0.40);
-    pub const SURFACE_CONTAINER_LOW     : (f32, f32, f32) = (0.96, 0.10, 0.45);
-    pub const SURFACE_CONTAINER_LOWEST  : (f32, f32, f32) = (1.00, 0.04, 0.50);
-    pub const INVERSE_SURFACE           : (f32, f32, f32) = (0.20, 0.90, 1.00);
-    pub const INVERSE_ON_SURFACE        : (f32, f32, f32) = (0.95, 0.20, 0.00);
-    pub const OUTLINE                   : (f32, f32, f32) = (0.50, 0.60, 0.10);
-    pub const OUTLINE_VARIANT           : (f32, f32, f32) = (0.80, 0.30, 0.20);
+    pub const SURFACE_CONTAINER_LOW     : (f32, f32, f32) = (0.96, 0.10, 0.44);
+    pub const SURFACE_CONTAINER_LOWEST  : (f32, f32, f32) = (1.00, 0.04, 0.48);
+    pub const INVERSE_SURFACE           : (f32, f32, f32) = (0.20, 0.90, 0.90);
+    pub const INVERSE_ON_SURFACE        : (f32, f32, f32) = (0.95, 0.20, 0.20);
+    pub const OUTLINE                   : (f32, f32, f32) = (0.50, 0.60, 0.60);
+    pub const OUTLINE_VARIANT           : (f32, f32, f32) = (0.80, 0.30, 0.30);
     pub const SCRIM                     : (f32, f32, f32) = (0.00, 0.00, 0.00);
     pub const SHADOW                    : (f32, f32, f32) = (0.00, 0.00, 0.00);
 }
