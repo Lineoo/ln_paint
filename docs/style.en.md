@@ -28,10 +28,10 @@ DO NOT:
 ```rs
 let theme = world.single_fetch::<Theme>();
 let visible = self.common.visible;
-let grey0 = theme.grey0;
+let grey = theme.grey;
 world.observer(this, move || {
     let visible = world.fetch(visible).val;
-    let grey0 = world.fetch(grey0).val;
+    let grey = world.fetch(grey).val;
 })
 ```
 
@@ -42,7 +42,7 @@ world.observer(this, move || {
     let this = world.fetch(this);
     let theme = world.single_fetch::<Theme>();
     let visible = world.fetch(this.common.visible).val;
-    let grey0 = world.fetch(theme.grey0).val;
+    let grey = world.fetch(theme.grey).val;
 })
 ```
 

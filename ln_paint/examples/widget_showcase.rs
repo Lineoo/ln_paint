@@ -13,10 +13,9 @@ use ln_paint::{
             vtor::{Vtor, logo},
             wireframe::Wireframe,
         },
-        theme::{LegacyTheme, LegacyThemeVal},
         widget::{
             area::{Area, AreaMode},
-            button::{Button, ButtonImage},
+            button::{Button, ButtonImage, ButtonTheme},
             slider::Slider,
         },
     },
@@ -57,15 +56,14 @@ impl Element for WidgetShowcase {
         world.set_autodeps(Some(this));
         world.dependency(this, self.common.visible);
 
-        let theme = world.single_fetch::<LegacyThemeVal>();
-        let metric_theme = world.single_fetch::<LegacyTheme>();
-        let roundness = metric_theme.roundness;
+        let theme = world.fetch(self.common.theme);
+        let roundness = world.fetch(theme.shape.corner_radius).val;
 
         world.insert(RRect {
             common: self.common,
             rect: self.rect,
             order: -200,
-            color: theme.gray0,
+            color: theme.color.surface_container_lowest,
             radius: 0.0,
             width: 0.0,
         });
@@ -85,7 +83,7 @@ impl Element for WidgetShowcase {
             },
             order: 100,
             common: self.common,
-            modulate: theme.distinct,
+            modulate: theme.color.on_surface,
             outdated: false,
         });
 
@@ -99,7 +97,7 @@ impl Element for WidgetShowcase {
                 common: self.common,
                 rect: outer,
                 order: -10,
-                color: theme.gray1,
+                color: theme.color.surface_container_low,
                 radius: roundness,
                 width: 0.0,
             });
@@ -118,7 +116,7 @@ impl Element for WidgetShowcase {
                 },
                 order: 100,
                 common: self.common,
-                modulate: theme.gray4,
+                modulate: theme.color.surface_container_high,
                 outdated: false,
             });
             outer
@@ -157,7 +155,7 @@ impl Element for WidgetShowcase {
         world.insert(Vtor {
             common: self.common,
             rect: logo_rect,
-            color: world.fetch(theme.theme).val,
+            color: world.fetch(theme.color.primary).val,
             order: 10,
             path: logo_path,
             outdated: false,
@@ -168,7 +166,7 @@ impl Element for WidgetShowcase {
             "vtor.rs::logo()\n填充路径 + 三角化\nGPU 矢量绘制",
             Metrics::new(13.0, 22.0),
             FONT_MONO,
-            theme.gray4,
+            theme.color.surface_container_high,
             100,
         ));
 
@@ -180,13 +178,18 @@ impl Element for WidgetShowcase {
             "文本渲染 / Text rendering\nSource Han Sans CN + fallback\nABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789\n天地玄黄，宇宙洪荒。",
             Metrics::new(14.0, 21.0),
             FONT_SANS,
-            theme.distinct,
+            theme.color.on_surface,
             100,
         ));
 
         // RRect: corner radius and theme colors.
         let rrect_card = card(24, 260, "RRect");
-        let swatches = [theme.gray2, theme.gray3, theme.theme, theme.distinct];
+        let swatches = [
+            theme.color.surface_container,
+            theme.color.surface_container_high,
+            theme.color.primary,
+            theme.color.on_surface,
+        ];
         let radii = [4.0, 12.0, 22.0, 28.0];
         for (i, (&color, radius)) in swatches.iter().zip(radii).enumerate() {
             let left = 24 + i as i32 * 72;
@@ -216,10 +219,9 @@ impl Element for WidgetShowcase {
         world.insert(Button {
             common: self.common,
             rect: button_rect,
-            theme: theme.button(),
+            theme: ButtonTheme::surface(&theme),
             image: Some(ButtonImage::new(
                 svg_render(include_bytes!("../res/interface/pen.svg")),
-                theme.distinct,
                 12,
             )),
             selected: world.insert(Val::new(true)),
@@ -231,16 +233,16 @@ impl Element for WidgetShowcase {
             "ToggleButton",
             Metrics::new(13.0, 20.0),
             FONT_SANS,
-            theme.gray4,
+            theme.color.surface_container_high,
             100,
         ));
 
         // Wireframe & Area: stroke variants and handle modes.
         let stroke_card = card(24, 408, "Wireframe & Area");
         for (i, (align, radius, color)) in [
-            (0.0, 4.0, theme.theme),
-            (0.5, 10.0, theme.distinct),
-            (1.0, 16.0, theme.gray4),
+            (0.0, 4.0, theme.color.primary),
+            (0.5, 10.0, theme.color.on_surface),
+            (1.0, 16.0, theme.color.surface_container_high),
         ]
         .into_iter()
         .enumerate()
@@ -258,9 +260,9 @@ impl Element for WidgetShowcase {
             });
         }
         for (i, (mode, color)) in [
-            (AreaMode::None, theme.gray4),
-            (AreaMode::Four, theme.distinct),
-            (AreaMode::Eight, theme.theme),
+            (AreaMode::None, theme.color.surface_container_high),
+            (AreaMode::Four, theme.color.on_surface),
+            (AreaMode::Eight, theme.color.primary),
         ]
         .into_iter()
         .enumerate()

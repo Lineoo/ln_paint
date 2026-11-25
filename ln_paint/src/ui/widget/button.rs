@@ -5,12 +5,9 @@ use crate::{
     input::{collider::ToolRectCollider, drag::Drag, pointer::PointerEvent},
     ui::{
         common::WidgetCommon,
-        layout::{
-            anim::Animator,
-            transform::{Transform, TransformValue},
-        },
+        layout::transform::{Transform, TransformValue},
         renderer::{canvas::Canvas, rrect::RRect, svg::PixImage},
-        theme::LegacyTheme,
+        theme::Theme,
     },
     unit::IRect,
     val::{Val, ValBind, ValChanged},
@@ -26,16 +23,19 @@ pub struct Button {
 }
 
 pub struct ButtonTheme {
-    pub idle_color: Handle<Val<Vec4>>,
-    pub hover_color: Handle<Val<Vec4>>,
-    pub press_color: Handle<Val<Vec4>>,
-    pub selected_color: Handle<Val<Vec4>>,
+    pub color: Handle<Val<Vec4>>,
+    pub on_color: Handle<Val<Vec4>>,
+    pub active_color: Handle<Val<Vec4>>,
+    pub active_on_color: Handle<Val<Vec4>>,
+    pub hover: Handle<Val<f32>>,
+    pub press: Handle<Val<f32>>,
+    pub focus: Handle<Val<f32>>,
+    pub corner_radius: Handle<Val<f32>>,
 }
 
 #[derive(Clone)]
 pub struct ButtonImage {
     pub transform: TransformValue,
-    pub modulate: Handle<Val<Vec4>>,
     pub bmp: PixImage,
 }
 
@@ -45,14 +45,28 @@ pub struct ButtonToggle {
 
 pub struct ButtonClick;
 
+impl ButtonTheme {
+    pub fn surface(theme: &Theme) -> Self {
+        ButtonTheme {
+            color: theme.color.surface,
+            on_color: theme.color.on_surface,
+            active_color: theme.color.primary_container,
+            active_on_color: theme.color.on_primary_container,
+            hover: theme.state.hover,
+            press: theme.state.press,
+            focus: theme.state.focus,
+            corner_radius: theme.shape.corner_radius,
+        }
+    }
+}
+
 impl ButtonImage {
-    pub fn new(bmp: PixImage, modulate: Handle<Val<Vec4>>, size: u32) -> Self {
+    pub fn new(bmp: PixImage, size: u32) -> Self {
         ButtonImage {
             transform: TransformValue::anchor(
                 (0.5, 0.5),
                 IRect::new_half(IVec2::ZERO, UVec2::splat(size)),
             ),
-            modulate,
             bmp,
         }
     }
@@ -65,46 +79,56 @@ impl Element for Button {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let theme = world.single_fetch::<LegacyTheme>();
+        let theme = world.fetch(self.common.theme);
 
         let selected = self.selected;
         let hovering = self.hovering;
-        let idle_color = self.theme.idle_color;
-        let hover_color = self.theme.hover_color;
-        let press_color = self.theme.press_color;
-        let selected_color = self.theme.selected_color;
-
         let pressed = world.insert(Val::new(false));
-        let frame_color_anim = ValBind::new(world, move |world| {
-            let selected_val = world.fetch(selected).val;
-            let hovering_val = world.fetch(hovering).val;
-            let pressed_val = world.fetch(pressed).val;
-            if selected_val {
-                world.fetch(selected_color).val
-            } else if pressed_val {
-                world.fetch(press_color).val
-            } else if hovering_val {
-                world.fetch(hover_color).val
+        let radius = world.fetch(theme.shape.corner_radius).val;
+
+        let color = ValBind::new(world, move |world| {
+            let this = world.fetch(this);
+            let selected = world.fetch(selected).val;
+            let pressed = world.fetch(pressed).val;
+            let hovering = world.fetch(hovering).val;
+
+            let color = match selected {
+                true => world.fetch(this.theme.active_color).val,
+                false => world.fetch(this.theme.color).val,
+            };
+
+            let on_color = match selected {
+                true => world.fetch(this.theme.active_on_color).val,
+                false => world.fetch(this.theme.on_color).val,
+            };
+
+            let factor = if pressed {
+                world.fetch(this.theme.press).val
+            } else if hovering {
+                world.fetch(this.theme.hover).val
             } else {
-                world.fetch(idle_color).val
-            }
+                0.0
+            };
+
+            color * (1. - factor) + on_color * factor
         })
         .listen(selected)
         .listen(hovering)
         .listen(pressed)
-        .listen(idle_color)
-        .listen(hover_color)
-        .listen(press_color)
-        .listen(selected_color)
-        .finish();
-        let frame_color = world.build(Animator::new(frame_color_anim, theme.anim_factor));
+        .listen(self.theme.color)
+        .listen(self.theme.on_color)
+        .listen(self.theme.active_color)
+        .listen(self.theme.active_on_color)
+        .listen(self.theme.press)
+        .listen(self.theme.hover)
+        .animate(theme.animation);
 
         world.insert(RRect {
             common: self.common,
             rect: self.rect,
             order: 10,
-            color: frame_color,
-            radius: theme.roundness,
+            color,
+            radius,
             width: 0.0,
         });
 
@@ -121,7 +145,7 @@ impl Element for Button {
                 common: self.common,
                 rect: icon_rect,
                 order: 11,
-                modulate: image.modulate,
+                modulate: self.theme.on_color,
                 data: image.bmp.bytes.clone(),
                 data_width: image.bmp.bytes_width,
                 data_height: image.bmp.bytes_height,

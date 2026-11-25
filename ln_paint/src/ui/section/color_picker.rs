@@ -18,9 +18,8 @@ use crate::{
         object::color_snip::{ColorSnip, ColorSnipAttr},
         renderer::{rrect::RRect, svg::svg_render},
         section::{debug_panel::DebugPanel, layer_selection::LayerSelectionPanel},
-        theme::LegacyThemeVal,
         widget::{
-            button::{Button, ButtonImage, ButtonToggle},
+            button::{Button, ButtonImage, ButtonTheme, ButtonToggle},
             container::Container,
             palette::{
                 hsl::{ColorHsla, HslRing, HslSquare, INNER_RADIUS, SetColorHsla},
@@ -45,14 +44,12 @@ impl Element for ColorPickerPanel {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let theme = world.single_fetch::<LegacyThemeVal>();
-
         let hsl_rect = world.insert(Val::new(IRect::default()));
         let hsl_visible = world.insert(Val::new(false));
         world.insert(LayerHslPalette {
             common: WidgetCommon {
-                camera: self.common.camera,
                 visible: hsl_visible,
+                ..self.common
             },
             rect: hsl_rect,
             hsl: Vec4::new(0.3, 0.5, 0.5, 1.0),
@@ -62,8 +59,8 @@ impl Element for ColorPickerPanel {
         let oklab_visible = world.insert(Val::new(false));
         world.insert(LayerOklabPalette {
             common: WidgetCommon {
-                camera: self.common.camera,
                 visible: oklab_visible,
+                ..self.common
             },
             rect: oklab_rect,
             oklab: Vec4::new(0.0, 0.0, 0.0, 1.0),
@@ -73,8 +70,8 @@ impl Element for ColorPickerPanel {
         let layer_visible = world.insert(Val::new(false));
         world.insert(LayerSelectionPanel {
             common: WidgetCommon {
-                camera: self.common.camera,
                 visible: layer_visible,
+                ..self.common
             },
             rect: layer_rect,
         });
@@ -83,8 +80,8 @@ impl Element for ColorPickerPanel {
         let debug_visible = world.insert(Val::new(false));
         world.insert(DebugPanel {
             common: WidgetCommon {
-                camera: self.common.camera,
                 visible: debug_visible,
+                ..self.common
             },
             rect: debug_rect,
         });
@@ -97,7 +94,6 @@ impl Element for ColorPickerPanel {
                 TabEntry {
                     icon: ButtonImage::new(
                         svg_render(include_bytes!("../../../res/interface/palette.svg")),
-                        theme.distinct,
                         12,
                     ),
                     rect: hsl_rect,
@@ -106,7 +102,6 @@ impl Element for ColorPickerPanel {
                 TabEntry {
                     icon: ButtonImage::new(
                         svg_render(include_bytes!("../../../res/interface/palette.svg")),
-                        theme.distinct,
                         12,
                     ),
                     rect: oklab_rect,
@@ -115,7 +110,6 @@ impl Element for ColorPickerPanel {
                 TabEntry {
                     icon: ButtonImage::new(
                         svg_render(include_bytes!("../../../res/interface/layers.svg")),
-                        theme.distinct,
                         12,
                     ),
                     rect: layer_rect,
@@ -124,7 +118,6 @@ impl Element for ColorPickerPanel {
                 TabEntry {
                     icon: ButtonImage::new(
                         svg_render(include_bytes!("../../../res/interface/bug.svg")),
-                        theme.distinct,
                         12,
                     ),
                     rect: debug_rect,
@@ -149,12 +142,12 @@ impl Element for ColorPickerButton {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let theme = world.single_fetch::<LegacyThemeVal>();
+        let theme = world.fetch(self.common.theme);
         let page = world.single_fetch::<LayerPage>();
         let button = world.insert(Button {
             common: self.common,
             rect: self.rect,
-            theme: theme.button(),
+            theme: ButtonTheme::surface(&theme),
             image: None,
             selected: self.selected,
             hovering: world.insert(Val::new(false)),
@@ -195,7 +188,7 @@ impl Element for ColorPickerButton {
                 world.insert(ColorSnip {
                     common: WidgetCommon {
                         camera: page_camera.handle(),
-                        visible: this.common.visible,
+                        ..this.common
                     },
                     rect,
                     attr: ColorSnipAttr {
@@ -250,6 +243,7 @@ impl Element for LayerHslPalette {
         });
         world.insert(Container {
             nest: container,
+            theme: self.common.theme,
             restriction: inner,
         });
 
@@ -321,6 +315,7 @@ impl Element for LayerOklabPalette {
         });
         world.insert(Container {
             nest: container,
+            theme: self.common.theme,
             restriction: inner,
         });
         let local = world.build(NestRect { source: container });

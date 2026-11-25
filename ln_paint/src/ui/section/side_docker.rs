@@ -20,9 +20,8 @@ use crate::{
             brush_panel::BrushPanel,
             color_picker::{ColorPickerButton, ColorPickerPanel},
         },
-        theme::LegacyThemeVal,
         widget::{
-            button::{Button, ButtonClick, ButtonImage, ButtonToggle},
+            button::{Button, ButtonClick, ButtonImage, ButtonTheme, ButtonToggle},
             panel::{Panel, PanelAttr},
             slider::{Slider, SliderLabel, SliderValue},
         },
@@ -42,7 +41,7 @@ impl Element for SideDocker {
         world.scope("side_docker");
         world.set_autodeps(Some(this));
 
-        let theme = world.single_fetch::<LegacyThemeVal>();
+        let theme = world.fetch(self.common.theme);
         let page = world.single::<LayerPage>();
 
         let axis = world.fetch(self.axis).val;
@@ -90,8 +89,8 @@ impl Element for SideDocker {
             Button {
                 common: self.common,
                 rect,
-                theme: theme.button(),
-                image: Some(ButtonImage::new(svg_render(image_bytes), theme.distinct, 8)),
+                theme: ButtonTheme::surface(&theme),
+                image: Some(ButtonImage::new(svg_render(image_bytes), 8)),
                 selected: world.insert(Val::new(false)),
                 hovering: world.insert(Val::new(false)),
             }
@@ -105,10 +104,9 @@ impl Element for SideDocker {
             let brush_menu = world.insert(Button {
                 common: self.common,
                 rect: brush_menu_rect,
-                theme: theme.button(),
+                theme: ButtonTheme::surface(&theme),
                 image: Some(ButtonImage::new(
                     svg_render(include_bytes!("../../../res/interface/pen.svg")),
-                    theme.distinct,
                     8,
                 )),
                 selected: brush_visible,
@@ -145,10 +143,9 @@ impl Element for SideDocker {
             let eraser = world.insert(Button {
                 common: self.common,
                 rect: world.build(luni.child(LuniChild::default())),
-                theme: theme.button(),
+                theme: ButtonTheme::surface(&theme),
                 image: Some(ButtonImage::new(
                     svg_render(include_bytes!("../../../res/interface/eraser.svg")),
-                    theme.distinct,
                     8,
                 )),
                 selected: eraser_selected,
@@ -202,10 +199,9 @@ impl Element for SideDocker {
             let selection = world.insert(Button {
                 common: self.common,
                 rect,
-                theme: theme.button(),
+                theme: ButtonTheme::surface(&theme),
                 image: Some(ButtonImage::new(
                     svg_render(include_bytes!("../../../res/interface/square-dashed.svg")),
-                    theme.distinct,
                     8,
                 )),
                 selected,

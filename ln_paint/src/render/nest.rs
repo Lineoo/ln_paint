@@ -88,7 +88,7 @@ impl Descriptor for NestBuilder {
 
         let common = WidgetCommon {
             camera,
-            visible: self.common.visible,
+            ..self.common
         };
 
         (nest, rect, common)

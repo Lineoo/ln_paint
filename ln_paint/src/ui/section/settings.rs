@@ -9,7 +9,7 @@ use crate::{
         },
         wrapper::LayerPage,
     },
-    render::nest::{NestAttr, NestBuilder, NestRect},
+    render::nest::{NestAttr, NestBuilder},
     ui::{
         common::WidgetCommon,
         i18n::tr,
@@ -24,7 +24,6 @@ use crate::{
             brush_preview::BrushPreviewDescriptor,
             text::{Text, TextAttr},
         },
-        theme::LegacyThemeVal,
         widget::{
             container::Container,
             slider::{Slider, SliderLabel, SliderValue},
@@ -47,7 +46,7 @@ impl Element for SettingPanel {
         world.dependency(this, self.common.visible);
 
         let page = world.single_fetch::<LayerPage>();
-        let theme = world.single_fetch::<LegacyThemeVal>();
+        let theme = world.fetch(self.common.theme);
 
         let attr = NestAttr::default();
         let (_, inner, common) = world.build(NestBuilder {
@@ -73,8 +72,9 @@ impl Element for SettingPanel {
 
         let active_bc = ValBind::new(world, move |world| {
             let page = world.single_fetch::<LayerPage>();
-            let theme = world.single_fetch::<LegacyThemeVal>();
-            let fallback = world.fetch(theme.gray4).val;
+            let this = world.fetch(this);
+            let theme = world.fetch(this.common.theme);
+            let fallback = world.fetch(theme.color.on_surface).val;
             page.active().color().unwrap_or(fallback)
         })
         .listen(page.handle())
@@ -84,9 +84,9 @@ impl Element for SettingPanel {
             common,
             rect: preview_rect,
             brush: page.active().dup(),
-            background: theme.gray0,
-            c0: theme.c0,
-            c1: theme.c1,
+            background: theme.color.surface,
+            c0: theme.color.primary_container,
+            c1: theme.color.tertiary_container,
             bc: active_bc,
         }));
         let settings_rect = world.build(luni.child(LuniChild {
@@ -96,10 +96,7 @@ impl Element for SettingPanel {
             ..Default::default()
         }));
         world.insert(TextSettingPanel {
-            common: WidgetCommon {
-                camera: common.camera,
-                visible: self.common.visible,
-            },
+            common,
             rect: settings_rect,
         });
 
@@ -174,14 +171,14 @@ impl Element for TextSettingPanel {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let theme = world.single_fetch::<LegacyThemeVal>();
+        let theme = world.fetch(self.common.theme);
         let layer = world.single_fetch::<LayerPage>();
         let supported_keys = layer.active().list_params();
         let layer = layer.retrieve();
         let panel_visible = self.common.visible;
 
         let attr = NestAttr::default();
-        let (container, inner, common) = world.build(NestBuilder {
+        let (nest, local, common) = world.build(NestBuilder {
             common: self.common,
             rect: self.rect,
             attr,
@@ -192,7 +189,7 @@ impl Element for TextSettingPanel {
             .count();
         let row_count = world.insert(Val::new(shown as i32));
         let restriction = ValBind::new(world, move |world| {
-            let inner = world.fetch(inner).val;
+            let inner = world.fetch(local).val;
             let rows = world.fetch(row_count).val;
             IRect::new(
                 inner.left(),
@@ -205,10 +202,10 @@ impl Element for TextSettingPanel {
         .listen(row_count)
         .finish();
         world.insert(Container {
-            nest: container,
+            nest,
+            theme: self.common.theme,
             restriction,
         });
-        let local = world.build(NestRect { source: container });
 
         let mut luni = LuniFlex::new(
             local,
@@ -247,7 +244,7 @@ impl Element for TextSettingPanel {
             },
             order: 100,
             common,
-            modulate: theme.gray4,
+            modulate: theme.color.primary,
             outdated: false,
         });
 
@@ -261,10 +258,7 @@ impl Element for TextSettingPanel {
                 basis: Some(SLIDER),
                 ..Default::default()
             }));
-            let common = WidgetCommon {
-                camera: common.camera,
-                visible,
-            };
+            let common = WidgetCommon { visible, ..common };
             option_label(world, tr(label).into(), frame, common);
             option_desc(world, tr(desc).into(), frame, common);
             let slider =
@@ -304,7 +298,7 @@ impl Element for TextSettingPanel {
             },
             order: 100,
             common,
-            modulate: theme.gray4,
+            modulate: theme.color.primary,
             outdated: false,
         });
 
@@ -490,7 +484,7 @@ fn format_option(key: BrushParamKey, value: f32) -> String {
 }
 
 fn option_label(world: &World, text: String, frame: Handle<Val<IRect>>, common: WidgetCommon) {
-    let theme = world.single_fetch::<LegacyThemeVal>();
+    let theme = world.fetch(common.theme);
 
     let rect = world.build(Transform::new(
         TransformValue {
@@ -528,13 +522,13 @@ fn option_label(world: &World, text: String, frame: Handle<Val<IRect>>, common: 
         },
         order: 100,
         common,
-        modulate: theme.distinct,
+        modulate: theme.color.on_surface,
         outdated: false,
     });
 }
 
 fn option_desc(world: &World, text: String, frame: Handle<Val<IRect>>, common: WidgetCommon) {
-    let theme = world.single_fetch::<LegacyThemeVal>();
+    let theme = world.fetch(common.theme);
 
     let rect = world.build(Transform::new(
         TransformValue {
@@ -572,7 +566,7 @@ fn option_desc(world: &World, text: String, frame: Handle<Val<IRect>>, common: W
         },
         order: 100,
         common,
-        modulate: theme.gray4,
+        modulate: theme.color.on_surface_variant,
         outdated: false,
     });
 }

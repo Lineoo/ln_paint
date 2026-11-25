@@ -3,7 +3,7 @@ use ln_world::{Element, Handle, World};
 
 use crate::{
     paint::wrapper::LayerPage,
-    render::nest::{NestAttr, NestBuilder, NestRect},
+    render::nest::{NestAttr, NestBuilder},
     ui::{
         common::WidgetCommon,
         i18n::{tr, trp},
@@ -12,9 +12,8 @@ use crate::{
             rrect::RRect,
             text::{Text, TextAttr},
         },
-        theme::LegacyThemeVal,
         widget::{
-            button::{Button, ButtonClick},
+            button::{Button, ButtonClick, ButtonTheme},
             container::Container,
         },
     },
@@ -34,19 +33,19 @@ impl Element for LayerSelectionPanel {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let theme = world.single_fetch::<LegacyThemeVal>();
+        let theme = world.fetch(self.common.theme);
 
         let attr = NestAttr::default();
-        let (panel, inner, common) = world.build(NestBuilder {
+        let (panel, local, common) = world.build(NestBuilder {
             rect: self.rect,
             common: self.common,
             attr,
         });
         world.insert(Container {
             nest: panel,
-            restriction: inner,
+            theme: self.common.theme,
+            restriction: local,
         });
-        let local = world.build(NestRect { source: panel });
 
         let doc_label_rect = world.build(Transform::new(
             TransformValue::anchor((0.0, 1.0), IRect::new(28, -22 - 18, 28 + 32, -22)),
@@ -67,7 +66,7 @@ impl Element for LayerSelectionPanel {
             },
             order: 100,
             common,
-            modulate: theme.distinct,
+            modulate: theme.color.on_surface,
             outdated: false,
         });
 
@@ -96,7 +95,7 @@ impl Element for LayerSelectionPanel {
             common,
             rect: div_rect,
             order: 0,
-            color: theme.gray2,
+            color: theme.color.surface_container,
             radius: 0.0,
             width: 0.0,
         });
@@ -120,7 +119,7 @@ impl Element for LayerSelectionPanel {
             },
             order: 100,
             common,
-            modulate: theme.distinct,
+            modulate: theme.color.on_surface,
             outdated: false,
         });
 
@@ -151,12 +150,9 @@ impl Element for LayerSelectionPanel {
                 .listen(active)
                 .finish();
             let layer0_button = world.insert(Button {
-                common: WidgetCommon {
-                    camera: common.camera,
-                    visible: self.common.visible,
-                },
+                common,
                 rect: button_rect,
-                theme: theme.button(),
+                theme: ButtonTheme::surface(&theme),
                 image: None,
                 selected,
                 hovering: world.insert(Val::new(false)),
@@ -199,7 +195,7 @@ impl Element for LayerSelectionPanel {
                 },
                 order: 100,
                 common,
-                modulate: theme.distinct,
+                modulate: theme.color.on_surface,
                 outdated: false,
             });
 

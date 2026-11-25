@@ -27,7 +27,7 @@ use crate::{
     },
     save::Save,
     ui::{
-        theme::{LegacyTheme, LegacyThemeVal},
+        theme::Theme,
         widget::area::{Area, AreaMode},
     },
     unit::{FI64Ext, IRect},
@@ -251,13 +251,10 @@ impl Element for LayerDrag {
                     log::debug!("{}", world.stat_deps());
                 }
                 KeyCode::F5 if press => {
-                    let mut theme = world.single_fetch_mut::<LegacyTheme>();
-                    if theme.distinct.x == 1.0 {
-                        *theme = LegacyTheme::light_mode();
-                    } else {
-                        *theme = LegacyTheme::dark_mode();
-                    }
-                    world.queue_trigger(theme.handle(), ValChanged);
+                    let theme = world.single_fetch::<Theme>();
+                    let mut dark = world.fetch_mut(theme.dark);
+                    dark.val = !dark.val;
+                    world.queue_trigger(dark.handle(), ValChanged);
                 }
                 _ => (),
             }
@@ -771,7 +768,8 @@ impl Element for LayerDraw {
                     (LayerInputMode::Area, _) => {
                         let container = world.fetch(container);
                         let camera = world.fetch(container.child);
-                        let theme = world.single_fetch::<LegacyThemeVal>();
+                        // TODO Theme is not singleton
+                        let theme = world.single_fetch::<Theme>();
                         let start_position = camera.screen_to_world(center);
                         let rect = world.insert(Val::new(IRect::new_half(
                             start_position.q32_round(),
@@ -781,7 +779,7 @@ impl Element for LayerDraw {
                         let area = world.insert(Area {
                             common: page.common,
                             rect,
-                            color: theme.theme,
+                            color: theme.color.primary,
                             mode,
                         });
                         LayerDrawState::CreateArea {

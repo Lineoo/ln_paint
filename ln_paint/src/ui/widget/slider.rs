@@ -11,7 +11,6 @@ use crate::{
             rrect::RRect,
             text::{Text, TextAttr},
         },
-        theme::{LegacyTheme, LegacyThemeVal},
     },
     unit::{Axis, FI64Ext, IRect},
     val::{Val, ValBind, ValChanged},
@@ -42,55 +41,61 @@ impl Element for Slider {
         world.dependency(handle, self.rect);
         world.dependency(handle, self.common.visible);
 
-        let theme = world.single_fetch::<LegacyTheme>();
-        let theme_val = world.single_fetch::<LegacyThemeVal>();
+        let theme = world.fetch(self.common.theme);
         let rect = world.fetch(self.rect).val;
         let value = world.fetch(self.value).val;
 
         let position = into_position(rect, self.axis, value);
         let back_rect_anim = world.insert(Val::new(back_rect(rect, self.axis)));
-        let back_rect_val = world.build(Animator::new(back_rect_anim, theme.anim_factor));
+        let back_rect_val = world.build(Animator::new(back_rect_anim, theme.animation));
         let front_rect_val = world.insert(Val::new(front_rect(rect, self.axis, position)));
         let knob_rect_val = world.insert(Val::new(knob_rect(rect, self.axis, position)));
         let knob_split_rect_val =
             world.insert(Val::new(knob_split_rect(rect, self.axis, position)));
         let pressed = world.insert(Val::new(false));
 
-        let knob_color_anim = ValBind::new(world, move |world| {
-            let theme = world.single_fetch::<LegacyThemeVal>();
+        let knob_color_val = ValBind::new(world, move |world| {
+            let this = world.fetch(handle);
+            let theme = world.fetch(this.common.theme);
+            let color = world.fetch(theme.color.primary).val;
+            let on_color = world.fetch(theme.color.on_primary).val;
             let pressed_val = world.fetch(pressed).val;
-            match pressed_val {
-                true => world.fetch(theme.gray1).val,
-                false => world.fetch(theme.gray0).val,
-            }
+            let factor = match pressed_val {
+                true => world.fetch(theme.state.press).val,
+                false => 0.0,
+            };
+            color * (1. - factor) + on_color * factor
         })
         .listen(pressed)
-        .listen(theme_val.gray0)
-        .listen(theme_val.gray1)
-        .finish();
-        let knob_color_val = world.build(Animator::new(knob_color_anim, theme.anim_factor));
+        .listen(theme.color.primary)
+        .listen(theme.color.on_primary)
+        .listen(theme.state.press)
+        .animate(theme.animation);
 
-        let knob_split_color_anim = ValBind::new(world, move |world| {
-            let theme = world.single_fetch::<LegacyThemeVal>();
+        let knob_split_color_val = ValBind::new(world, move |world| {
+            let this = world.fetch(handle);
+            let theme = world.fetch(this.common.theme);
+            let color = world.fetch(theme.color.primary_container).val;
+            let on_color = world.fetch(theme.color.on_primary_container).val;
             let pressed_val = world.fetch(pressed).val;
-            match pressed_val {
-                true => world.fetch(theme.theme).val,
-                false => world.fetch(theme.gray1).val,
-            }
+            let factor = match pressed_val {
+                true => world.fetch(theme.state.press).val,
+                false => 0.0,
+            };
+            color * (1. - factor) + on_color * factor
         })
         .listen(pressed)
-        .listen(theme_val.gray1)
-        .listen(theme_val.theme)
-        .finish();
-        let knob_split_color_val =
-            world.build(Animator::new(knob_split_color_anim, theme.anim_factor));
+        .listen(theme.color.primary_container)
+        .listen(theme.color.on_primary_container)
+        .listen(theme.state.press)
+        .animate(theme.animation);
 
         world.insert(RRect {
             common: self.common,
             rect: back_rect_val,
             order: 20,
-            color: theme_val.gray2,
-            radius: theme.roundness,
+            color: theme.color.surface_container,
+            radius: world.fetch(theme.shape.corner_radius).val,
             width: 0.0,
         });
 
@@ -98,8 +103,8 @@ impl Element for Slider {
             common: self.common,
             rect: front_rect_val,
             order: 21,
-            color: theme_val.theme,
-            radius: theme.roundness,
+            color: theme.color.secondary_container,
+            radius: world.fetch(theme.shape.corner_radius).val,
             width: 0.0,
         });
 
@@ -108,7 +113,7 @@ impl Element for Slider {
             rect: knob_rect_val,
             order: 22,
             color: knob_color_val,
-            radius: theme.roundness,
+            radius: world.fetch(theme.shape.corner_radius).val,
             width: 0.0,
         });
 
@@ -225,7 +230,7 @@ impl Element for SliderLabel {
         world.set_autodeps(Some(this));
 
         let source = world.fetch(self.source);
-        let theme = world.single_fetch::<LegacyThemeVal>();
+        let theme = world.fetch(self.common.theme);
         let rect = world.fetch(source.rect).val;
         let value = world.fetch(source.value).val;
 
@@ -237,15 +242,15 @@ impl Element for SliderLabel {
             position,
         )));
         let common = WidgetCommon {
-            camera: self.common.camera,
             visible: source.hover,
+            ..self.common
         };
 
         world.insert(RRect {
             common,
             rect: label_rect,
             order: 100,
-            color: theme.gray0,
+            color: theme.color.surface_container_high,
             radius: LABEL_HALF.y as f32,
             width: 0.0,
         });
@@ -260,7 +265,7 @@ impl Element for SliderLabel {
             },
             order: 150,
             common,
-            modulate: theme.distinct,
+            modulate: theme.color.on_surface,
             outdated: false,
         });
 

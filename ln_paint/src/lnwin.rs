@@ -31,7 +31,7 @@ use crate::{
             text::TextPipeline, vtor::VtorPipeline, wireframe::WireframePipeline,
         },
         section::{desktop_ui::DesktopUi, mobile_ui::MobileUi},
-        theme::{LegacyTheme, LegacyThemeVal},
+        theme::Theme,
         widget::palette::{
             hsl::{HslRingMaterial, HslSquareMaterial},
             oklab::{OklabBarMaterial, OklabPolarMaterial},
@@ -202,11 +202,10 @@ impl Element for Lnwindow {
             world.insert(TextPipeline::from_world(world));
             let save = world.single_fetch::<Save>();
             let theme = match save.sn().dark_mode {
-                None | Some(true) => LegacyTheme::dark_mode(),
-                Some(false) => LegacyTheme::light_mode(),
+                Some(true) => world.insert(Theme::dark(world)),
+                Some(false) => world.insert(Theme::light(world)),
+                None => world.insert(Theme::from_world(world)),
             };
-            let theme = world.insert(theme);
-            world.insert(LegacyThemeVal::bind(world, theme));
             drop(save);
 
             world.flush();
@@ -223,7 +222,11 @@ impl Element for Lnwindow {
                 zoom: i64::q32_from_f64(lnwindow.scale_factor().log2()),
             }));
             let visible = world.insert(Val::new(true));
-            let common = WidgetCommon { camera, visible };
+            let common = WidgetCommon {
+                camera,
+                visible,
+                theme,
+            };
             world.insert(UICamera(camera));
             drop(lnwindow);
 

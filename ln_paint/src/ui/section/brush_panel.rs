@@ -26,7 +26,6 @@ use crate::{
             text::{Text, TextAttr},
         },
         section::settings::SettingPanel,
-        theme::{LegacyTheme, LegacyThemeVal},
         widget::{
             button::{Button, ButtonClick, ButtonImage, ButtonTheme},
             container::Container,
@@ -51,14 +50,12 @@ impl Element for BrushPanel {
         world.scope("brush_panel");
         world.set_autodeps(Some(this));
 
-        let theme = world.single_fetch::<LegacyThemeVal>();
-
         let list_rect = world.insert(Val::new(IRect::default()));
         let list_visible = world.insert(Val::new(false));
         world.insert(BrushListPanel {
             common: WidgetCommon {
-                camera: self.common.camera,
                 visible: list_visible,
+                ..self.common
             },
             rect: list_rect,
         });
@@ -67,8 +64,8 @@ impl Element for BrushPanel {
         let settings_visible = world.insert(Val::new(false));
         world.insert(SettingPanel {
             common: WidgetCommon {
-                camera: self.common.camera,
                 visible: settings_visible,
+                ..self.common
             },
             rect: settings_rect,
         });
@@ -80,7 +77,6 @@ impl Element for BrushPanel {
                 TabEntry {
                     icon: ButtonImage::new(
                         svg_render(include_bytes!("../../../res/interface/brush.svg")),
-                        theme.distinct,
                         12,
                     ),
                     rect: list_rect,
@@ -89,7 +85,6 @@ impl Element for BrushPanel {
                 TabEntry {
                     icon: ButtonImage::new(
                         svg_render(include_bytes!("../../../res/interface/settings.svg")),
-                        theme.distinct,
                         12,
                     ),
                     rect: settings_rect,
@@ -111,8 +106,7 @@ impl Element for BrushListPanel {
         world.scope("brush_list_panel");
         world.set_autodeps(Some(this));
 
-        let theme = world.single_fetch::<LegacyTheme>();
-        let theme_val = world.single_fetch::<LegacyThemeVal>();
+        let theme = world.fetch(self.common.theme);
         let page = world.single_fetch::<LayerPage>();
 
         let count = page.brushes.len();
@@ -136,6 +130,7 @@ impl Element for BrushListPanel {
         });
         world.insert(Container {
             nest: container,
+            theme: self.common.theme,
             restriction,
         });
 
@@ -169,12 +164,7 @@ impl Element for BrushListPanel {
             let button = world.insert(Button {
                 common,
                 rect: button_rect,
-                theme: ButtonTheme {
-                    idle_color: theme_val.gray2,
-                    hover_color: theme_val.gray2,
-                    press_color: theme_val.gray2,
-                    selected_color: theme_val.gray2,
-                },
+                theme: ButtonTheme::surface(&theme),
                 image: None,
                 selected,
                 hovering: world.insert(Val::new(false)),
@@ -183,24 +173,25 @@ impl Element for BrushListPanel {
             let outline_rect =
                 world.build(Transform::new(TransformValue::shrink(-2, -2), button_rect));
             let outline_color_anim = ValBind::new(world, move |world| {
-                let theme = world.single_fetch::<LegacyThemeVal>();
+                let this = world.fetch(this);
+                let theme = world.fetch(this.common.theme);
                 let selected_val = world.fetch(selected).val;
                 match selected_val {
-                    true => world.fetch(theme.theme).val,
-                    false => world.fetch(theme.gray2).val,
+                    true => world.fetch(theme.color.primary).val,
+                    false => world.fetch(theme.color.surface).val,
                 }
             })
             .listen(selected)
-            .listen(theme_val.theme)
-            .listen(theme_val.gray2)
+            .listen(theme.color.primary)
+            .listen(theme.color.surface)
             .finish();
-            let outline_color = world.build(Animator::new(outline_color_anim, theme.anim_factor));
+            let outline_color = world.build(Animator::new(outline_color_anim, theme.animation));
             world.insert(RRect {
                 common,
                 rect: outline_rect,
                 order: 9,
                 color: outline_color,
-                radius: theme.roundness,
+                radius: world.fetch(theme.shape.corner_radius).val,
                 width: 0.0,
             });
 
@@ -238,7 +229,7 @@ impl Element for BrushListPanel {
                 rect: label_rect,
                 order: 150,
                 common,
-                modulate: theme_val.distinct,
+                modulate: theme.color.on_surface,
                 outdated: false,
             });
 
@@ -266,10 +257,10 @@ impl Element for BrushListPanel {
 
             let preview = world.insert(world.build(BrushPreviewDescriptor {
                 common,
-                background: theme_val.gray2,
-                c0: theme_val.c0,
-                c1: theme_val.gray2,
-                bc: theme_val.gray4,
+                background: theme.color.surface,
+                c0: theme.color.tertiary_container,
+                c1: theme.color.surface,
+                bc: theme.color.primary,
                 rect: preview_rect,
                 brush: page.brushes[i].brush.dup(),
             }));

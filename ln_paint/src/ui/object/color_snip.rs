@@ -12,7 +12,6 @@ use crate::{
             transform::{Transform, TransformValue},
         },
         renderer::{canvas::Canvas, rrect::RRect, svg::svg_render},
-        theme::{LegacyTheme, LegacyThemeVal},
     },
     unit::{FI64Ext, IRect},
     val::{Val, ValBind, ValChanged},
@@ -37,8 +36,7 @@ impl Element for ColorSnip {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let theme = world.single_fetch::<LegacyTheme>();
-        let theme_val = world.single_fetch::<LegacyThemeVal>();
+        let theme = world.fetch(self.common.theme);
         let input = world.single::<LayerDrag>();
         let visible = self.common.visible;
         let base = mul_alpha(srgb_gamma_decode(self.attr.color));
@@ -46,7 +44,7 @@ impl Element for ColorSnip {
         let hover = world.insert(Val::new(false));
         let pressed = world.insert(Val::new(false));
 
-        let shadow_offset = theme.shadow_offset.as_ivec2();
+        let shadow_offset = IVec2::ZERO;
         let shadow_rect = world.build(Transform::new(
             TransformValue::shift(shadow_offset.x, shadow_offset.y),
             self.rect,
@@ -55,9 +53,9 @@ impl Element for ColorSnip {
             common: self.common,
             rect: shadow_rect,
             order: 9,
-            color: theme_val.shadow_color,
-            radius: theme.roundness,
-            width: theme.shadow_blur,
+            color: theme.color.shadow,
+            radius: world.fetch(theme.shape.corner_radius).val,
+            width: world.fetch(theme.shape.shadow_width).val,
         });
 
         let color = ValBind::new(world, move |world| match world.fetch(pressed).val {
@@ -66,18 +64,18 @@ impl Element for ColorSnip {
         })
         .listen(pressed)
         .finish();
-        let color = world.build(Animator::new(color, theme.anim_factor));
+        let color = world.build(Animator::new(color, theme.animation));
 
         world.insert(RRect {
             common: self.common,
             rect: self.rect,
             order: 10,
             color,
-            radius: theme.roundness,
+            radius: world.fetch(theme.shape.corner_radius).val,
             width: 0.0,
         });
 
-        let distinct = theme_val.distinct;
+        let distinct = theme.color.on_surface;
         let icon_modulate = ValBind::new(world, move |world| {
             let hover = world.fetch(hover).val;
             world
@@ -88,12 +86,12 @@ impl Element for ColorSnip {
         .listen(hover)
         .listen(distinct)
         .finish();
-        let icon_modulate = world.build(Animator::new(icon_modulate, theme.anim_factor));
+        let icon_modulate = world.build(Animator::new(icon_modulate, theme.animation));
         let icon = svg_render(include_bytes!("../../../res/interface/pipette.svg"));
         world.insert(Canvas {
             common: WidgetCommon {
-                camera: self.common.camera,
                 visible,
+                ..self.common
             },
             rect: world.build(Transform::new(
                 TransformValue::anchor((0.5, 0.5), IRect::new_half(IVec2::ZERO, UVec2::splat(12))),

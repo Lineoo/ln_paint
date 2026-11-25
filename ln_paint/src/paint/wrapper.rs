@@ -195,6 +195,7 @@ impl LayerPage {
         let cursor_common = WidgetCommon {
             camera: ui_camera,
             visible: cursor_visible,
+            theme: common.theme,
         };
         world.insert(RRect {
             common: cursor_common,

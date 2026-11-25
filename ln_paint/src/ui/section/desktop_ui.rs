@@ -27,9 +27,8 @@ use crate::{
             brush_panel::BrushListPanel, color_picker::LayerOklabPalette, debug_panel::DebugPanel,
             layer_selection::LayerSelectionPanel, settings::SettingPanel,
         },
-        theme::LegacyThemeVal,
         widget::{
-            button::{Button, ButtonClick, ButtonImage, ButtonToggle},
+            button::{Button, ButtonClick, ButtonImage, ButtonTheme, ButtonToggle},
             panel::{Panel, PanelAttr},
             slider::{Slider, SliderLabel, SliderValue},
             tabs::{TabEntry, Tabs},
@@ -166,7 +165,7 @@ impl Element for ToolBar {
         world.dependency(this, self.common.visible);
 
         let page = world.single::<LayerPage>();
-        let theme = world.single_fetch::<LegacyThemeVal>();
+        let theme = world.fetch(self.common.theme);
 
         let attr = NestAttr {
             // cause we need the slider label to display
@@ -193,8 +192,8 @@ impl Element for ToolBar {
                 world.insert(Button {
                     common,
                     rect,
-                    theme: theme.button(),
-                    image: Some(ButtonImage::new(svg_render(image_bytes), theme.distinct, 8)),
+                    theme: ButtonTheme::surface(&theme),
+                    image: Some(ButtonImage::new(svg_render(image_bytes), 8)),
                     selected,
                     hovering: world.insert(Val::new(false)),
                 })
@@ -267,7 +266,7 @@ impl Element for ToolBar {
         let slider = world.insert(Slider {
             common: WidgetCommon {
                 camera: common.camera,
-                visible: self.common.visible,
+                ..self.common
             },
             rect: slider_rect,
             axis: Axis::Right,
@@ -356,7 +355,7 @@ impl Element for StatusBar {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let theme = world.single_fetch::<LegacyThemeVal>();
+        let theme = world.fetch(self.common.theme);
 
         let attr = NestAttr::default();
         let (_, inner, common) = world.build(NestBuilder {
@@ -398,7 +397,7 @@ impl Element for StatusBar {
             },
             order: 120,
             common,
-            modulate: theme.gray3,
+            modulate: theme.color.on_surface,
             outdated: false,
         });
     }
@@ -499,14 +498,12 @@ impl Element for VerbosePanel {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let theme = world.single_fetch::<LegacyThemeVal>();
-
         let brush_rect = world.insert(Val::new(IRect::default()));
         let brush_visible = world.insert(Val::new(false));
         world.insert(BrushListPanel {
             common: WidgetCommon {
-                camera: self.common.camera,
                 visible: brush_visible,
+                ..self.common
             },
             rect: brush_rect,
         });
@@ -515,8 +512,8 @@ impl Element for VerbosePanel {
         let settings_visible = world.insert(Val::new(false));
         world.insert(SettingPanel {
             common: WidgetCommon {
-                camera: self.common.camera,
                 visible: settings_visible,
+                ..self.common
             },
             rect: settings_rect,
         });
@@ -525,8 +522,8 @@ impl Element for VerbosePanel {
         let layer_visible = world.insert(Val::new(false));
         world.insert(LayerSelectionPanel {
             common: WidgetCommon {
-                camera: self.common.camera,
                 visible: layer_visible,
+                ..self.common
             },
             rect: layer_rect,
         });
@@ -535,8 +532,8 @@ impl Element for VerbosePanel {
         let debug_visible = world.insert(Val::new(false));
         world.insert(DebugPanel {
             common: WidgetCommon {
-                camera: self.common.camera,
                 visible: debug_visible,
+                ..self.common
             },
             rect: debug_rect,
         });
@@ -548,7 +545,6 @@ impl Element for VerbosePanel {
                 TabEntry {
                     icon: ButtonImage::new(
                         svg_render(include_bytes!("../../../res/interface/brush.svg")),
-                        theme.distinct,
                         12,
                     ),
                     rect: brush_rect,
@@ -557,7 +553,6 @@ impl Element for VerbosePanel {
                 TabEntry {
                     icon: ButtonImage::new(
                         svg_render(include_bytes!("../../../res/interface/settings.svg")),
-                        theme.distinct,
                         12,
                     ),
                     rect: settings_rect,
@@ -566,7 +561,6 @@ impl Element for VerbosePanel {
                 TabEntry {
                     icon: ButtonImage::new(
                         svg_render(include_bytes!("../../../res/interface/layers.svg")),
-                        theme.distinct,
                         12,
                     ),
                     rect: layer_rect,
@@ -575,7 +569,6 @@ impl Element for VerbosePanel {
                 TabEntry {
                     icon: ButtonImage::new(
                         svg_render(include_bytes!("../../../res/interface/bug.svg")),
-                        theme.distinct,
                         12,
                     ),
                     rect: debug_rect,

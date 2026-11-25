@@ -1,3 +1,4 @@
+use glam::IVec2;
 use ln_world::{Element, Handle, HandleGeneric, World};
 
 use crate::{
@@ -6,7 +7,6 @@ use crate::{
         common::WidgetCommon,
         layout::transform::{Transform, TransformValue},
         renderer::rrect::RRect,
-        theme::{LegacyTheme, LegacyThemeVal},
     },
     unit::IRect,
     val::Val,
@@ -30,12 +30,11 @@ impl Panel {
         world.dependency(handle, self.rect);
         world.dependency(handle, self.common.visible);
 
-        let theme = world.single_fetch::<LegacyTheme>();
-        let theme_val = world.single_fetch::<LegacyThemeVal>();
-        let shadow_offset = theme.shadow_offset.as_ivec2();
-        let shadow_blur = theme.shadow_blur;
+        let theme = world.fetch(self.common.theme);
+        let shadow_offset = IVec2::ZERO;
+        let shadow_blur = world.fetch(theme.shape.shadow_width).val;
         let roundness = match self.attr.round {
-            true => theme.roundness,
+            true => world.fetch(theme.shape.corner_radius).val,
             false => 0.0,
         };
 
@@ -43,7 +42,7 @@ impl Panel {
             common: self.common,
             rect: self.rect,
             order: 0,
-            color: theme_val.gray1,
+            color: theme.color.surface,
             radius: roundness,
             width: 0.0,
         });
@@ -55,7 +54,7 @@ impl Panel {
                 common: self.common,
                 rect: shadow_rect,
                 order: -1,
-                color: theme_val.shadow_color,
+                color: theme.color.shadow,
                 radius: roundness,
                 width: shadow_blur,
             });

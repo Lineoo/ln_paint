@@ -223,3 +223,24 @@ fn compute_max_saturation(a: f32, b: f32) -> f32 {
 
     s - f * f1 / (f1 * f1 - 0.5 * f * f2)
 }
+
+#[cfg(test)]
+mod test {
+    use glam::Vec4;
+
+    use crate::color::{
+        oklab::{oklab_to_linear_srgb, oklch_to_oklab},
+        srgb::srgb_gamma_encode,
+    };
+
+    #[test]
+    fn general() {
+        let surf = Vec4::new(0.06, 0.0, 0.0, 1.0);
+        let surfc = Vec4::new(0.12, 0.0, 0.0, 1.0);
+        println!(
+            "{} {}",
+            srgb_gamma_encode(oklab_to_linear_srgb(oklch_to_oklab(surf))),
+            srgb_gamma_encode(oklab_to_linear_srgb(oklch_to_oklab(surfc)))
+        )
+    }
+}

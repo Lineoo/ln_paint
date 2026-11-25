@@ -76,8 +76,8 @@ impl Area {
 
         for index in 0..HANDLE_COUNT {
             let common = WidgetCommon {
-                camera: self.common.camera,
                 visible: handle_visibles[index],
+                ..self.common
             };
 
             world.insert(RRect {

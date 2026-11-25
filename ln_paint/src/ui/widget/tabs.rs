@@ -13,8 +13,7 @@ use crate::{
             transform::{Transform, TransformEdge, TransformValue},
         },
         renderer::rrect::RRect,
-        theme::{LegacyTheme, LegacyThemeVal},
-        widget::button::{Button, ButtonClick, ButtonImage},
+        widget::button::{Button, ButtonClick, ButtonImage, ButtonTheme},
     },
     unit::IRect,
     val::{Val, ValBind, ValChanged},
@@ -40,18 +39,17 @@ impl Tabs {
         world.dependency(handle, self.rect);
         world.dependency(handle, self.common.visible);
 
-        let theme = world.single_fetch::<LegacyTheme>();
-        let theme_val = world.single_fetch::<LegacyThemeVal>();
+        let theme = world.fetch(self.common.theme);
 
-        let roundness = theme.roundness;
-        let shadow_offset = theme.shadow_offset.as_ivec2();
-        let shadow_blur = theme.shadow_blur;
+        let roundness = world.fetch(theme.shape.corner_radius).val;
+        let shadow_offset = IVec2::ZERO;
+        let shadow_blur = world.fetch(theme.shape.shadow_width).val;
 
         world.insert(RRect {
             common: self.common,
             rect: self.rect,
             order: -10,
-            color: theme_val.gray2,
+            color: theme.color.surface_container,
             radius: roundness,
             width: 0.0,
         });
@@ -64,7 +62,7 @@ impl Tabs {
             common: self.common,
             rect: shadow_rect,
             order: -11,
-            color: theme_val.shadow_color,
+            color: theme.color.shadow,
             radius: roundness,
             width: shadow_blur,
         });
@@ -111,10 +109,7 @@ impl Tabs {
 
         for (i, entry) in self.tabs.iter().enumerate() {
             // FIXME deep duplication
-            let mut icon = entry.icon.clone();
-            let color = world.fetch(icon.modulate).val;
-            icon.modulate = world.insert(Val::new(color));
-            let entry_icon_modulate = icon.modulate;
+            let icon = entry.icon.clone();
 
             let button_rect = world.build(luni.child(LuniChild::default()));
             let active = self.active;
@@ -124,7 +119,13 @@ impl Tabs {
             let button = world.insert(Button {
                 common: self.common,
                 rect: button_rect,
-                theme: theme_val.tab_button(),
+                theme: ButtonTheme {
+                    color: theme.color.surface_container,
+                    on_color: theme.color.on_surface,
+                    active_color: theme.color.primary_container,
+                    active_on_color: theme.color.on_primary_container,
+                    ..ButtonTheme::surface(&theme)
+                },
                 image: Some(icon),
                 selected: button_selected,
                 hovering: world.insert(Val::new(false)),
@@ -136,12 +137,12 @@ impl Tabs {
             ));
             world.insert(RRect {
                 common: WidgetCommon {
-                    camera: self.common.camera,
                     visible: entry.visible,
+                    ..self.common
                 },
                 rect: indicator_rect,
                 order: 100,
-                color: theme_val.theme,
+                color: theme.color.primary,
                 radius: 0.0,
                 width: 0.0,
             });
@@ -156,18 +157,6 @@ impl Tabs {
             })
             .listen(button_selected)
             .listen(self.common.visible)
-            .finish();
-
-            ValBind::attach(world, entry_icon_modulate, move |world| {
-                let theme = world.single_fetch::<LegacyThemeVal>();
-                match world.fetch(button_selected).val {
-                    true => world.fetch(theme.distinct).val,
-                    false => world.fetch(theme.gray4).val,
-                }
-            })
-            .listen(button_selected)
-            .listen(theme_val.distinct)
-            .listen(theme_val.gray4)
             .finish();
 
             world.observer(button, move |&ButtonClick, world| {

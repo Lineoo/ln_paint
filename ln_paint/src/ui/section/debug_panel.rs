@@ -6,7 +6,7 @@ use crate::{
     paint::wrapper::LayerPage,
     render::{
         Render,
-        nest::{NestAttr, NestBuilder, NestRect},
+        nest::{NestAttr, NestBuilder},
     },
     save::Save,
     ui::{
@@ -16,9 +16,8 @@ use crate::{
             svg::svg_render,
             text::{Text, TextAttr},
         },
-        theme::LegacyThemeVal,
         widget::{
-            button::{Button, ButtonClick, ButtonImage, ButtonToggle},
+            button::{Button, ButtonClick, ButtonImage, ButtonTheme, ButtonToggle},
             container::Container,
         },
     },
@@ -38,19 +37,19 @@ impl Element for DebugPanel {
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
 
-        let theme = world.single_fetch::<LegacyThemeVal>();
+        let theme = world.fetch(self.common.theme);
 
         let attr = NestAttr::default();
-        let (container, inner, common) = world.build(NestBuilder {
+        let (container, local, common) = world.build(NestBuilder {
             common: self.common,
             rect: self.rect,
             attr,
         });
         world.insert(Container {
             nest: container,
-            restriction: inner,
+            theme: self.common.theme,
+            restriction: local,
         });
-        let local = world.build(NestRect { source: container });
 
         let text_rect = world.build(Transform::new(TransformValue::shrink(24, 24), local));
         let debug_text = world.insert(Text {
@@ -63,7 +62,7 @@ impl Element for DebugPanel {
             },
             order: 50,
             common,
-            modulate: theme.distinct,
+            modulate: theme.color.on_surface,
             outdated: false,
         });
 
@@ -94,11 +93,11 @@ impl Element for DebugPanel {
             world.insert(Button {
                 common: WidgetCommon {
                     camera: common.camera,
-                    visible: self.common.visible,
+                    ..self.common
                 },
                 rect,
-                theme: theme.button(),
-                image: Some(ButtonImage::new(svg_render(image_bytes), theme.distinct, 8)),
+                theme: ButtonTheme::surface(&theme),
+                image: Some(ButtonImage::new(svg_render(image_bytes), 8)),
                 selected: world.insert(Val::new(false)),
                 hovering: world.insert(Val::new(false)),
             })

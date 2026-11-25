@@ -4,10 +4,7 @@ use ln_world::{Element, Handle, World};
 use crate::{
     input::{drag::Drag, pointer::PointerEvent},
     render::nest::Nest,
-    ui::{
-        renderer::rrect::RRect,
-        theme::{LegacyTheme, LegacyThemeVal},
-    },
+    ui::{renderer::rrect::RRect, theme::Theme},
     unit::{FI64Ext, IRect},
     val::{Val, ValChanged},
 };
@@ -17,6 +14,7 @@ use crate::{
 /// - restrict is for scroll
 pub struct Container {
     pub nest: Handle<Nest>,
+    pub theme: Handle<Theme>,
     pub restriction: Handle<Val<IRect>>,
 }
 
@@ -25,16 +23,15 @@ impl Element for Container {
         world.scope("container_deco");
         world.set_autodeps(Some(this));
 
-        let theme = world.single_fetch::<LegacyTheme>();
-        let theme_val = world.single_fetch::<LegacyThemeVal>();
+        let theme = world.fetch(self.theme);
         let nest = world.fetch(self.nest);
 
         world.insert(RRect {
             common: nest.common,
             rect: nest.rect,
             order: 10,
-            color: theme_val.gray1,
-            radius: theme.roundness,
+            color: theme.color.surface,
+            radius: world.fetch(theme.shape.corner_radius).val,
             width: 0.0,
         });
 
