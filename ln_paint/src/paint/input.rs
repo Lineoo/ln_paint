@@ -27,7 +27,7 @@ use crate::{
     },
     save::Save,
     ui::{
-        theme::Theme,
+        theme::{Theme, ThemeScheme},
         widget::area::{Area, AreaMode},
     },
     unit::{FI64Ext, IRect},
@@ -252,9 +252,16 @@ impl Element for LayerDrag {
                 }
                 KeyCode::F5 if press => {
                     let theme = world.single_fetch::<Theme>();
-                    let mut dark = world.fetch_mut(theme.dark);
-                    dark.val = !dark.val;
-                    world.queue_trigger(dark.handle(), ValChanged);
+                    let mut scheme = world.fetch_mut(theme.scheme);
+                    scheme.val = match scheme.val {
+                        ThemeScheme::Dark => ThemeScheme::DarkNeutral,
+                        ThemeScheme::DarkNeutral => ThemeScheme::Light,
+                        ThemeScheme::Light => ThemeScheme::LightNeutral,
+                        ThemeScheme::LightNeutral => ThemeScheme::Neutral,
+                        ThemeScheme::Neutral => ThemeScheme::NeutralVariant,
+                        ThemeScheme::NeutralVariant => ThemeScheme::Dark,
+                    };
+                    world.queue_trigger(scheme.handle(), ValChanged);
                 }
                 _ => (),
             }

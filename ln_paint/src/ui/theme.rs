@@ -11,7 +11,7 @@ pub struct Theme {
     pub state: ThemeState,
     pub shape: ThemeShape,
     pub hue: Handle<Val<f32>>,
-    pub dark: Handle<Val<bool>>,
+    pub scheme: Handle<Val<ThemeScheme>>,
     pub animation: f32,
 }
 
@@ -58,16 +58,26 @@ pub struct ThemeShape {
     pub corner_radius: Handle<Val<f32>>,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum ThemeScheme {
+    Dark,
+    DarkNeutral,
+    Light,
+    LightNeutral,
+    Neutral,
+    NeutralVariant,
+}
+
 #[rustfmt::skip]
 mod consts {
     use std::f32::consts::TAU;
 
-    // Chroma
-    pub const PRIMARY           : f32 = 0.131;
-    pub const SECONDARY         : f32 = 0.044;
-    pub const TERTIARY          : f32 = 0.065;
-    pub const NEUTRAL_VARIANT   : f32 = 0.022;
-    pub const NEUTRAL           : f32 = 0.011;
+    // Chroma (standard, neutral)
+    pub const PRIMARY           : (f32, f32) = (0.131, 0.044);
+    pub const SECONDARY         : (f32, f32) = (0.044, 0.022);
+    pub const TERTIARY          : (f32, f32) = (0.065, 0.065);
+    pub const NEUTRAL_VARIANT   : (f32, f32) = (0.022, 0.011);
+    pub const NEUTRAL           : (f32, f32) = (0.011, 0.000);
 
     // Hue
     pub const TERTIARY_HUE      : f32 = TAU / 6.;
@@ -78,26 +88,26 @@ mod consts {
     pub const PRESS             : f32 = 0.10;
     pub const DRAG              : f32 = 0.16;
 
-    // Tone
-    pub const COLOR                     : (u32, u32) = ( 40, 80);
-    pub const ON_COLOR                  : (u32, u32) = (100, 20);
-    pub const COLOR_CONTAINER           : (u32, u32) = ( 90, 30);
-    pub const ON_COLOR_CONTAINER        : (u32, u32) = ( 30, 90);
-    pub const SURFACE                   : (u32, u32) = ( 98,  6);
-    pub const ON_SURFACE                : (u32, u32) = ( 10, 90);
-    pub const SURFACE_VARIANT           : (u32, u32) = ( 90, 30);
-    pub const ON_SURFACE_VARIANT        : (u32, u32) = ( 30, 80);
-    pub const SURFACE_CONTAINER_HIGHEST : (u32, u32) = ( 90, 22);
-    pub const SURFACE_CONTAINER_HIGH    : (u32, u32) = ( 92, 17);
-    pub const SURFACE_CONTAINER         : (u32, u32) = ( 94, 12);
-    pub const SURFACE_CONTAINER_LOW     : (u32, u32) = ( 96, 10);
-    pub const SURFACE_CONTAINER_LOWEST  : (u32, u32) = (  0,  4);
-    pub const INVERSE_SURFACE           : (u32, u32) = ( 20, 90);
-    pub const INVERSE_ON_SURFACE        : (u32, u32) = ( 95, 20);
-    pub const OUTLINE                   : (u32, u32) = ( 50, 60);
-    pub const OUTLINE_VARIANT           : (u32, u32) = ( 80, 30);
-    pub const SCRIM                     : (u32, u32) = (  0,  0);
-    pub const SHADOW                    : (u32, u32) = (  0,  0);
+    // Tone (Light, Dark, Neutral)
+    pub const COLOR                     : (f32, f32, f32) = (0.40, 0.80, 0.30);
+    pub const ON_COLOR                  : (f32, f32, f32) = (1.00, 0.20, 0.90);
+    pub const COLOR_CONTAINER           : (f32, f32, f32) = (0.90, 0.30, 0.80);
+    pub const ON_COLOR_CONTAINER        : (f32, f32, f32) = (0.30, 0.90, 0.30);
+    pub const SURFACE                   : (f32, f32, f32) = (0.98, 0.06, 0.50);
+    pub const ON_SURFACE                : (f32, f32, f32) = (0.10, 0.90, 1.00);
+    pub const SURFACE_VARIANT           : (f32, f32, f32) = (0.90, 0.30, 0.40);
+    pub const ON_SURFACE_VARIANT        : (f32, f32, f32) = (0.30, 0.80, 0.90);
+    pub const SURFACE_CONTAINER_HIGHEST : (f32, f32, f32) = (0.90, 0.22, 0.30);
+    pub const SURFACE_CONTAINER_HIGH    : (f32, f32, f32) = (0.92, 0.17, 0.35);
+    pub const SURFACE_CONTAINER         : (f32, f32, f32) = (0.94, 0.12, 0.40);
+    pub const SURFACE_CONTAINER_LOW     : (f32, f32, f32) = (0.96, 0.10, 0.45);
+    pub const SURFACE_CONTAINER_LOWEST  : (f32, f32, f32) = (1.00, 0.04, 0.50);
+    pub const INVERSE_SURFACE           : (f32, f32, f32) = (0.20, 0.90, 1.00);
+    pub const INVERSE_ON_SURFACE        : (f32, f32, f32) = (0.95, 0.20, 0.00);
+    pub const OUTLINE                   : (f32, f32, f32) = (0.50, 0.60, 0.10);
+    pub const OUTLINE_VARIANT           : (f32, f32, f32) = (0.80, 0.30, 0.20);
+    pub const SCRIM                     : (f32, f32, f32) = (0.00, 0.00, 0.00);
+    pub const SHADOW                    : (f32, f32, f32) = (0.00, 0.00, 0.00);
 }
 
 impl Theme {
@@ -109,7 +119,7 @@ impl Theme {
         Theme::source(
             world,
             world.insert(Val::new(0.67)),
-            world.insert(Val::new(false)),
+            world.insert(Val::new(ThemeScheme::Light)),
         )
     }
 
@@ -117,41 +127,47 @@ impl Theme {
         Theme::source(
             world,
             world.insert(Val::new(0.67)),
-            world.insert(Val::new(true)),
+            world.insert(Val::new(ThemeScheme::Dark)),
         )
     }
 
-    pub fn source(world: &World, hue: Handle<Val<f32>>, dark: Handle<Val<bool>>) -> Self {
+    pub fn source(world: &World, hue: Handle<Val<f32>>, scheme: Handle<Val<ThemeScheme>>) -> Self {
         Theme {
-            color: ThemeColor::source(world, hue, dark),
+            color: ThemeColor::source(world, hue, scheme),
             state: ThemeState::from_world(world),
             shape: ThemeShape::from_world(world),
             hue,
-            dark,
+            scheme,
             animation: 30.0,
         }
     }
 }
 
 impl ThemeColor {
-    pub fn source(world: &World, hue: Handle<Val<f32>>, dark: Handle<Val<bool>>) -> Self {
+    pub fn source(world: &World, hue: Handle<Val<f32>>, scheme: Handle<Val<ThemeScheme>>) -> Self {
         use consts::*;
 
-        let bind = |(l_light, l_dark), c, h| {
+        let bind = |(l_light, l_dark, l_neutral), (c_standard, c_neutral), h| {
             ValBind::new(world, move |world| {
+                use ThemeScheme::*;
+
                 let hue = world.fetch(hue).val;
-                let dark = world.fetch(dark).val;
-                let l = match dark {
-                    true => l_dark as f32 / 100.0,
-                    false => l_light as f32 / 100.0,
+                let scheme = world.fetch(scheme).val;
+                // tweak OkLab's L value to get it closer to CIEDE2000
+                let l = match scheme {
+                    Dark | DarkNeutral => f32::powf(l_dark, 0.62),
+                    Light | LightNeutral => f32::powf(l_light, 0.96),
+                    Neutral | NeutralVariant => l_neutral,
                 };
-                // simple tweak to OkLab's L value (get it closer to CIEDE2000)
-                let l_ = l.powf(0.73);
-                let oklch = Oklch(Vec4::new(l_, c, hue + h, 1.0));
+                let c = match scheme {
+                    Dark | Light | NeutralVariant => c_standard,
+                    DarkNeutral | LightNeutral | Neutral => c_neutral,
+                };
+                let oklch = Oklch(Vec4::new(l, c, hue + h, 1.0));
                 oklch.to_oklab().to_srgb_linear()
             })
             .listen(hue)
-            .listen(dark)
+            .listen(scheme)
             .finish()
         };
 
@@ -204,8 +220,8 @@ impl ThemeState {
 impl ThemeShape {
     pub fn from_world(world: &World) -> Self {
         ThemeShape {
-            shadow_width: world.insert(Val::new(4.0)),
-            corner_radius: world.insert(Val::new(8.0)),
+            shadow_width: world.insert(Val::new(8.0)),
+            corner_radius: world.insert(Val::new(4.0)),
         }
     }
 }
