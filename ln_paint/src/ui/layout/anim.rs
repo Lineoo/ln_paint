@@ -4,11 +4,14 @@ use glam::Vec4;
 use ln_world::{Descriptor, Element, Handle, World};
 
 use crate::{
+    color::srgb::SrgbLinear,
     lnwin::Lnwindow,
     render::RenderPrepareControl,
     unit::IRect,
     val::{Val, ValChanged},
 };
+
+// TODO move to val/anim
 
 pub struct Animator<T: AnimationType> {
     pub target: Handle<Val<T>>,
@@ -78,14 +81,12 @@ impl<T: AnimationType> Element for AnimationCore<T> {
 
                 // send event
 
-                let new = T::from_storage(this.src_st);
-                let refresh = changed || new != src.val;
-                if refresh {
-                    src.val = new;
+                if changed || this.src_st != src.val.into_storage() {
+                    src.val = T::from_storage(this.src_st);
                     world.queue_trigger(this.src, ValChanged);
                 }
 
-                if refresh {
+                if changed || this.src_st != src.val.into_storage() {
                     world.single_fetch::<Lnwindow>().window.request_redraw();
                 }
             }),
@@ -106,7 +107,7 @@ impl<T: AnimationType> Element for AnimationCore<T> {
             this.src_st = T::into_storage(dst.val);
             this.dst_st = this.src_st;
             this.last_update = Instant::now();
-            if src.val != dst.val {
+            if src.val.into_storage() != dst.val.into_storage() {
                 src.val = dst.val;
                 world.queue_trigger(this.src, ValChanged);
             }
@@ -147,7 +148,7 @@ fn step<T: AnimationType>(
     changed
 }
 
-pub trait AnimationType: PartialEq + Clone + Copy + Send + 'static {
+pub trait AnimationType: Clone + Copy + Send + 'static {
     type Storage: FloatArray + Send;
     fn into_storage(self) -> Self::Storage;
     fn from_storage(storage: Self::Storage) -> Self;
@@ -186,6 +187,18 @@ impl AnimationType for Vec4 {
 
     fn from_storage(storage: Self::Storage) -> Self {
         storage.into()
+    }
+}
+
+impl AnimationType for SrgbLinear {
+    type Storage = [f32; 4];
+
+    fn into_storage(self) -> Self::Storage {
+        self.0.into()
+    }
+
+    fn from_storage(storage: Self::Storage) -> Self {
+        SrgbLinear(storage.into())
     }
 }
 

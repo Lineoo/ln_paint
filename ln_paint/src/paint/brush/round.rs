@@ -1,8 +1,9 @@
-use glam::{IVec2, UVec2, Vec4};
+use glam::{IVec2, UVec2};
 use ln_world::Element;
 
 use crate::{
     brush_params,
+    color::srgb::Srgb,
     paint::{
         BrushKind, BrushStage, CompositeMode, PaintPipeline, WriteMode,
         brush::{
@@ -19,14 +20,14 @@ pub struct RoundBrush {
     pub flow: BrushParam<f32>,
     pub softness: BrushParam<f32>,
     pub spacing: BrushParam<f32>,
-    pub color: Vec4,
+    pub color: Srgb,
     pub erase: bool,
 }
 
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct RoundDraw {
-    pub color: Vec4,
+    pub color: Srgb,
     pub position: IVec2,
     pub position_fract: UVec2,
     pub softness: f32,

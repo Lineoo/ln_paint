@@ -1,4 +1,4 @@
-use glam::{DVec2, I64Vec2, UVec2, Vec4};
+use glam::{DVec2, I64Vec2, UVec2};
 use ln_world::{Descriptor, Element, Handle, HandleGeneric, World};
 use wgpu::{
     CommandEncoderDescriptor, ComputePassDescriptor, Extent3d, TexelCopyBufferLayout,
@@ -6,7 +6,7 @@ use wgpu::{
 };
 
 use crate::{
-    color::srgb::{mul_alpha, srgb_gamma_decode, srgb_gamma_encode},
+    color::srgb::{Srgb, SrgbLinear, SrgbLinearPremultipliedEncoded},
     input::collider::ToolRectCollider,
     paint::{
         ChunkRenderer, PaintPipeline, Standalone,
@@ -25,13 +25,10 @@ use crate::{
 pub struct BrushPreviewDescriptor {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,
-    pub background: Handle<Val<Vec4>>,
-    /// Brush preview band colors, in L.
-    pub c0: Handle<Val<Vec4>>,
-    pub c1: Handle<Val<Vec4>>,
-    // TODO only for brush list, not for setting preview
-    /// Brush stroke color, in L.
-    pub bc: Handle<Val<Vec4>>,
+    pub bg: Handle<Val<SrgbLinear>>,
+    pub bg_color1: Handle<Val<SrgbLinear>>,
+    pub bg_color2: Handle<Val<SrgbLinear>>,
+    pub brush_color: Handle<Val<SrgbLinear>>,
     pub brush: Box<dyn BrushParams>,
 }
 
@@ -39,12 +36,10 @@ pub struct BrushPreviewDescriptor {
 pub struct BrushPreview {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,
-    pub background: Handle<Val<Vec4>>,
-    /// Brush preview band colors, in S(L).
-    pub c0: Handle<Val<Vec4>>,
-    pub c1: Handle<Val<Vec4>>,
-    /// Brush stroke color, in S(L).
-    pub bc: Handle<Val<Vec4>>,
+    pub bg: Handle<Val<Srgb>>,
+    pub bg_color1: Handle<Val<Srgb>>,
+    pub bg_color2: Handle<Val<Srgb>>,
+    pub brush_color: Handle<Val<Srgb>>,
     pub brush: Box<dyn BrushParams>,
     pub canvas: Handle<Val<Standalone>>,
     pub renderer: ChunkRenderer,
@@ -56,7 +51,7 @@ impl Descriptor for BrushPreviewDescriptor {
 
     fn when_build(self, world: &World) -> Self::Target {
         let page = world.single_fetch::<LayerPage>();
-        let renderer = page.lp.create_render(world.fetch(self.background).val);
+        let renderer = page.lp.create_render(world.fetch(self.bg).val.to_encoded());
         let rect = self.rect;
         let canvas = world.insert_with(move |world| {
             let page = world.single_fetch::<LayerPage>();
@@ -64,16 +59,17 @@ impl Descriptor for BrushPreviewDescriptor {
             let canvas = page.lp.create_standalone(rect);
             Val::new(canvas)
         });
-        let c0 = ValBind::transfer(world, self.c0, |&c0| srgb_gamma_encode(c0));
-        let c1 = ValBind::transfer(world, self.c1, |&c1| srgb_gamma_encode(c1));
-        let bc = ValBind::transfer(world, self.bc, |&bc| srgb_gamma_encode(bc));
+        let bg = ValBind::transfer(world, self.bg, |&c| c.to_srgb());
+        let bg_color1 = ValBind::transfer(world, self.bg_color1, |&c| c.to_srgb());
+        let bg_color2 = ValBind::transfer(world, self.bg_color2, |&c| c.to_srgb());
+        let brush_color = ValBind::transfer(world, self.brush_color, |&c| c.to_srgb());
         BrushPreview {
             common: self.common,
             rect: self.rect,
-            background: self.background,
-            c0,
-            c1,
-            bc,
+            bg,
+            bg_color1,
+            bg_color2,
+            brush_color,
             brush: self.brush,
             canvas,
             renderer,
@@ -112,11 +108,18 @@ impl Element for BrushPreview {
                 let visible = world.fetch(this.common.visible).val;
                 if this.outdated && visible {
                     let page = world.single_fetch::<LayerPage>();
-                    let c0 = world.fetch(this.c0).val;
-                    let c1 = world.fetch(this.c1).val;
-                    let bc = world.fetch(this.bc).val;
+                    let bg_color1 = world.fetch(this.bg_color1).val.to_linear().to_encoded();
+                    let bg_color2 = world.fetch(this.bg_color2).val.to_linear().to_encoded();
+                    let brush_color = world.fetch(this.brush_color).val;
                     let canvas = world.fetch(this.canvas);
-                    Self::generate_preview(&page.lp, &canvas.val, this.brush.as_mut(), c0, c1, bc);
+                    Self::generate_preview(
+                        &page.lp,
+                        &canvas.val,
+                        this.brush.as_mut(),
+                        bg_color1,
+                        bg_color2,
+                        brush_color,
+                    );
                     this.outdated = false;
                 }
             }),
@@ -150,21 +153,22 @@ impl Element for BrushPreview {
             world.queue(move |world| Nest::refresh_camera(world, nest));
         });
 
-        world.observer(self.background, move |ValChanged, world| {
+        world.observer(self.bg, move |ValChanged, world| {
             let this = world.fetch(this);
-            let background_color = world.fetch(this.background).val;
-            this.renderer.write_background(background_color);
+            let background_color = world.fetch(this.bg).val;
+            this.renderer
+                .write_background(background_color.to_linear().to_encoded());
         });
 
-        world.observer(self.c0, move |ValChanged, world| {
+        world.observer(self.bg_color1, move |ValChanged, world| {
             world.fetch_mut(this).outdated = true;
         });
 
-        world.observer(self.c1, move |ValChanged, world| {
+        world.observer(self.bg_color2, move |ValChanged, world| {
             world.fetch_mut(this).outdated = true;
         });
 
-        world.observer(self.bc, move |ValChanged, world| {
+        world.observer(self.brush_color, move |ValChanged, world| {
             world.fetch_mut(this).outdated = true;
         });
     }
@@ -176,15 +180,11 @@ impl BrushPreview {
         lp: &PaintPipeline,
         canvas: &Standalone,
         brush: &mut dyn BrushParams,
-        c0: Vec4,
-        c1: Vec4,
-        distinct: Vec4,
+        bg_color1: SrgbLinearPremultipliedEncoded,
+        bg_color2: SrgbLinearPremultipliedEncoded,
+        brush_color: Srgb,
     ) {
-        let swap = canvas
-            .chunk
-            .read_write
-            .is_none()
-            .then(|| lp.create_standalone(canvas.rect));
+        let swap = (canvas.chunk.read_write.is_none()).then(|| lp.create_standalone(canvas.rect));
 
         let mut encoder = (lp.device).create_command_encoder(&CommandEncoderDescriptor {
             label: Some("preview_paint_clear"),
@@ -201,10 +201,10 @@ impl BrushPreview {
         lp.queue.submit([encoder.finish()]);
 
         if brush.replace_mode() {
-            Self::draw_background(lp, canvas, c0, c1);
+            Self::draw_background(lp, canvas, bg_color1, bg_color2);
         }
 
-        brush.set_color(distinct);
+        brush.set_color(brush_color);
         Self::draw_stroke(lp, canvas, &swap, brush);
     }
 
@@ -233,25 +233,19 @@ impl BrushPreview {
     }
 
     /// Two differently colored halves, left and right, as the preview background.
-    fn draw_background(lp: &PaintPipeline, canvas: &Standalone, c0: Vec4, c1: Vec4) {
+    fn draw_background(
+        lp: &PaintPipeline,
+        canvas: &Standalone,
+        c0: SrgbLinearPremultipliedEncoded,
+        c1: SrgbLinearPremultipliedEncoded,
+    ) {
         let size = canvas.rect.extend;
         if size.x == 0 || size.y == 0 {
             return;
         }
 
-        // Brush colors are S(L), while the canvas stores S(P(L)).
-        let texel = |color: Vec4| {
-            let color = srgb_gamma_encode(mul_alpha(srgb_gamma_decode(color)));
-            [
-                (color.x * 255.0).clamp(0.0, 255.0).round() as u8,
-                (color.y * 255.0).clamp(0.0, 255.0).round() as u8,
-                (color.z * 255.0).clamp(0.0, 255.0).round() as u8,
-                (color.w * 255.0).clamp(0.0, 255.0).round() as u8,
-            ]
-        };
-
-        let left = texel(c0);
-        let right = texel(c1);
+        let left = c0.to_rgba_bytes();
+        let right = c1.to_rgba_bytes();
         let split = size.x / 2;
 
         let mut row = Vec::with_capacity((size.x * 4) as usize);

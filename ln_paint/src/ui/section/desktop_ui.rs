@@ -3,6 +3,7 @@ use glam::{IVec2, UVec2, Vec4};
 use ln_world::{Element, Handle, World};
 
 use crate::{
+    color::oklab::Oklab,
     paint::{
         brush::param::BrushParamKey,
         input::{LayerDrag, LayerDraw},
@@ -455,7 +456,7 @@ impl Element for CommandCenter {
         world.insert(LayerOklabPalette {
             common,
             rect: oklab_rect,
-            oklab: Vec4::new(0.0, 0.0, 0.0, 1.0),
+            oklab: Oklab(Vec4::new(0.0, 0.0, 0.0, 1.0)),
         });
 
         let verbose_rect = world.build(Transform::new(

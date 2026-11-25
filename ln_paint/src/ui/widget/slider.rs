@@ -64,7 +64,7 @@ impl Element for Slider {
                 true => world.fetch(theme.state.press).val,
                 false => 0.0,
             };
-            color * (1. - factor) + on_color * factor
+            color.mix(on_color, factor)
         })
         .listen(pressed)
         .listen(theme.color.primary)
@@ -82,7 +82,7 @@ impl Element for Slider {
                 true => world.fetch(theme.state.press).val,
                 false => 0.0,
             };
-            color * (1. - factor) + on_color * factor
+            color.mix(on_color, factor)
         })
         .listen(pressed)
         .listen(theme.color.primary_container)

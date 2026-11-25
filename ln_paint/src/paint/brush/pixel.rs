@@ -1,10 +1,11 @@
 use std::mem::size_of;
 
-use glam::{I64Vec2, IVec2, UVec2, Vec4};
+use glam::{I64Vec2, IVec2, UVec2};
 use ln_world::Element;
 
 use crate::{
     brush_params,
+    color::srgb::Srgb,
     paint::{
         BrushKind, BrushStage, CompositeMode, DRAWS_ARRAY_CAPACITY, PaintPipeline, WriteMode,
         brush::{Brush, Dab, DrawsProcessor, param::BrushParam},
@@ -15,14 +16,14 @@ use crate::{
 #[derive(Clone)]
 pub struct PixelBrush {
     pub size: BrushParam<f32>,
-    pub color: Vec4,
+    pub color: Srgb,
     pub erase: bool,
 }
 
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct PixelDraw {
-    pub color: Vec4,
+    pub color: Srgb,
     pub position: IVec2,
     pub size: f32,
     pub _pad: u32,

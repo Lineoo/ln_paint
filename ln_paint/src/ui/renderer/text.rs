@@ -5,7 +5,7 @@ use cosmic_text::{
     SwashContent,
 };
 use etagere::{AllocatorOptions, AtlasAllocator, size2};
-use glam::{DVec2, I64Vec2, IVec2, UVec2, Vec2, Vec4};
+use glam::{DVec2, I64Vec2, IVec2, UVec2, Vec2};
 use ln_world::{Element, Handle, World};
 use smallvec::SmallVec;
 use swash::scale::Source;
@@ -15,7 +15,7 @@ use wgpu::{
 };
 
 use crate::{
-    color::srgb::srgb_gamma_decode_f32,
+    color::srgb::{Srgb, SrgbLinear},
     lnwin::Lnwindow,
     render::{MSAA_STATE, Render, RenderDrawControl, RenderPrepareControl, camera::CameraBind},
     shaders::shader_compile,
@@ -33,7 +33,7 @@ pub struct Text {
     pub attr: TextAttr,
     pub order: isize,
     pub common: WidgetCommon,
-    pub modulate: Handle<Val<Vec4>>,
+    pub modulate: Handle<Val<SrgbLinear>>,
     /// will delay text draw to next render prepare phase
     pub outdated: bool,
 }
@@ -672,7 +672,7 @@ impl TextPipeline {
                             true => value / alpha,
                             false => value,
                         };
-                        let linear = srgb_gamma_decode_f32(straight.min(1.0)) * alpha;
+                        let linear = Srgb::decode(straight.min(1.0)) * alpha;
                         *channel = (linear * 255.0).round() as u8;
                     }
                 }

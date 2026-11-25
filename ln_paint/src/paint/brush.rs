@@ -8,10 +8,11 @@ pub mod tint;
 use std::mem::size_of;
 
 use bytemuck::{Pod, Zeroable, bytes_of};
-use glam::{I64Vec2, UVec2, Vec4};
+use glam::{I64Vec2, UVec2};
 use wgpu::{BindGroup, CommandEncoderDescriptor, ComputePass, ComputePassDescriptor};
 
 use crate::{
+    color::srgb::Srgb,
     paint::{
         CacheLayerChunk, CacheLayers, ChunkPool, DRAWS_ARRAY_CAPACITY, PaintPipeline, PlainLayer,
         RawLayer, RawLayerChunk, Standalone, WriteMode,
@@ -872,14 +873,14 @@ impl dyn BrushParams + '_ {
         }
     }
 
-    pub fn color(&self) -> Option<Vec4> {
+    pub fn color(&self) -> Option<Srgb> {
         match self.param(BrushParamKey::Color)? {
             BrushValue::Color(color) => Some(*color),
             _ => None,
         }
     }
 
-    pub fn set_color(&mut self, value: Vec4) {
+    pub fn set_color(&mut self, value: Srgb) {
         if let Some(BrushValueMut::Color(color)) = self.param_mut(BrushParamKey::Color) {
             *color = value;
         }

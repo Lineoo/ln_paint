@@ -1,6 +1,6 @@
 use glam::Vec4;
 
-use crate::paint::brush::Dab;
+use crate::{color::srgb::Srgb, paint::brush::Dab};
 
 #[derive(Clone)]
 pub struct BrushParam<T> {
@@ -35,14 +35,14 @@ pub enum BrushParamKey {
 pub enum BrushValue<'a> {
     Scalar(&'a BrushParam<f32>),
     Vec4(&'a Vec4),
-    Color(&'a Vec4),
+    Color(&'a Srgb),
     Toggle(&'a bool),
 }
 
 pub enum BrushValueMut<'a> {
     Scalar(&'a mut BrushParam<f32>),
     Vec4(&'a mut Vec4),
-    Color(&'a mut Vec4),
+    Color(&'a mut Srgb),
     Toggle(&'a mut bool),
 }
 

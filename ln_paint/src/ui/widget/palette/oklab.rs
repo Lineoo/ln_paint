@@ -6,10 +6,7 @@ use lyon::{
 };
 
 use crate::{
-    color::{
-        oklab::{oklab_clip_to_srgb_gamut, oklab_to_linear_srgb},
-        srgb::mul_alpha,
-    },
+    color::{oklab::Oklab, srgb::SrgbLinear},
     input::{collider::ToolRectCollider, pointer::PointerEvent},
     shaders::shader_compile,
     ui::{
@@ -29,48 +26,48 @@ const THUMB_RADIUS: f32 = 5.0;
 pub struct OklabPolar {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,
-    pub oklab: Vec4,
+    pub oklab: Oklab,
 }
 
 pub struct OklabBar {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,
-    pub oklab: Vec4,
+    pub oklab: Oklab,
 }
 
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct OklabPolarMaterial {
-    oklab: Vec4,
+    oklab: Oklab,
 }
 
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct OklabBarMaterial {
-    oklab: Vec4,
+    oklab: Oklab,
 }
 
-pub struct ColorOklab(pub Vec4);
-pub struct SetColorOklab(pub Vec4);
+pub struct ColorOklab(pub Oklab);
+pub struct SetColorOklab(pub Oklab);
 
-fn thumb_color(oklab: Vec4) -> Vec4 {
-    mul_alpha(oklab_to_linear_srgb(oklab))
+fn thumb_color(oklab: Oklab) -> SrgbLinear {
+    oklab.to_srgb_linear()
 }
 
-fn polar_thumb(rect: IRect, oklab: Vec4) -> IRect {
+fn polar_thumb(rect: IRect, oklab: Oklab) -> IRect {
     IRect::new_half(
         rect.origin
-            + (Vec2::new(oklab.y / 0.8 + 0.5, oklab.z / 0.8 + 0.5) * rect.extend.as_vec2())
+            + (Vec2::new(oklab.0.y / 0.8 + 0.5, oklab.0.z / 0.8 + 0.5) * rect.extend.as_vec2())
                 .as_ivec2(),
         UVec2::splat(THUMB_RADIUS as u32),
     )
 }
 
-fn bar_thumb(rect: IRect, oklab: Vec4) -> IRect {
+fn bar_thumb(rect: IRect, oklab: Oklab) -> IRect {
     IRect::new_half(
         IVec2::new(
             rect.horizontal_center(),
-            rect.origin.y + (oklab.x * rect.extend.y as f32) as i32,
+            rect.origin.y + (oklab.0.x * rect.extend.y as f32) as i32,
         ),
         UVec2::new(rect.extend.x / 2, THUMB_RADIUS as u32),
     )
@@ -109,8 +106,8 @@ impl OklabPolar {
             common: self.common,
             rect: self.rect,
             order: 70,
-            color: Vec4::new(0.2, 0.2, 0.2, 0.4),
-            path: chroma_to_path(Vec2::new(self.oklab.y, self.oklab.z).length()),
+            color: SrgbLinear(Vec4::new(0.2, 0.2, 0.2, 0.4)),
+            path: chroma_to_path(Vec2::new(self.oklab.0.y, self.oklab.0.z).length()),
             outdated: false,
         });
 
@@ -128,7 +125,7 @@ impl OklabPolar {
             common: self.common,
             rect: thumb_light_rect,
             order: 140,
-            color: world.insert(Val::new(Vec4::new(1.0, 1.0, 1.0, 1.0))),
+            color: world.insert(Val::new(SrgbLinear(Vec4::ONE))),
             radius: THUMB_RADIUS + 1.0,
             width: 0.0,
         });
@@ -137,7 +134,7 @@ impl OklabPolar {
             common: self.common,
             rect: thumb_shadow_rect,
             order: 130,
-            color: world.insert(Val::new(Vec4::new(0.0, 0.0, 0.0, 1.0))),
+            color: world.insert(Val::new(SrgbLinear(Vec4::W))),
             radius: THUMB_RADIUS + 2.0,
             width: 0.0,
         });
@@ -159,9 +156,9 @@ impl OklabPolar {
             let delta = capture.pointer.position - I64Vec2::q32_from_i32(rect.origin);
             let uv = (delta.q32_as_f64() / rect.extend.as_dvec2()).as_vec2();
 
-            this.oklab.y = (uv.x * 0.8 - 0.4).clamp(-0.4, 0.4);
-            this.oklab.z = (uv.y * 0.8 - 0.4).clamp(-0.4, 0.4);
-            this.oklab = oklab_clip_to_srgb_gamut(this.oklab);
+            this.oklab.0.y = (uv.x * 0.8 - 0.4).clamp(-0.4, 0.4);
+            this.oklab.0.z = (uv.y * 0.8 - 0.4).clamp(-0.4, 0.4);
+            this.oklab = this.oklab.clip_srgb();
             world.queue_trigger(this.handle(), ColorOklab(this.oklab));
         });
 
@@ -172,7 +169,7 @@ impl OklabPolar {
             let mut thumb_rect = world.fetch_mut(thumb_rect);
             let mut thumb_color_val = world.fetch_mut(thumb_color_val);
             this.oklab = oklab;
-            chroma_indicator.path = chroma_to_path(Vec2::new(oklab.y, oklab.z).length());
+            chroma_indicator.path = chroma_to_path(Vec2::new(oklab.0.y, oklab.0.z).length());
             chroma_indicator.outdated = true;
             thumb_rect.val = polar_thumb(rect, this.oklab);
             thumb_color_val.val = thumb_color(oklab);
@@ -225,7 +222,7 @@ impl OklabBar {
             common: self.common,
             rect: thumb_light_rect,
             order: 140,
-            color: world.insert(Val::new(Vec4::new(1.0, 1.0, 1.0, 1.0))),
+            color: world.insert(Val::new(SrgbLinear(Vec4::ONE))),
             radius: THUMB_RADIUS + 1.0,
             width: 0.0,
         });
@@ -234,7 +231,7 @@ impl OklabBar {
             common: self.common,
             rect: thumb_shadow_rect,
             order: 130,
-            color: world.insert(Val::new(Vec4::new(0.0, 0.0, 0.0, 1.0))),
+            color: world.insert(Val::new(SrgbLinear(Vec4::W))),
             radius: THUMB_RADIUS + 2.0,
             width: 0.0,
         });
@@ -256,8 +253,8 @@ impl OklabBar {
             let delta = capture.pointer.position - I64Vec2::q32_from_i32(rect.origin);
             let uv = (delta.q32_as_f64() / rect.extend.as_dvec2()).as_vec2();
 
-            this.oklab.x = uv.y.clamp(0.0, 1.0);
-            this.oklab = oklab_clip_to_srgb_gamut(this.oklab);
+            this.oklab.0.x = uv.y.clamp(0.0, 1.0);
+            this.oklab = this.oklab.clip_srgb();
             world.queue_trigger(this.handle(), ColorOklab(this.oklab));
         });
 

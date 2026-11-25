@@ -4,10 +4,7 @@ use glam::{I64Vec2, UVec2, Vec2, Vec4};
 use ln_world::{Element, Handle, HandleGeneric, World};
 
 use crate::{
-    color::{
-        hsl::hsl_to_srgb,
-        srgb::{mul_alpha, srgb_gamma_decode},
-    },
+    color::{hsl::Hsl, srgb::SrgbLinear},
     input::{
         collider::{ToolRectCollider, ToolRingCollider},
         pointer::PointerEvent,
@@ -38,7 +35,7 @@ const THUMB_RADIUS: f32 = 5.0;
 pub struct HslSquare {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,
-    pub hsl: Vec4,
+    pub hsl: Hsl,
 }
 
 /// Hue ring panel. The hue is picked on the annulus between
@@ -46,38 +43,38 @@ pub struct HslSquare {
 pub struct HslRing {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,
-    pub hsl: Vec4,
+    pub hsl: Hsl,
     pub inner_radius: f32,
 }
 
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct HslSquareMaterial {
-    hsl: Vec4,
+    hsl: Hsl,
 }
 
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct HslRingMaterial {
-    hsl: Vec4,
+    hsl: Hsl,
     inner_radius: f32,
     _pad: [u32; 3],
 }
 
-pub struct ColorHsla(pub Vec4);
-pub struct SetColorHsla(pub Vec4);
+pub struct ColorHsla(pub Hsl);
+pub struct SetColorHsla(pub Hsl);
 
-fn thumb_color(hsl: Vec4) -> Vec4 {
-    mul_alpha(srgb_gamma_decode(hsl_to_srgb(hsl)))
+fn thumb_color(hsl: Hsl) -> SrgbLinear {
+    hsl.to_srgb().to_linear()
 }
 
-fn square_thumb(rect: IRect, hsl: Vec4) -> IRect {
-    let center = rect.origin + (Vec2::new(hsl.y, hsl.z) * rect.extend.as_vec2()).as_ivec2();
+fn square_thumb(rect: IRect, hsl: Hsl) -> IRect {
+    let center = rect.origin + (Vec2::new(hsl.0.y, hsl.0.z) * rect.extend.as_vec2()).as_ivec2();
     IRect::new_half(center, UVec2::splat(THUMB_RADIUS as u32))
 }
 
-fn ring_thumb(rect: IRect, hsl: Vec4, inner_radius: f32) -> IRect {
-    let angle = hsl.x * TAU;
+fn ring_thumb(rect: IRect, hsl: Hsl, inner_radius: f32) -> IRect {
+    let angle = hsl.0.x * TAU;
     let radius = (inner_radius + OUTER_RADIUS) * 0.5;
     let uv = Vec2::splat(0.5) + Vec2::new(angle.cos(), angle.sin()) * radius;
     let center = rect.origin + (uv * rect.extend.as_vec2()).as_ivec2();
@@ -120,7 +117,7 @@ impl HslSquare {
             common: self.common,
             rect: thumb_light_rect,
             order: 140,
-            color: world.insert(Val::new(Vec4::new(1.0, 1.0, 1.0, 1.0))),
+            color: world.insert(Val::new(SrgbLinear(Vec4::ONE))),
             radius: THUMB_RADIUS + 1.0,
             width: 0.0,
         });
@@ -129,7 +126,7 @@ impl HslSquare {
             common: self.common,
             rect: thumb_shadow_rect,
             order: 130,
-            color: world.insert(Val::new(Vec4::new(0.0, 0.0, 0.0, 1.0))),
+            color: world.insert(Val::new(SrgbLinear(Vec4::W))),
             radius: THUMB_RADIUS + 2.0,
             width: 0.0,
         });
@@ -151,8 +148,8 @@ impl HslSquare {
             let delta = capture.pointer.position - I64Vec2::q32_from_i32(rect.origin);
             let uv = (delta.q32_as_f64() / rect.extend.as_dvec2()).as_vec2();
 
-            this.hsl.y = uv.x.clamp(0.0, 1.0);
-            this.hsl.z = uv.y.clamp(0.0, 1.0);
+            this.hsl.0.y = uv.x.clamp(0.0, 1.0);
+            this.hsl.0.z = uv.y.clamp(0.0, 1.0);
             world.queue_trigger(this.handle(), ColorHsla(this.hsl));
         });
 
@@ -161,7 +158,7 @@ impl HslSquare {
             let rect = world.fetch(this.rect).val;
             let mut thumb_rect = world.fetch_mut(thumb_rect);
             let mut thumb_color_val = world.fetch_mut(thumb_color_val);
-            this.hsl = hsl.max(Vec4::ZERO).min(Vec4::ONE);
+            this.hsl = hsl.clamp();
             thumb_rect.val = square_thumb(rect, this.hsl);
             thumb_color_val.val = thumb_color(this.hsl);
             world.queue_trigger(thumb_rect.handle(), ValChanged);
@@ -217,7 +214,7 @@ impl HslRing {
             common: self.common,
             rect: thumb_light_rect,
             order: 140,
-            color: world.insert(Val::new(Vec4::new(1.0, 1.0, 1.0, 1.0))),
+            color: world.insert(Val::new(SrgbLinear(Vec4::ONE))),
             radius: THUMB_RADIUS + 1.0,
             width: 0.0,
         });
@@ -226,7 +223,7 @@ impl HslRing {
             common: self.common,
             rect: thumb_shadow_rect,
             order: 130,
-            color: world.insert(Val::new(Vec4::new(0.0, 0.0, 0.0, 1.0))),
+            color: world.insert(Val::new(SrgbLinear(Vec4::W))),
             radius: THUMB_RADIUS + 2.0,
             width: 0.0,
         });
@@ -251,7 +248,7 @@ impl HslRing {
             let uv = (delta.q32_as_f64() / rect.extend.as_dvec2()).as_vec2();
             let delta = uv - Vec2::splat(0.5);
 
-            this.hsl.x = (delta.y.atan2(delta.x) / TAU).rem_euclid(1.0);
+            this.hsl.0.x = (delta.y.atan2(delta.x) / TAU).rem_euclid(1.0);
             world.queue_trigger(this.handle(), ColorHsla(this.hsl));
         });
 
@@ -260,7 +257,7 @@ impl HslRing {
             let rect = world.fetch(this.rect).val;
             let mut thumb_rect = world.fetch_mut(thumb_rect);
             let mut thumb_color_val = world.fetch_mut(thumb_color_val);
-            this.hsl = hsl.max(Vec4::ZERO).min(Vec4::ONE);
+            this.hsl = hsl.clamp();
             thumb_rect.val = ring_thumb(rect, this.hsl, this.inner_radius);
             thumb_color_val.val = thumb_color(hsl);
             world.queue_trigger(thumb_rect.handle(), ValChanged);

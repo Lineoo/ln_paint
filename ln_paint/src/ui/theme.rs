@@ -2,7 +2,7 @@ use glam::Vec4;
 use ln_world::{Element, Handle, World};
 
 use crate::{
-    color::oklab::{oklab_clip_to_srgb_gamut, oklab_to_linear_srgb, oklch_to_oklab},
+    color::{oklab::Oklch, srgb::SrgbLinear},
     val::{Val, ValBind},
 };
 
@@ -17,33 +17,33 @@ pub struct Theme {
 
 #[rustfmt::skip]
 pub struct ThemeColor {
-    pub primary:                    Handle<Val<Vec4>>,
-    pub on_primary:                 Handle<Val<Vec4>>,
-    pub primary_container:          Handle<Val<Vec4>>,
-    pub on_primary_container:       Handle<Val<Vec4>>,
-    pub secondary:                  Handle<Val<Vec4>>,
-    pub on_secondary:               Handle<Val<Vec4>>,
-    pub secondary_container:        Handle<Val<Vec4>>,
-    pub on_secondary_container:     Handle<Val<Vec4>>,
-    pub tertiary:                   Handle<Val<Vec4>>,
-    pub on_tertiary:                Handle<Val<Vec4>>,
-    pub tertiary_container:         Handle<Val<Vec4>>,
-    pub on_tertiary_container:      Handle<Val<Vec4>>,
-    pub surface:                    Handle<Val<Vec4>>,
-    pub on_surface:                 Handle<Val<Vec4>>,
-    pub surface_variant:            Handle<Val<Vec4>>,
-    pub on_surface_variant:         Handle<Val<Vec4>>,
-    pub surface_container_highest:  Handle<Val<Vec4>>,
-    pub surface_container_high:     Handle<Val<Vec4>>,
-    pub surface_container:          Handle<Val<Vec4>>,
-    pub surface_container_low:      Handle<Val<Vec4>>,
-    pub surface_container_lowest:   Handle<Val<Vec4>>,
-    pub inverse_surface:            Handle<Val<Vec4>>,
-    pub inverse_on_surface:         Handle<Val<Vec4>>,
-    pub outline:                    Handle<Val<Vec4>>,
-    pub outline_variant:            Handle<Val<Vec4>>,
-    pub scrim:                      Handle<Val<Vec4>>,
-    pub shadow:                     Handle<Val<Vec4>>,
+    pub primary:                    Handle<Val<SrgbLinear>>,
+    pub on_primary:                 Handle<Val<SrgbLinear>>,
+    pub primary_container:          Handle<Val<SrgbLinear>>,
+    pub on_primary_container:       Handle<Val<SrgbLinear>>,
+    pub secondary:                  Handle<Val<SrgbLinear>>,
+    pub on_secondary:               Handle<Val<SrgbLinear>>,
+    pub secondary_container:        Handle<Val<SrgbLinear>>,
+    pub on_secondary_container:     Handle<Val<SrgbLinear>>,
+    pub tertiary:                   Handle<Val<SrgbLinear>>,
+    pub on_tertiary:                Handle<Val<SrgbLinear>>,
+    pub tertiary_container:         Handle<Val<SrgbLinear>>,
+    pub on_tertiary_container:      Handle<Val<SrgbLinear>>,
+    pub surface:                    Handle<Val<SrgbLinear>>,
+    pub on_surface:                 Handle<Val<SrgbLinear>>,
+    pub surface_variant:            Handle<Val<SrgbLinear>>,
+    pub on_surface_variant:         Handle<Val<SrgbLinear>>,
+    pub surface_container_highest:  Handle<Val<SrgbLinear>>,
+    pub surface_container_high:     Handle<Val<SrgbLinear>>,
+    pub surface_container:          Handle<Val<SrgbLinear>>,
+    pub surface_container_low:      Handle<Val<SrgbLinear>>,
+    pub surface_container_lowest:   Handle<Val<SrgbLinear>>,
+    pub inverse_surface:            Handle<Val<SrgbLinear>>,
+    pub inverse_on_surface:         Handle<Val<SrgbLinear>>,
+    pub outline:                    Handle<Val<SrgbLinear>>,
+    pub outline_variant:            Handle<Val<SrgbLinear>>,
+    pub scrim:                      Handle<Val<SrgbLinear>>,
+    pub shadow:                     Handle<Val<SrgbLinear>>,
 }
 
 pub struct ThemeState {
@@ -72,32 +72,32 @@ mod consts {
     // Hue
     pub const TERTIARY_HUE      : f32 = TAU / 6.;
 
-    // State Layer Opacity
+    // Opacity
     pub const HOVER             : f32 = 0.08;
     pub const FOCUS             : f32 = 0.10;
     pub const PRESS             : f32 = 0.10;
     pub const DRAG              : f32 = 0.16;
 
-    // Lightness (Tone)
-    pub const COLOR                     : (f32, f32) = (0.40, 0.80);
-    pub const ON_COLOR                  : (f32, f32) = (1.00, 0.20);
-    pub const COLOR_CONTAINER           : (f32, f32) = (0.90, 0.30);
-    pub const ON_COLOR_CONTAINER        : (f32, f32) = (0.30, 0.90);
-    pub const SURFACE                   : (f32, f32) = (0.98, 0.06);
-    pub const ON_SURFACE                : (f32, f32) = (0.10, 0.90);
-    pub const SURFACE_VARIANT           : (f32, f32) = (0.90, 0.30);
-    pub const ON_SURFACE_VARIANT        : (f32, f32) = (0.30, 0.80);
-    pub const SURFACE_CONTAINER_HIGHEST : (f32, f32) = (0.90, 0.22);
-    pub const SURFACE_CONTAINER_HIGH    : (f32, f32) = (0.92, 0.17);
-    pub const SURFACE_CONTAINER         : (f32, f32) = (0.94, 0.12);
-    pub const SURFACE_CONTAINER_LOW     : (f32, f32) = (0.96, 0.10);
-    pub const SURFACE_CONTAINER_LOWEST  : (f32, f32) = (1.00, 0.04);
-    pub const INVERSE_SURFACE           : (f32, f32) = (0.20, 0.90);
-    pub const INVERSE_ON_SURFACE        : (f32, f32) = (0.95, 0.20);
-    pub const OUTLINE                   : (f32, f32) = (0.50, 0.60);
-    pub const OUTLINE_VARIANT           : (f32, f32) = (0.80, 0.30);
-    pub const SCRIM                     : (f32, f32) = (0.00, 0.00);
-    pub const SHADOW                    : (f32, f32) = (0.00, 0.00);
+    // Tone
+    pub const COLOR                     : (u32, u32) = ( 40, 80);
+    pub const ON_COLOR                  : (u32, u32) = (100, 20);
+    pub const COLOR_CONTAINER           : (u32, u32) = ( 90, 30);
+    pub const ON_COLOR_CONTAINER        : (u32, u32) = ( 30, 90);
+    pub const SURFACE                   : (u32, u32) = ( 98,  6);
+    pub const ON_SURFACE                : (u32, u32) = ( 10, 90);
+    pub const SURFACE_VARIANT           : (u32, u32) = ( 90, 30);
+    pub const ON_SURFACE_VARIANT        : (u32, u32) = ( 30, 80);
+    pub const SURFACE_CONTAINER_HIGHEST : (u32, u32) = ( 90, 22);
+    pub const SURFACE_CONTAINER_HIGH    : (u32, u32) = ( 92, 17);
+    pub const SURFACE_CONTAINER         : (u32, u32) = ( 94, 12);
+    pub const SURFACE_CONTAINER_LOW     : (u32, u32) = ( 96, 10);
+    pub const SURFACE_CONTAINER_LOWEST  : (u32, u32) = (  0,  4);
+    pub const INVERSE_SURFACE           : (u32, u32) = ( 20, 90);
+    pub const INVERSE_ON_SURFACE        : (u32, u32) = ( 95, 20);
+    pub const OUTLINE                   : (u32, u32) = ( 50, 60);
+    pub const OUTLINE_VARIANT           : (u32, u32) = ( 80, 30);
+    pub const SCRIM                     : (u32, u32) = (  0,  0);
+    pub const SHADOW                    : (u32, u32) = (  0,  0);
 }
 
 impl Theme {
@@ -141,14 +141,14 @@ impl ThemeColor {
             ValBind::new(world, move |world| {
                 let hue = world.fetch(hue).val;
                 let dark = world.fetch(dark).val;
-                let mut oklch = Vec4::ONE;
-                oklch.x = match dark {
-                    true => l_dark,
-                    false => l_light,
+                let l = match dark {
+                    true => l_dark as f32 / 100.0,
+                    false => l_light as f32 / 100.0,
                 };
-                oklch.y = c;
-                oklch.z = hue + h;
-                oklab_to_linear_srgb(oklab_clip_to_srgb_gamut(oklch_to_oklab(oklch)))
+                // simple tweak to OkLab's L value (get it closer to CIEDE2000)
+                let l_ = l.powf(0.73);
+                let oklch = Oklch(Vec4::new(l_, c, hue + h, 1.0));
+                oklch.to_oklab().to_srgb_linear()
             })
             .listen(hue)
             .listen(dark)

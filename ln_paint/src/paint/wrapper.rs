@@ -12,6 +12,7 @@ use ln_world::{Element, Handle, World};
 use wgpu::{CommandEncoderDescriptor, ComputePassDescriptor};
 
 use crate::{
+    color::srgb::{Srgb, SrgbLinear, SrgbLinearPremultipliedEncoded},
     lnwin::Lnwindow,
     paint::{
         CacheLayerChunk, CacheLayers, ChunkPool, ChunkRenderer, DEFAULT_CHUNK_SIZE,
@@ -100,7 +101,7 @@ pub struct LayerPage {
 
     active: Box<dyn BrushParams>,
     erase: RoundBrush,
-    color: Vec4,
+    color: Srgb,
 
     pub debug: bool,
 
@@ -131,7 +132,7 @@ impl LayerPage {
             &camera_bind.layout,
         ));
 
-        let rd = lp.create_render(Vec4::ONE);
+        let rd = lp.create_render(SrgbLinearPremultipliedEncoded(Vec4::ONE));
 
         let traveler = Traveler::new(lp.clone());
 
@@ -201,7 +202,7 @@ impl LayerPage {
             common: cursor_common,
             rect: cursor_rect,
             order: 110,
-            color: world.insert(Val::new(Vec4::new(0.5, 0.5, 0.5, 1.0) * 0.4)),
+            color: world.insert(Val::new(SrgbLinear(Vec4::new(0.5, 0.5, 0.5, 1.0) * 0.4))),
             radius: 0.5,
             width: 0.0,
         });
@@ -209,12 +210,12 @@ impl LayerPage {
             common: cursor_common,
             rect: cursor_shadow_rect,
             order: 109,
-            color: world.insert(Val::new(Vec4::new(0.0, 0.0, 0.0, 1.0) * 0.3)),
+            color: world.insert(Val::new(SrgbLinear(Vec4::new(0.0, 0.0, 0.0, 1.0) * 0.3))),
             radius: 0.5,
             width: BRUSH_PREVIEW_SHADOW_BLUR as f32,
         });
 
-        let color = Vec4::new(0.0, 0.0, 0.0, 1.0);
+        let color = Srgb(Vec4::new(0.0, 0.0, 0.0, 1.0));
 
         let brushes: Vec<BrushPreset> = vec![
             BrushPreset {
@@ -331,7 +332,7 @@ impl LayerPage {
                 flow: BrushParam::force_index(0.9, 1.0, 0.5),
                 softness: BrushParam::constant(0.3),
                 spacing: BrushParam::constant(0.1),
-                color: Vec4::new(1.0, 1.0, 1.0, 1.0),
+                color: Srgb(Vec4::new(1.0, 1.0, 1.0, 1.0)),
                 erase: true,
             },
             color,
@@ -467,11 +468,11 @@ impl LayerPage {
         self.active.set_color(self.color);
     }
 
-    pub fn color(&self) -> Vec4 {
+    pub fn color(&self) -> Srgb {
         self.active.color().unwrap_or(self.color)
     }
 
-    pub fn set_color(&mut self, color: Vec4) {
+    pub fn set_color(&mut self, color: Srgb) {
         self.color = color;
         self.active.set_color(color);
     }
@@ -482,7 +483,7 @@ impl LayerPage {
             .pick_color(&self.raw, &self.cache, cursor.q32_floor(), move |color| {
                 cmd.queue(move |world| {
                     let mut page = world.single_fetch_mut::<LayerPage>();
-                    page.set_color(color.with_w(1.0));
+                    page.set_color(color.with_alpha(1.0));
                     world.queue_trigger(page.handle(), ValChanged);
                 });
             });

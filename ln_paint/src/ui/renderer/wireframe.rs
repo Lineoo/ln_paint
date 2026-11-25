@@ -1,4 +1,4 @@
-use glam::{UVec2, Vec4};
+use glam::UVec2;
 use ln_world::{Element, Handle, World};
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
@@ -6,6 +6,7 @@ use wgpu::{
 };
 
 use crate::{
+    color::srgb::SrgbLinear,
     lnwin::Lnwindow,
     render::{MSAA_STATE, Render, RenderDrawControl, camera::CameraBind},
     shaders::shader_compile,
@@ -18,7 +19,7 @@ pub struct Wireframe {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,
     pub order: isize,
-    pub color: Handle<Val<Vec4>>,
+    pub color: Handle<Val<SrgbLinear>>,
     pub radius: f32,
     pub width: f32,
     /// 0.0 inside, 0.5 centered, 1.0 outside.
@@ -36,7 +37,7 @@ struct WireframeRect {
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 struct WireframeMaterial {
-    color: Vec4,
+    color: SrgbLinear,
     radius: f32,
     width: f32,
     align: f32,
@@ -154,7 +155,7 @@ impl Wireframe {
         UVec2::splat((outer + EDGE_MARGIN).ceil() as u32)
     }
 
-    fn material(&self, color: Vec4) -> WireframeMaterial {
+    fn material(&self, color: SrgbLinear) -> WireframeMaterial {
         WireframeMaterial {
             color,
             radius: self.radius,

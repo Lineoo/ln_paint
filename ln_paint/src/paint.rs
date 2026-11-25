@@ -32,7 +32,7 @@ use wgpu::{
 };
 
 use crate::{
-    color::srgb::{demul_alpha, mul_alpha, srgb_gamma_encode},
+    color::srgb::{Srgb, SrgbLinearPremultipliedEncoded},
     paint::{brush::Brush, stream::ThreadInput},
     render::camera::Camera,
     shaders::shader_compile,
@@ -212,15 +212,15 @@ impl PaintPipeline {
         Standalone { chunk, rect }
     }
 
-    pub fn create_render(self: &Arc<PaintPipeline>, background: Vec4) -> ChunkRenderer {
+    pub fn create_render(
+        self: &Arc<PaintPipeline>,
+        background: SrgbLinearPremultipliedEncoded,
+    ) -> ChunkRenderer {
         let render_layout = self.device.create_bind_group_layout(&LAYOUT_RENDER);
         let (render_background, render_group_unfiltered, render_group_filtered) =
             render_groups(&self.device, &render_layout);
-        self.queue.write_buffer(
-            &render_background,
-            0,
-            bytes_of(&mul_alpha(srgb_gamma_encode(demul_alpha(background)))),
-        );
+        self.queue
+            .write_buffer(&render_background, 0, bytes_of(&background));
         ChunkRenderer {
             lp: self.clone(),
             render_background,
@@ -407,7 +407,7 @@ impl PaintPipeline {
         raw: &RawLayer,
         cache: &CacheLayers,
         point: IVec2,
-        f: impl FnOnce(Vec4) + WasmNotSend + 'static,
+        f: impl FnOnce(Srgb) + WasmNotSend + 'static,
     ) {
         let mapped = self.readback_mapped.load(Ordering::Acquire);
         if mapped {
@@ -421,7 +421,7 @@ impl PaintPipeline {
                 match cache.chunks.get(&(chunk_key.0, chunk_key.1, 0)) {
                     Some(CacheLayerChunk::Filled(chunk)) => chunk,
                     Some(CacheLayerChunk::Transparent) => {
-                        f(Vec4::new(0.0, 0.0, 0.0, 0.0));
+                        f(Srgb::TRANSPARENT);
                         return;
                     }
                     None => {
@@ -430,7 +430,7 @@ impl PaintPipeline {
                 }
             }
             Some(RawLayerChunk::Transparent) => {
-                f(Vec4::new(0.0, 0.0, 0.0, 0.0));
+                f(Srgb::TRANSPARENT);
                 return;
             }
             None => {
@@ -463,7 +463,7 @@ impl PaintPipeline {
             0,
             &self.readback_share,
             0,
-            size_of::<Vec4>() as u64,
+            size_of::<Srgb>() as u64,
         );
 
         self.queue.submit([encoder.finish()]);
@@ -477,7 +477,7 @@ impl PaintPipeline {
                     return;
                 }
                 let view = readback_share.get_mapped_range(..).unwrap();
-                let color = *bytemuck::from_bytes::<Vec4>(&view[..]);
+                let color = *bytemuck::from_bytes::<Srgb>(&view[..]);
                 f(color);
                 drop(view);
                 readback_mapped.store(false, Ordering::Release);
@@ -656,12 +656,8 @@ impl PaintPipeline {
 }
 
 impl ChunkRenderer {
-    pub fn write_background(&self, color: Vec4) {
-        self.lp.queue.write_buffer(
-            &self.render_background,
-            0,
-            bytes_of(&mul_alpha(srgb_gamma_encode(demul_alpha(color)))),
-        );
+    pub fn write_background(&self, color: SrgbLinearPremultipliedEncoded) {
+        (self.lp.queue).write_buffer(&self.render_background, 0, bytes_of(&color));
     }
 
     pub fn render_chunk(&self, rpass: &mut RenderPass, camera: &Camera, chunk: &Chunk) {

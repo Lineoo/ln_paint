@@ -2,6 +2,7 @@ use cosmic_text::{Attrs, Metrics, Weight};
 use ln_world::{Element, Handle, World};
 
 use crate::{
+    color::srgb::Srgb,
     paint::{
         brush::{
             BrushParams,
@@ -70,12 +71,15 @@ impl Element for SettingPanel {
             ..Default::default()
         }));
 
-        let active_bc = ValBind::new(world, move |world| {
+        let brush_color = ValBind::new(world, move |world| {
             let page = world.single_fetch::<LayerPage>();
             let this = world.fetch(this);
             let theme = world.fetch(this.common.theme);
             let fallback = world.fetch(theme.color.on_surface).val;
-            page.active().color().unwrap_or(fallback)
+            page.active()
+                .color()
+                .map(Srgb::to_linear)
+                .unwrap_or(fallback)
         })
         .listen(page.handle())
         .finish();
@@ -84,10 +88,10 @@ impl Element for SettingPanel {
             common,
             rect: preview_rect,
             brush: page.active().dup(),
-            background: theme.color.surface,
-            c0: theme.color.primary_container,
-            c1: theme.color.tertiary_container,
-            bc: active_bc,
+            bg: theme.color.surface,
+            bg_color1: theme.color.primary_container,
+            bg_color2: theme.color.tertiary_container,
+            brush_color,
         }));
         let settings_rect = world.build(luni.child(LuniChild {
             basis: Some(200),

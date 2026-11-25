@@ -172,10 +172,7 @@ pub mod legacy_classic {
 
     use redb::{Database, ReadableDatabase, ReadableTable, TableDefinition};
 
-    use crate::{
-        color::srgb::{srgb_gamma_decode_f32, srgb_gamma_encode_f32},
-        save::chunk::ChunkSave,
-    };
+    use crate::{color::srgb::Srgb, save::chunk::ChunkSave};
 
     type ChunkKey = (i32, i32, u8);
 
@@ -251,9 +248,9 @@ pub mod legacy_classic {
                 0 => {
                     let (chunks, _) = bytes.as_chunks_mut();
                     for [r, g, b, _] in chunks {
-                        *r = (srgb_gamma_encode_f32(*r as f32 / 255.) * 255.) as u8;
-                        *g = (srgb_gamma_encode_f32(*g as f32 / 255.) * 255.) as u8;
-                        *b = (srgb_gamma_encode_f32(*b as f32 / 255.) * 255.) as u8;
+                        *r = (Srgb::encode(*r as f32 / 255.) * 255.) as u8;
+                        *g = (Srgb::encode(*g as f32 / 255.) * 255.) as u8;
+                        *b = (Srgb::encode(*b as f32 / 255.) * 255.) as u8;
                     }
                 }
                 1 => {
@@ -262,15 +259,12 @@ pub mod legacy_classic {
                 2 => {
                     let (chunks, _) = bytes.as_chunks_mut();
                     for [r, g, b, a] in chunks {
-                        *r = (srgb_gamma_encode_f32(
-                            srgb_gamma_decode_f32(*r as f32 / 255.) * (*a as f32 / 255.),
-                        ) * 255.) as u8;
-                        *g = (srgb_gamma_encode_f32(
-                            srgb_gamma_decode_f32(*g as f32 / 255.) * (*a as f32 / 255.),
-                        ) * 255.) as u8;
-                        *b = (srgb_gamma_encode_f32(
-                            srgb_gamma_decode_f32(*b as f32 / 255.) * (*a as f32 / 255.),
-                        ) * 255.) as u8;
+                        *r = (Srgb::encode(Srgb::decode(*r as f32 / 255.) * (*a as f32 / 255.))
+                            * 255.) as u8;
+                        *g = (Srgb::encode(Srgb::decode(*g as f32 / 255.) * (*a as f32 / 255.))
+                            * 255.) as u8;
+                        *b = (Srgb::encode(Srgb::decode(*b as f32 / 255.) * (*a as f32 / 255.))
+                            * 255.) as u8;
                     }
                 }
                 _ => unreachable!("unsupported migration {migrate_format}"),

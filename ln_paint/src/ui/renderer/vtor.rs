@@ -1,4 +1,4 @@
-use glam::{Vec2, Vec4};
+use glam::Vec2;
 use ln_world::{Element, Handle, World};
 use lyon::{
     math::{Point, Transform, Vector},
@@ -11,6 +11,7 @@ use wgpu::{
 };
 
 use crate::{
+    color::srgb::SrgbLinear,
     lnwin::Lnwindow,
     render::{MSAA_STATE, Render, RenderDrawControl, RenderPrepareControl, camera::CameraBind},
     shaders::shader_compile,
@@ -27,7 +28,7 @@ pub struct VtorPipeline {
 pub struct Vtor {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,
-    pub color: Vec4,
+    pub color: SrgbLinear,
     pub order: isize,
     pub path: Path,
     pub outdated: bool,
@@ -45,10 +46,10 @@ struct VtorInstance {
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 struct VtorUniform {
-    color: Vec4,
+    color: SrgbLinear,
 }
 
-pub struct SetVtorColor(pub Vec4);
+pub struct SetVtorColor(pub SrgbLinear);
 
 impl Vtor {
     pub fn init(&mut self, world: &World, this: Handle<Self>) {
@@ -142,7 +143,7 @@ impl Vtor {
     fn gen_path_buffer(
         path: Path,
         rect: IRect,
-        color: Vec4,
+        color: SrgbLinear,
         pipeline: &VtorPipeline,
         device: &Device,
     ) -> VtorInstance {

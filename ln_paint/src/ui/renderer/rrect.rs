@@ -1,7 +1,8 @@
-use glam::{UVec2, Vec4};
+use glam::UVec2;
 use ln_world::{Element, Handle, World};
 
 use crate::{
+    color::srgb::SrgbLinear,
     shaders::shader_compile,
     ui::{
         common::WidgetCommon,
@@ -15,7 +16,7 @@ pub struct RRect {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,
     pub order: isize,
-    pub color: Handle<Val<Vec4>>,
+    pub color: Handle<Val<SrgbLinear>>,
     pub radius: f32,
     pub width: f32,
 }
@@ -23,7 +24,7 @@ pub struct RRect {
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct RRectMaterial {
-    color: Vec4,
+    color: SrgbLinear,
     radius: f32,
     width: f32,
     _pad: [u32; 2],

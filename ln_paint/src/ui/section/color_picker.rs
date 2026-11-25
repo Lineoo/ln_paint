@@ -4,11 +4,7 @@ use glam::{IVec2, UVec2, Vec4};
 use ln_world::{Element, Handle, World};
 
 use crate::{
-    color::{
-        hsl::{hsl_to_srgb, srgb_to_hsl},
-        oklab::{linear_srgb_to_oklab, oklab_to_linear_srgb},
-        srgb::{mul_alpha, srgb_gamma_decode, srgb_gamma_encode},
-    },
+    color::{hsl::Hsl, oklab::Oklab},
     input::drag::{DragEvent, DragStatus},
     paint::wrapper::LayerPage,
     render::nest::{NestAttr, NestBuilder, NestRect},
@@ -52,7 +48,7 @@ impl Element for ColorPickerPanel {
                 ..self.common
             },
             rect: hsl_rect,
-            hsl: Vec4::new(0.3, 0.5, 0.5, 1.0),
+            hsl: Hsl(Vec4::new(0.3, 0.5, 0.5, 1.0)),
         });
 
         let oklab_rect = world.insert(Val::new(IRect::default()));
@@ -63,7 +59,7 @@ impl Element for ColorPickerPanel {
                 ..self.common
             },
             rect: oklab_rect,
-            oklab: Vec4::new(0.0, 0.0, 0.0, 1.0),
+            oklab: Oklab(Vec4::new(0.0, 0.0, 0.0, 1.0)),
         });
 
         let layer_rect = world.insert(Val::new(IRect::default()));
@@ -159,7 +155,7 @@ impl Element for ColorPickerButton {
         let icon_rect = world.build(Transform::new(icon_transform, self.rect));
         let color = ValBind::new(world, |world| {
             let layer = world.single_fetch::<LayerPage>();
-            mul_alpha(srgb_gamma_decode(layer.color()))
+            layer.color().to_linear()
         })
         .listen(page.handle())
         .finish();
@@ -222,7 +218,7 @@ impl Element for ColorPickerButton {
 pub struct LayerHslPalette {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,
-    pub hsl: Vec4,
+    pub hsl: Hsl,
 }
 
 impl Element for LayerHslPalette {
@@ -277,17 +273,17 @@ impl Element for LayerHslPalette {
         let layer = world.single::<LayerPage>();
         world.observer(ring, move |&ColorHsla(hsla), world| {
             let mut layer = world.fetch_mut(layer);
-            layer.set_color(hsl_to_srgb(hsla));
+            layer.set_color(hsla.to_srgb());
             world.queue_trigger(layer.handle(), ValChanged);
         });
         world.observer(square, move |&ColorHsla(hsla), world| {
             let mut layer = world.fetch_mut(layer);
-            layer.set_color(hsl_to_srgb(hsla));
+            layer.set_color(hsla.to_srgb());
             world.queue_trigger(layer.handle(), ValChanged);
         });
         world.observer(layer, move |&ValChanged, world| {
             let layer = world.fetch(layer);
-            let hsla = srgb_to_hsl(layer.color());
+            let hsla = Hsl::from_srgb(layer.color());
             world.trigger(ring, &SetColorHsla(hsla));
             world.trigger(square, &SetColorHsla(hsla));
         });
@@ -297,7 +293,7 @@ impl Element for LayerHslPalette {
 pub struct LayerOklabPalette {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,
-    pub oklab: Vec4,
+    pub oklab: Oklab,
 }
 
 impl Element for LayerOklabPalette {
@@ -349,17 +345,17 @@ impl Element for LayerOklabPalette {
         let layer = world.single::<LayerPage>();
         world.observer(polar, move |&ColorOklab(color), world| {
             let mut layer = world.fetch_mut(layer);
-            layer.set_color(srgb_gamma_encode(oklab_to_linear_srgb(color)));
+            layer.set_color(color.to_srgb_linear().to_srgb());
             world.queue_trigger(layer.handle(), ValChanged);
         });
         world.observer(bar, move |&ColorOklab(color), world| {
             let mut layer = world.fetch_mut(layer);
-            layer.set_color(srgb_gamma_encode(oklab_to_linear_srgb(color)));
+            layer.set_color(color.to_srgb_linear().to_srgb());
             world.queue_trigger(layer.handle(), ValChanged);
         });
         world.observer(layer, move |&ValChanged, world| {
             let layer = world.fetch(layer);
-            let oklab = linear_srgb_to_oklab(srgb_gamma_decode(layer.color()));
+            let oklab = Oklab::from_srgb_linear(layer.color().to_linear());
             world.trigger(polar, &SetColorOklab(oklab));
             world.trigger(bar, &SetColorOklab(oklab));
         });

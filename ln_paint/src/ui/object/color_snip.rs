@@ -2,7 +2,10 @@ use glam::{IVec2, UVec2, Vec4};
 use ln_world::{Element, Handle, HandleGeneric, World};
 
 use crate::{
-    color::srgb::{mul_alpha, srgb_gamma_decode},
+    color::{
+        oklab::Oklab,
+        srgb::{Srgb, SrgbLinear},
+    },
     input::{collider::ToolRectCollider, drag::Drag, mouse::MouseMenu, pointer::PointerEvent},
     paint::{input::LayerDrag, wrapper::LayerPage},
     ui::{
@@ -26,7 +29,7 @@ pub struct ColorSnip {
 #[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub struct ColorSnipAttr {
     pub position: IVec2,
-    pub color: Vec4,
+    pub color: Srgb,
 }
 
 impl Element for ColorSnip {
@@ -39,7 +42,6 @@ impl Element for ColorSnip {
         let theme = world.fetch(self.common.theme);
         let input = world.single::<LayerDrag>();
         let visible = self.common.visible;
-        let base = mul_alpha(srgb_gamma_decode(self.attr.color));
 
         let hover = world.insert(Val::new(false));
         let pressed = world.insert(Val::new(false));
@@ -58,13 +60,20 @@ impl Element for ColorSnip {
             width: world.fetch(theme.shape.shadow_width).val,
         });
 
-        let color = ValBind::new(world, move |world| match world.fetch(pressed).val {
-            true => base * 0.7 + Vec4::new(0.2, 0.2, 0.2, 0.3) * base.w,
-            false => base,
+        let color = ValBind::new(world, move |world| {
+            let color = world.fetch(this).attr.color.to_linear();
+            let oklab = Oklab::from_srgb_linear(color);
+            let on_color = match oklab.0.x > 0.5 {
+                true => SrgbLinear(Vec4::W),
+                false => SrgbLinear(Vec4::ONE),
+            };
+            match world.fetch(pressed).val {
+                true => color.mix(on_color, 0.3),
+                false => color,
+            }
         })
         .listen(pressed)
-        .finish();
-        let color = world.build(Animator::new(color, theme.animation));
+        .animate(theme.animation);
 
         world.insert(RRect {
             common: self.common,
@@ -75,16 +84,21 @@ impl Element for ColorSnip {
             width: 0.0,
         });
 
-        let distinct = theme.color.on_surface;
         let icon_modulate = ValBind::new(world, move |world| {
+            let color = world.fetch(this).attr.color.to_linear();
+            let oklab = Oklab::from_srgb_linear(color);
             let hover = world.fetch(hover).val;
-            world
-                .fetch(distinct)
-                .val
-                .with_w(if hover { 1.0 } else { 0.0 })
+            let on_color = match oklab.0.x > 0.5 {
+                true => SrgbLinear(Vec4::W),
+                false => SrgbLinear(Vec4::ONE),
+            };
+            let opacity = match hover {
+                true => 1.0,
+                false => 0.0,
+            };
+            on_color * opacity
         })
         .listen(hover)
-        .listen(distinct)
         .finish();
         let icon_modulate = world.build(Animator::new(icon_modulate, theme.animation));
         let icon = svg_render(include_bytes!("../../../res/interface/pipette.svg"));

@@ -3,6 +3,7 @@ use ln_world::Element;
 
 use crate::{
     brush_params,
+    color::srgb::Srgb,
     paint::{
         BrushKind, BrushStage, CompositeMode, PaintPipeline, WriteMode,
         brush::{
@@ -18,14 +19,14 @@ pub struct TintBrush {
     pub size: BrushParam<f32>,
     pub softness: BrushParam<f32>,
     pub spacing: BrushParam<f32>,
-    pub color: Vec4,
+    pub color: Srgb,
     pub flow: Vec4,
 }
 
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct TintDraw {
-    pub color: Vec4,
+    pub color: Srgb,
     pub flow: Vec4,
     pub position: IVec2,
     pub position_fract: UVec2,

@@ -1,4 +1,4 @@
-use glam::{IVec2, UVec2, Vec4};
+use glam::{IVec2, UVec2};
 use ln_world::{Element, Handle, World};
 use wgpu::{
     BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor,
@@ -14,6 +14,7 @@ use wgpu::{
 };
 
 use crate::{
+    color::srgb::SrgbLinear,
     lnwin::Lnwindow,
     render::{MSAA_STATE, Render, RenderDrawControl, camera::CameraBind},
     shaders::shader_compile,
@@ -26,7 +27,7 @@ pub struct Canvas {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,
     pub order: isize,
-    pub modulate: Handle<Val<Vec4>>,
+    pub modulate: Handle<Val<SrgbLinear>>,
 
     pub data: Vec<u8>,
     pub data_width: u32,
@@ -181,7 +182,7 @@ impl Canvas {
         render: &Render,
         pipeline: &CanvasPipeline,
         rect: IRect,
-        modulate: Vec4,
+        modulate: SrgbLinear,
     ) -> CanvasInstance {
         let rectangle_uniform = render.device.create_buffer_init(&BufferInitDescriptor {
             label: Some("canvas_uniform"),
@@ -225,7 +226,7 @@ impl Canvas {
 
         let color_uniform = render.device.create_buffer_init(&BufferInitDescriptor {
             label: Some("canvas_uniform"),
-            contents: bytemuck::bytes_of(&<[f32; 4]>::from(modulate)),
+            contents: bytemuck::bytes_of(&modulate),
             usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
         });
 

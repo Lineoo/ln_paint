@@ -14,7 +14,7 @@ use crate::unit::{Axis, FI64Ext};
     serde::Serialize,
     serde::Deserialize,
     bytemuck::Pod,
-    bytemuck::Zeroable,
+    bytemuck::Zeroable
 )]
 pub struct IRect {
     pub origin: IVec2,

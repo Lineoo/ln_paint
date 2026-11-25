@@ -4,14 +4,18 @@ use crate::color::srgb::{SrgbLinear, SrgbLinearUnmultiplied};
 
 /// **`L_oklab`**
 #[repr(transparent)]
-#[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Debug, Clone, Copy)]
+#[derive(bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Oklab(pub Vec4);
 
 /// **`L_oklch`**
 ///
 /// hue in radians.
 #[repr(transparent)]
-#[derive(Debug, Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Debug, Clone, Copy)]
+#[derive(bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct Oklch(pub Vec4);
 
 impl Oklab {

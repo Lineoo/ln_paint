@@ -257,10 +257,10 @@ impl Element for BrushListPanel {
 
             let preview = world.insert(world.build(BrushPreviewDescriptor {
                 common,
-                background: theme.color.surface,
-                c0: theme.color.tertiary_container,
-                c1: theme.color.surface,
-                bc: theme.color.primary,
+                bg: theme.color.surface,
+                bg_color1: theme.color.tertiary_container,
+                bg_color2: theme.color.surface,
+                brush_color: theme.color.primary,
                 rect: preview_rect,
                 brush: page.brushes[i].brush.dup(),
             }));

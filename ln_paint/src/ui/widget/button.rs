@@ -1,7 +1,8 @@
-use glam::{IVec2, UVec2, Vec4};
+use glam::{IVec2, UVec2};
 use ln_world::{Element, Handle, HandleGeneric, World};
 
 use crate::{
+    color::srgb::SrgbLinear,
     input::{collider::ToolRectCollider, drag::Drag, pointer::PointerEvent},
     ui::{
         common::WidgetCommon,
@@ -23,10 +24,10 @@ pub struct Button {
 }
 
 pub struct ButtonTheme {
-    pub color: Handle<Val<Vec4>>,
-    pub on_color: Handle<Val<Vec4>>,
-    pub active_color: Handle<Val<Vec4>>,
-    pub active_on_color: Handle<Val<Vec4>>,
+    pub color: Handle<Val<SrgbLinear>>,
+    pub on_color: Handle<Val<SrgbLinear>>,
+    pub active_color: Handle<Val<SrgbLinear>>,
+    pub active_on_color: Handle<Val<SrgbLinear>>,
     pub hover: Handle<Val<f32>>,
     pub press: Handle<Val<f32>>,
     pub focus: Handle<Val<f32>>,
@@ -110,7 +111,7 @@ impl Element for Button {
                 0.0
             };
 
-            color * (1. - factor) + on_color * factor
+            color.mix(on_color, factor)
         })
         .listen(selected)
         .listen(hovering)

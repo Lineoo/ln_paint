@@ -1,7 +1,8 @@
-use glam::{IVec2, UVec2, Vec4};
+use glam::{IVec2, UVec2};
 use ln_world::{Element, Handle, HandleGeneric, World};
 
 use crate::{
+    color::srgb::SrgbLinear,
     input::collider::ToolRectCollider,
     ui::{
         common::WidgetCommon,
@@ -21,7 +22,7 @@ pub enum AreaMode {
 pub struct Area {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,
-    pub color: Handle<Val<Vec4>>,
+    pub color: Handle<Val<SrgbLinear>>,
     pub mode: Handle<Val<AreaMode>>,
 }
 
