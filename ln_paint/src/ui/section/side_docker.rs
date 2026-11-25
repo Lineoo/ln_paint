@@ -271,7 +271,7 @@ impl Element for SideDocker {
                 axis: place_dir.positive(),
                 value: slider_value,
                 hover: world.insert(Val::new(false)),
-                pressed: false,
+                pressed: world.insert(Val::new(false)),
             });
             let slider_label_text = ValBind::transfer(world, slider_value, |&value| {
                 let scale = (value.exp2() - 1.0) * 127.5 + 0.5;

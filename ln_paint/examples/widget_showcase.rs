@@ -213,7 +213,7 @@ impl Element for WidgetShowcase {
             axis: Axis::Right,
             rect: slider_rect,
             hover: world.insert(Val::new(false)),
-            pressed: false,
+            pressed: world.insert(Val::new(false)),
         });
         let button_rect = local(controls_card, 24, 78, 144, 118);
         world.insert(Button {

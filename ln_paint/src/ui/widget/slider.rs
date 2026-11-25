@@ -23,8 +23,8 @@ pub struct Slider {
     pub value: Handle<Val<f32>>,
     pub rect: Handle<Val<IRect>>,
     pub hover: Handle<Val<bool>>,
+    pub pressed: Handle<Val<bool>>,
     pub axis: Axis,
-    pub pressed: bool,
 }
 
 pub struct SliderLabel {
@@ -35,11 +35,11 @@ pub struct SliderLabel {
 }
 
 impl Element for Slider {
-    fn when_insert(&mut self, world: &World, handle: Handle<Self>) {
+    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
         world.scope("slider");
-        world.set_autodeps(Some(handle));
-        world.dependency(handle, self.rect);
-        world.dependency(handle, self.common.visible);
+        world.set_autodeps(Some(this));
+        world.dependency(this, self.rect);
+        world.dependency(this, self.common.visible);
 
         let theme = world.fetch(self.common.theme);
         let rect = world.fetch(self.rect).val;
@@ -52,39 +52,38 @@ impl Element for Slider {
         let knob_rect_val = world.insert(Val::new(knob_rect(rect, self.axis, position)));
         let knob_split_rect_val =
             world.insert(Val::new(knob_split_rect(rect, self.axis, position)));
-        let pressed = world.insert(Val::new(false));
 
         let knob_color_val = ValBind::new(world, move |world| {
-            let this = world.fetch(handle);
+            let this = world.fetch(this);
             let theme = world.fetch(this.common.theme);
             let color = world.fetch(theme.color.primary).val;
             let on_color = world.fetch(theme.color.on_primary).val;
-            let pressed_val = world.fetch(pressed).val;
+            let pressed_val = world.fetch(this.pressed).val;
             let factor = match pressed_val {
                 true => world.fetch(theme.state.press).val,
                 false => 0.0,
             };
             color.mix(on_color, factor)
         })
-        .listen(pressed)
+        .listen(self.pressed)
         .listen(theme.color.primary)
         .listen(theme.color.on_primary)
         .listen(theme.state.press)
         .animate(theme.animation);
 
         let knob_split_color_val = ValBind::new(world, move |world| {
-            let this = world.fetch(handle);
+            let this = world.fetch(this);
             let theme = world.fetch(this.common.theme);
             let color = world.fetch(theme.color.primary_container).val;
             let on_color = world.fetch(theme.color.on_primary_container).val;
-            let pressed_val = world.fetch(pressed).val;
+            let pressed_val = world.fetch(this.pressed).val;
             let factor = match pressed_val {
                 true => world.fetch(theme.state.press).val,
                 false => 0.0,
             };
             color.mix(on_color, factor)
         })
-        .listen(pressed)
+        .listen(self.pressed)
         .listen(theme.color.primary_container)
         .listen(theme.color.on_primary_container)
         .listen(theme.state.press)
@@ -128,13 +127,13 @@ impl Element for Slider {
 
         world.insert(ToolRectCollider {
             common: self.common,
-            target: handle.untyped(),
+            target: this.untyped(),
             rect: self.rect,
             order: 10,
         });
 
-        world.observer(handle, move |event: &PointerEvent, world| {
-            let mut this = world.fetch_mut(handle);
+        world.observer(this, move |event: &PointerEvent, world| {
+            let this = world.fetch(this);
             let rect = world.fetch(this.rect).val;
 
             match event {
@@ -149,20 +148,18 @@ impl Element for Slider {
                     let position = (capture.pointer.position.q32_round() - rect.center())
                         .dot(this.axis.direction());
                     let value = from_position(rect, this.axis, position);
-                    world.queue_trigger(handle, SliderValue(value));
+                    world.queue_trigger(this.handle(), SliderValue(value));
 
                     if matches!(event, PointerEvent::Press(_)) {
-                        this.pressed = true;
                         let mut back = world.fetch_mut(back_rect_anim);
-                        let mut pressed = world.fetch_mut(pressed);
+                        let mut pressed = world.fetch_mut(this.pressed);
                         back.val = back_rect_pressed(rect, this.axis);
                         pressed.val = true;
                         world.queue_trigger(back.handle(), ValChanged);
                         world.queue_trigger(pressed.handle(), ValChanged);
                     } else if matches!(event, PointerEvent::Release(_)) {
-                        this.pressed = false;
                         let mut back = world.fetch_mut(back_rect_anim);
-                        let mut pressed = world.fetch_mut(pressed);
+                        let mut pressed = world.fetch_mut(this.pressed);
                         back.val = back_rect(rect, this.axis);
                         pressed.val = false;
                         world.queue_trigger(back.handle(), ValChanged);
@@ -174,9 +171,10 @@ impl Element for Slider {
         });
 
         world.observer(self.value, move |&ValChanged, world| {
-            let this = world.fetch(handle);
+            let this = world.fetch(this);
             let value = world.fetch(this.value).val;
             let rect = world.fetch(this.rect).val;
+            let pressed = world.fetch(this.pressed).val;
             let mut front = world.fetch_mut(front_rect_val);
             let mut knob = world.fetch_mut(knob_rect_val);
             let mut knob_split = world.fetch_mut(knob_split_rect_val);
@@ -185,7 +183,7 @@ impl Element for Slider {
 
             front.val = front_rect(rect, this.axis, position);
             knob_split.val = knob_split_rect(rect, this.axis, position);
-            knob.val = match this.pressed {
+            knob.val = match pressed {
                 true => knob_rect_pressed(rect, this.axis, position),
                 false => knob_rect(rect, this.axis, position),
             };
@@ -196,9 +194,10 @@ impl Element for Slider {
         });
 
         world.observer(self.rect, move |ValChanged, world| {
-            let this = world.fetch(handle);
+            let this = world.fetch(this);
             let value = world.fetch(this.value).val;
             let rect = world.fetch(this.rect).val;
+            let pressed = world.fetch(this.pressed).val;
             let mut front = world.fetch_mut(front_rect_val);
             let mut knob = world.fetch_mut(knob_rect_val);
             let mut knob_split = world.fetch_mut(knob_split_rect_val);
@@ -210,7 +209,7 @@ impl Element for Slider {
             let position = into_position(rect, this.axis, value);
             front.val = front_rect(rect, this.axis, position);
             knob_split.val = knob_split_rect(rect, this.axis, position);
-            knob.val = match this.pressed {
+            knob.val = match pressed {
                 true => knob_rect_pressed(rect, this.axis, position),
                 false => knob_rect(rect, this.axis, position),
             };

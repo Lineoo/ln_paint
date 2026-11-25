@@ -326,9 +326,12 @@ impl Element for TextSettingPanel {
             format!("{:+.2}", (v as f64 - 0.8) * 3.0)
         });
         world.observer(zoom_slider, move |&SliderValue(value), world| {
+            let slider = world.fetch(zoom_slider);
             let mut layer = world.fetch_mut(layer);
+            let mut slider_value = world.fetch_mut(slider.value);
             layer.zoom_offset = (value as f64 - 0.8) * 3.;
-            set_slider_value(world, zoom_slider, value);
+            slider_value.val = value;
+            world.queue_trigger(slider_value.handle(), ValChanged);
         });
 
         luni.children = option_children(&options, brush_title_frame, page_title_frame, zoom_frame);
@@ -338,7 +341,10 @@ impl Element for TextSettingPanel {
             let layer = world.fetch(layer);
 
             for &(key, slider) in &sliders {
-                set_slider_value(world, slider, read_option(layer.active(), key));
+                let slider = world.fetch(slider);
+                let mut value = world.fetch_mut(slider.value);
+                value.val = read_option(layer.active(), key);
+                world.queue_trigger(value.handle(), ValChanged);
             }
 
             let supported_keys = layer.active().list_params();
@@ -610,7 +616,7 @@ fn option_slider(
         axis: Axis::Right,
         rect,
         hover: world.insert(Val::new(false)),
-        pressed: false,
+        pressed: world.insert(Val::new(false)),
     });
 
     let text = ValBind::transfer(world, value, move |&value| format(value));
@@ -623,14 +629,4 @@ fn option_slider(
     });
 
     slider
-}
-
-fn set_slider_value(world: &World, slider: Handle<Slider>, next: f32) {
-    let handle = world.fetch(slider).value;
-    let mut value = world.fetch_mut(handle);
-    if value.val != next {
-        value.val = next;
-        drop(value);
-        world.queue_trigger(handle, ValChanged);
-    }
 }

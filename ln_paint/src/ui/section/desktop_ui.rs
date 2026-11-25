@@ -273,7 +273,7 @@ impl Element for ToolBar {
             axis: Axis::Right,
             value,
             hover: world.insert(Val::new(false)),
-            pressed: false,
+            pressed: world.insert(Val::new(false)),
         });
 
         let slider_label_text = ValBind::transfer(world, value, |&value| {
