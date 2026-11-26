@@ -1,0 +1,7 @@
+# Configuration File of LnPaint #
+
+database_version = 0
+
+[theme]
+scheme = "dark" # dark dark_variant light light_variant neutral neutral_variant
+hue = "0.67" # radians [0, 2π)

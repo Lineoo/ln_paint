@@ -5,17 +5,9 @@ use glam::{DVec2, I64Vec2, IVec2, UVec2, Vec2};
 use crate::unit::{Axis, FI64Ext};
 
 #[repr(C)]
-#[derive(
-    Default,
-    Clone,
-    Copy,
-    PartialEq,
-    Eq,
-    serde::Serialize,
-    serde::Deserialize,
-    bytemuck::Pod,
-    bytemuck::Zeroable
-)]
+#[derive(Default, Clone, Copy, PartialEq, Eq)]
+#[derive(bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct IRect {
     pub origin: IVec2,
     pub extend: UVec2,

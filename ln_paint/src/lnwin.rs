@@ -31,7 +31,7 @@ use crate::{
             text::TextPipeline, vtor::VtorPipeline, wireframe::WireframePipeline,
         },
         section::{desktop_ui::DesktopUi, mobile_ui::MobileUi},
-        theme::Theme,
+        theme::{Theme, ThemeScheme},
         widget::palette::{
             hsl::{HslRingMaterial, HslSquareMaterial},
             oklab::{OklabBarMaterial, OklabPolarMaterial},
@@ -201,11 +201,24 @@ impl Element for Lnwindow {
             world.insert(VtorPipeline::from_world(world));
             world.insert(TextPipeline::from_world(world));
             let save = world.single_fetch::<Save>();
-            let theme = match save.sn().dark_mode {
-                Some(true) => world.insert(Theme::dark(world)),
-                Some(false) => world.insert(Theme::light(world)),
-                None => world.insert(Theme::from_world(world)),
+            let scheme = match save.sn().theme.scheme.as_ref().map(String::as_str) {
+                Some("dark") => ThemeScheme::Dark,
+                Some("light") => ThemeScheme::Light,
+                Some("dark_variant") => ThemeScheme::DarkVariant,
+                Some("light_variant") => ThemeScheme::LightVariant,
+                Some("neutral") => ThemeScheme::Neutral,
+                Some("neutral_variant") => ThemeScheme::NeutralVariant,
+                Some(unknown) => {
+                    log::warn!("unknown color scheme: {unknown}");
+                    ThemeScheme::Dark
+                }
+                None => ThemeScheme::Dark,
             };
+            let theme = world.insert(Theme::source(
+                world,
+                world.insert(Val::new(0.67)),
+                world.insert(Val::new(scheme)),
+            ));
             drop(save);
 
             world.flush();

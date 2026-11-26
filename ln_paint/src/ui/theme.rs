@@ -61,32 +61,38 @@ pub struct ThemeShape {
 #[derive(Debug, Clone, Copy)]
 pub enum ThemeScheme {
     Dark,
-    DarkNeutral,
+    DarkVariant,
     Light,
-    LightNeutral,
+    LightVariant,
     Neutral,
     NeutralVariant,
+}
+
+#[derive(Default, serde::Serialize, serde::Deserialize)]
+pub struct ThemeArchive {
+    pub scheme: Option<String>,
+    pub hue: Option<f32>,
 }
 
 #[rustfmt::skip]
 mod consts {
     use std::f32::consts::TAU;
 
-    // Chroma (standard, neutral)
-    pub const PRIMARY           : (f32, f32) = (0.131, 0.022);
-    pub const SECONDARY         : (f32, f32) = (0.044, 0.011);
-    pub const TERTIARY          : (f32, f32) = (0.065, 0.022);
-    pub const NEUTRAL_VARIANT   : (f32, f32) = (0.022, 0.011);
-    pub const NEUTRAL           : (f32, f32) = (0.011, 0.000);
+    // Chroma (neutral, variant)
+    pub const PRIMARY           : (f32, f32) = (0.065, 0.131);
+    pub const SECONDARY         : (f32, f32) = (0.044, 0.044);
+    pub const TERTIARY          : (f32, f32) = (0.065, 0.065);
+    pub const NEUTRAL_VARIANT   : (f32, f32) = (0.011, 0.022);
+    pub const NEUTRAL           : (f32, f32) = (0.000, 0.011);
 
     // Hue
     pub const TERTIARY_HUE      : f32 = TAU / 6.;
 
-    // Opacity
-    pub const HOVER             : f32 = 0.08;
-    pub const FOCUS             : f32 = 0.10;
-    pub const PRESS             : f32 = 0.10;
-    pub const DRAG              : f32 = 0.16;
+    // Opacity (// origin alpha value from Material)
+    pub const HOVER             : f32 = 0.08; // 0.08
+    pub const FOCUS             : f32 = 0.15; // 0.10
+    pub const PRESS             : f32 = 0.15; // 0.10
+    pub const DRAG              : f32 = 0.25; // 0.16
 
     // Tone (Light, Dark, Neutral)
     pub const COLOR                     : (f32, f32, f32) = (0.40, 0.80, 0.80);
@@ -112,22 +118,10 @@ mod consts {
 
 impl Theme {
     pub fn from_world(world: &World) -> Self {
-        Theme::dark(world)
-    }
-
-    pub fn light(world: &World) -> Self {
         Theme::source(
             world,
             world.insert(Val::new(0.67)),
-            world.insert(Val::new(ThemeScheme::Light)),
-        )
-    }
-
-    pub fn dark(world: &World) -> Self {
-        Theme::source(
-            world,
-            world.insert(Val::new(0.67)),
-            world.insert(Val::new(ThemeScheme::Dark)),
+            world.insert(Val::new(ThemeScheme::DarkVariant)),
         )
     }
 
@@ -147,7 +141,7 @@ impl ThemeColor {
     pub fn source(world: &World, hue: Handle<Val<f32>>, scheme: Handle<Val<ThemeScheme>>) -> Self {
         use consts::*;
 
-        let bind = |(l_light, l_dark, l_neutral), (c_standard, c_neutral), h| {
+        let bind = |(l_light, l_dark, l_neutral), (c_neutral, c_variant), h| {
             ValBind::new(world, move |world| {
                 use ThemeScheme::*;
 
@@ -155,13 +149,13 @@ impl ThemeColor {
                 let scheme = world.fetch(scheme).val;
                 // tweak OkLab's L value to get it closer to CIEDE2000
                 let l = match scheme {
-                    Dark | DarkNeutral => f32::powf(l_dark, 0.62),
-                    Light | LightNeutral => f32::powf(l_light, 0.96),
-                    Neutral | NeutralVariant => l_neutral,
+                    Dark | DarkVariant => f32::powf(l_dark, 0.62),
+                    Light | LightVariant => f32::powf(l_light, 0.96),
+                    Neutral | NeutralVariant => f32::powf(l_neutral, 0.85),
                 };
                 let c = match scheme {
-                    Dark | Light | NeutralVariant => c_standard,
-                    DarkNeutral | LightNeutral | Neutral => c_neutral,
+                    Dark | Light | Neutral => c_neutral,
+                    DarkVariant | LightVariant | NeutralVariant => c_variant,
                 };
                 let oklch = Oklch(Vec4::new(l, c, hue + h, 1.0));
                 oklch.to_oklab().to_srgb_linear()

@@ -1,34 +1,22 @@
 use std::sync::Arc;
 
 use cosmic_text::{Align, Attrs, Family, Metrics};
+use glam::Vec4;
 use ln_paint::{
-    lnwin::Lnwin,
-    ui::{
-        common::WidgetCommon,
-        layout::transform::Transform,
-        renderer::{
+    color::{hsl::Hsl, oklab::Oklab}, lnwin::Lnwin, ui::{
+        common::WidgetCommon, layout::luni::{
+            LuniAlign, LuniAxis, LuniChild, LuniChildTemplate, LuniFlex, LuniParent, LuniRect,
+        }, renderer::{
             rrect::RRect,
             svg::svg_render,
             text::{Text, TextAttr},
-            vtor::{Vtor, logo},
-            wireframe::Wireframe,
+        }, widget::{
+            button::{Button, ButtonImage, ButtonTheme}, palette::{hsl::HslSquare, oklab::OklabPolar}, slider::Slider,
         },
-        widget::{
-            area::{Area, AreaMode},
-            button::{Button, ButtonImage, ButtonTheme},
-            slider::Slider,
-        },
-    },
-    unit::{Axis, IRect},
-    val::Val,
+    }, unit::{Axis, IRect}, val::Val,
 };
 use ln_world::{Element, Handle, World};
 use winit::event_loop::EventLoop;
-
-const FONT_SANS: &str = "Source Han Sans CN";
-const FONT_MONO: &str = "Noto Sans Mono";
-const CARD_WIDTH: i32 = 364;
-const CARD_HEIGHT: i32 = 136;
 
 fn main() {
     env_logger::init();
@@ -44,7 +32,6 @@ fn main() {
     event_loop.run_app(lnwin).unwrap();
 }
 
-/// Widget gallery. Empty cards are kept as slots for upcoming widgets.
 pub struct WidgetShowcase {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,
@@ -57,224 +44,174 @@ impl Element for WidgetShowcase {
         world.dependency(this, self.common.visible);
 
         let theme = world.fetch(self.common.theme);
-        let roundness = world.fetch(theme.shape.corner_radius).val;
 
         world.insert(RRect {
             common: self.common,
             rect: self.rect,
             order: -200,
-            color: theme.color.surface_container_lowest,
+            color: theme.color.surface,
             radius: 0.0,
             width: 0.0,
         });
 
-        let title_rect = world.build(Transform::anchor(
-            (0.0, 1.0),
-            IRect::new(24, -58, 720, -20),
+        LuniFlex::new(
             self.rect,
-        ));
-        world.insert(Text {
-            text: world.insert(Val::new("组件展示 / Widget Gallery".to_string())),
-            rect: title_rect,
-            attr: TextAttr {
-                metrics: Metrics::new(28.0, 34.0),
-                attrs: Attrs::new().family(Family::Name(FONT_SANS)),
-                align: Align::Left,
-            },
-            order: 100,
-            common: self.common,
-            modulate: theme.color.on_surface,
-            outdated: false,
-        });
-
-        let card = |left: i32, down: i32, title: &str| {
-            let outer = world.build(Transform::anchor(
-                (0.0, 1.0),
-                IRect::new(left, -down - CARD_HEIGHT, left + CARD_WIDTH, -down),
-                self.rect,
-            ));
-            world.insert(RRect {
-                common: self.common,
-                rect: outer,
-                order: -10,
-                color: theme.color.surface_container_low,
-                radius: roundness,
-                width: 0.0,
-            });
-            let title_rect = world.build(Transform::anchor(
-                (0.0, 1.0),
-                IRect::new(16, -30, CARD_WIDTH - 16, -12),
-                outer,
-            ));
-            world.insert(Text {
-                text: world.insert(Val::new(title.to_string())),
-                rect: title_rect,
-                attr: TextAttr {
-                    metrics: Metrics::new(12.0, 18.0),
-                    attrs: Attrs::new().family(Family::Name(FONT_SANS)),
-                    align: Align::Left,
+            LuniParent {
+                axis: LuniAxis::Row,
+                gap: 4,
+                padding: LuniRect {
+                    left: 28,
+                    bottom: 12,
+                    right: 28,
+                    top: 12,
                 },
-                order: 100,
-                common: self.common,
-                modulate: theme.color.surface_container_high,
-                outdated: false,
-            });
-            outer
-        };
-
-        let local = |card, left: i32, top: i32, right: i32, bottom: i32| {
-            world.build(Transform::anchor(
-                (0.0, 1.0),
-                IRect::new(left, -bottom, right, -top),
-                card,
-            ))
-        };
-
-        let text = |rect, text: &str, metrics, family, modulate, order| Text {
-            text: world.insert(Val::new(text.to_string())),
-            rect,
-            attr: TextAttr {
-                metrics,
-                attrs: Attrs::new().family(Family::Name(family)),
-                align: Align::Left,
+                ..Default::default()
             },
-            order,
-            common: self.common,
-            modulate,
-            outdated: false,
-        };
+        )
+        .scope(world, |luni| {
+            LuniFlex::new(
+                world.build(luni.child(LuniChild {
+                    basis: Some(600),
+                    ..Default::default()
+                })),
+                LuniParent {
+                    axis: LuniAxis::Column,
+                    gap: 4,
+                    ..Default::default()
+                },
+            )
+            .scope(world, |luni| {
+                let t = |luni: &mut LuniFlex, s: &str, height, size| {
+                    world.insert(Text {
+                        text: world.insert(Val::new(String::from(s))),
+                        rect: world.build(luni.child(LuniChild {
+                            basis: Some(height),
+                            ..Default::default()
+                        })),
+                        attr: TextAttr {
+                            metrics: Metrics::new(size, height as f32),
+                            attrs: Attrs::new().family(Family::SansSerif),
+                            align: Align::Left,
+                        },
+                        order: 100,
+                        common: self.common,
+                        modulate: theme.color.on_surface,
+                        outdated: false,
+                    })
+                };
 
-        // Vtor: vector logo from vtor.rs.
-        let vtor_card = card(24, 112, "Vtor");
-        let logo_rect = local(vtor_card, 24, 30, 136, 126);
-        // logo() is authored in a 64x64 SVG canvas; Vtor takes normalized paths.
-        let logo_path = logo().transformed(
-            &lyon::math::Transform::scale(1.0 / 64.0, -1.0 / 64.0)
-                .then_translate(lyon::math::Vector::new(0.0, 1.0)),
-        );
-        world.insert(Vtor {
-            common: self.common,
-            rect: logo_rect,
-            color: world.fetch(theme.color.primary).val,
-            order: 10,
-            path: logo_path,
-            outdated: false,
-        });
-        let vtor_text = local(vtor_card, 150, 38, CARD_WIDTH - 16, 112);
-        world.insert(text(
-            vtor_text,
-            "vtor.rs::logo()\n填充路径 + 三角化\nGPU 矢量绘制",
-            Metrics::new(13.0, 22.0),
-            FONT_MONO,
-            theme.color.surface_container_high,
-            100,
-        ));
+                t(luni, "Widget Showcase", 34, 20.0);
+                t(luni, "Buttons", 28, 12.0);
 
-        // Text: Latin and CJK samples.
-        let text_card = card(412, 112, "Text");
-        let text_rect = local(text_card, 24, 38, CARD_WIDTH - 16, 128);
-        world.insert(text(
-            text_rect,
-            "文本渲染 / Text rendering\nSource Han Sans CN + fallback\nABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789\n天地玄黄，宇宙洪荒。",
-            Metrics::new(14.0, 21.0),
-            FONT_SANS,
-            theme.color.on_surface,
-            100,
-        ));
+                LuniFlex::new(
+                    world.build(luni.child(LuniChild {
+                        basis: Some(24),
+                        ..Default::default()
+                    })),
+                    LuniParent {
+                        axis: LuniAxis::Row,
+                        gap: 4,
+                        template: LuniChildTemplate {
+                            basis: 60,
+                            ..Default::default()
+                        },
+                        ..Default::default()
+                    },
+                )
+                .scope(world, |luni| {
+                    let mut b = |color, on_color| {
+                        world.insert(Button {
+                            common: self.common,
+                            rect: world.build(luni.child(LuniChild::default())),
+                            theme: ButtonTheme {
+                                color,
+                                on_color,
+                                ..ButtonTheme::surface(&theme)
+                            },
+                            image: Some(ButtonImage::new(
+                                svg_render(include_bytes!("../res/interface/pen.svg")),
+                                8,
+                            )),
+                            selected: world.insert(Val::new(false)),
+                            hovering: world.insert(Val::new(false)),
+                        })
+                    };
 
-        // RRect: corner radius and theme colors.
-        let rrect_card = card(24, 260, "RRect");
-        let swatches = [
-            theme.color.surface_container,
-            theme.color.surface_container_high,
-            theme.color.primary,
-            theme.color.on_surface,
-        ];
-        let radii = [4.0, 12.0, 22.0, 28.0];
-        for (i, (&color, radius)) in swatches.iter().zip(radii).enumerate() {
-            let left = 24 + i as i32 * 72;
-            let rect = local(rrect_card, left, 42, left + 56, 98);
-            world.insert(RRect {
-                common: self.common,
-                rect,
-                order: 10,
-                color,
-                radius,
-                width: 0.0,
+                    let c = &theme.color;
+                    b(c.surface, c.on_surface);
+                    b(c.primary, c.on_primary);
+                    b(c.primary_container, c.on_primary_container);
+                    b(c.secondary, c.on_secondary);
+                    b(c.secondary_container, c.on_secondary_container);
+                    b(c.tertiary, c.on_tertiary);
+                    b(c.tertiary_container, c.on_tertiary_container);
+                });
+
+                t(luni, "Sliders", 28, 12.0);
+
+                world.insert(Slider {
+                    common: self.common,
+                    value: world.insert(Val::new(0.5)),
+                    rect: world.build(luni.child(LuniChild {
+                        cross: Some(400),
+                        align: Some(LuniAlign::FlexStart),
+                        ..Default::default()
+                    })),
+                    hover: world.insert(Val::new(false)),
+                    pressed: world.insert(Val::new(false)),
+                    axis: Axis::Right,
+                });
+
+                t(luni, "Palettes", 28, 12.0);
+
+                world.insert(OklabPolar {
+                    common: self.common,
+                    rect: world.build(luni.child(LuniChild {
+                        basis: Some(180),
+                        cross: Some(180),
+                        align: Some(LuniAlign::FlexStart),
+                        ..Default::default()
+                    })),
+                    oklab: Oklab(Vec4::new(0.80, -0.07, 0.02, 1.00)),
+                });
+
+                world.insert(HslSquare {
+                    common: self.common,
+                    rect: world.build(luni.child(LuniChild {
+                        basis: Some(180),
+                        cross: Some(180),
+                        align: Some(LuniAlign::FlexStart),
+                        ..Default::default()
+                    })),
+                    hsl: Hsl(Vec4::new(0.50, 0.70, 0.20, 1.00)),
+                });
             });
-        }
 
-        // Controls: interactive slider and toggle button.
-        let controls_card = card(412, 260, "Sliders & ToggleButton");
-        let slider_rect = local(controls_card, 24, 40, CARD_WIDTH - 24, 64);
-        world.insert(Slider {
-            common: self.common,
-            value: world.insert(Val::new(0.42)),
-            axis: Axis::Right,
-            rect: slider_rect,
-            hover: world.insert(Val::new(false)),
-            pressed: world.insert(Val::new(false)),
-        });
-        let button_rect = local(controls_card, 24, 78, 144, 118);
-        world.insert(Button {
-            common: self.common,
-            rect: button_rect,
-            theme: ButtonTheme::surface(&theme),
-            image: Some(ButtonImage::new(
-                svg_render(include_bytes!("../res/interface/pen.svg")),
-                12,
-            )),
-            selected: world.insert(Val::new(true)),
-            hovering: world.insert(Val::new(false)),
-        });
-        let button_text = local(controls_card, 160, 84, CARD_WIDTH - 16, 112);
-        world.insert(text(
-            button_text,
-            "ToggleButton",
-            Metrics::new(13.0, 20.0),
-            FONT_SANS,
-            theme.color.surface_container_high,
-            100,
-        ));
-
-        // Wireframe & Area: stroke variants and handle modes.
-        let stroke_card = card(24, 408, "Wireframe & Area");
-        for (i, (align, radius, color)) in [
-            (0.0, 4.0, theme.color.primary),
-            (0.5, 10.0, theme.color.on_surface),
-            (1.0, 16.0, theme.color.surface_container_high),
-        ]
-        .into_iter()
-        .enumerate()
-        {
-            let left = 24 + i as i32 * 112;
-            let rect = local(stroke_card, left, 40, left + 64, 64);
-            world.insert(Wireframe {
-                common: self.common,
-                rect,
-                order: 10,
-                color,
-                radius,
-                width: 4.0 + i as f32 * 2.0,
-                align,
+            LuniFlex::new(
+                world.build(luni.child(LuniChild {
+                    basis: Some(600),
+                    ..Default::default()
+                })),
+                LuniParent {
+                    axis: LuniAxis::Row,
+                    gap: 4,
+                    ..Default::default()
+                },
+            )
+            .scope(world, |luni| {
+                world.insert(Slider {
+                    common: self.common,
+                    value: world.insert(Val::new(0.5)),
+                    rect: world.build(luni.child(LuniChild {
+                        cross: Some(200),
+                        align: Some(LuniAlign::FlexStart),
+                        ..Default::default()
+                    })),
+                    hover: world.insert(Val::new(false)),
+                    pressed: world.insert(Val::new(false)),
+                    axis: Axis::Up,
+                });
             });
-        }
-        for (i, (mode, color)) in [
-            (AreaMode::None, theme.color.surface_container_high),
-            (AreaMode::Four, theme.color.on_surface),
-            (AreaMode::Eight, theme.color.primary),
-        ]
-        .into_iter()
-        .enumerate()
-        {
-            let left = 24 + i as i32 * 112;
-            let rect = local(stroke_card, left, 82, left + 80, 114);
-            world.insert(Area {
-                common: self.common,
-                rect,
-                color,
-                mode: world.insert(Val::new(mode)),
-            });
-        }
+        });
     }
 }

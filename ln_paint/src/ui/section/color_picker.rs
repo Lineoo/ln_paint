@@ -215,6 +215,8 @@ impl Element for ColorPickerButton {
     }
 }
 
+// TODO hsl combination should be move inside palette module, leave transaction parts here
+
 pub struct LayerHslPalette {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,

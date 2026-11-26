@@ -24,6 +24,7 @@ use crate::{
         chunk::{TABLE_LAYER_CHUNK, TABLE_LAYER_CHUNK_RAW},
         object::TABLE_LAYER_OBJECT,
     },
+    ui::theme::ThemeArchive,
 };
 
 /// The format version of the database.
@@ -257,13 +258,14 @@ impl Save {
 }
 
 /// read-only deserialized copy from origin scene file
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(Default, serde::Deserialize)]
 pub struct SceneFile {
     pub database_version: Option<u32>,
     #[serde(default)]
     pub compact_on_startup: bool,
     pub desktop_mode: Option<bool>,
-    pub dark_mode: Option<bool>,
+    #[serde(default)]
+    pub theme: ThemeArchive,
     #[serde(default)]
     pub page_camera: PageContainerArchive,
     pub tilt_correction: Option<TiltCorrection>,
@@ -290,20 +292,6 @@ impl SceneFile {
                     SceneFile::default()
                 }
             },
-        }
-    }
-}
-
-impl Default for SceneFile {
-    fn default() -> Self {
-        SceneFile {
-            database_version: Some(DATABASE_VERSION),
-            compact_on_startup: false,
-            desktop_mode: None,
-            dark_mode: None,
-            page_camera: PageContainerArchive::default(),
-            tilt_correction: None,
-            offset_correction: None,
         }
     }
 }

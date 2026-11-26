@@ -1,15 +1,13 @@
 use std::sync::Arc;
 
 use cosmic_text::{Align, Attrs, Family, Metrics};
+use glam::Vec4;
 use ln_paint::{
-    lnwin::Lnwin,
-    ui::{
+    color::srgb::SrgbLinear, lnwin::Lnwin, ui::{
         common::WidgetCommon,
         layout::transform::{Transform, TransformValue},
         renderer::text::{Text, TextAttr},
-    },
-    unit::IRect,
-    val::Val,
+    }, unit::IRect, val::Val,
 };
 use ln_world::{Element, Handle, World};
 use winit::event_loop::EventLoop;
@@ -44,7 +42,8 @@ impl Element for TextPreview {
         world.set_autodeps(Some(this));
         world.dependency(this, self.common.visible);
 
-        let theme = world.fetch(self.common.theme);
+        let color = world.insert(Val::new(SrgbLinear(Vec4::new(0.3, 0.2, 0.0, 1.0))));
+        let black = world.insert(Val::new(SrgbLinear::BLACK));
 
         let row = |top: i32, height: i32| {
             world.build(Transform::anchor(
@@ -91,7 +90,7 @@ impl Element for TextPreview {
             title,
             Metrics::new(32.0, 38.0),
             FONT_SANS,
-            theme.color.primary,
+            color,
         ));
 
         world.insert(text(
@@ -100,7 +99,7 @@ impl Element for TextPreview {
             latin,
             Metrics::new(18.0, 24.0),
             FONT_MONO,
-            theme.color.surface_container_lowest,
+            black,
         ));
 
         world.insert(text(
@@ -109,7 +108,7 @@ impl Element for TextPreview {
             cjk,
             Metrics::new(18.0, 26.0),
             FONT_SANS,
-            theme.color.surface_container_lowest,
+            black,
         ));
 
         world.insert(text(
@@ -117,7 +116,7 @@ impl Element for TextPreview {
             emoji,
             Metrics::new(24.0, 36.0),
             FONT_EMOJI,
-            theme.color.surface_container_lowest,
+            black,
         ));
 
         for (rect, align) in [
@@ -135,7 +134,7 @@ impl Element for TextPreview {
                 },
                 order: 10,
                 common: self.common,
-                modulate: theme.color.primary,
+                modulate: color,
                 outdated: false,
             });
         }
@@ -145,7 +144,7 @@ impl Element for TextPreview {
             small,
             Metrics::new(12.0, 18.0),
             FONT_SANS,
-            theme.color.surface_container_lowest,
+            black,
         ));
     }
 }

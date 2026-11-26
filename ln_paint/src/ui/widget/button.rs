@@ -2,7 +2,7 @@ use glam::{IVec2, UVec2};
 use ln_world::{Element, Handle, HandleGeneric, World};
 
 use crate::{
-    color::srgb::SrgbLinear,
+    color::srgb::{Srgb, SrgbLinear},
     input::{collider::ToolRectCollider, drag::Drag, pointer::PointerEvent},
     ui::{
         common::WidgetCommon,
@@ -111,7 +111,7 @@ impl Element for Button {
                 0.0
             };
 
-            color.mix(on_color, factor)
+            Srgb::mix(color.to_srgb(), on_color.to_srgb(), factor).to_linear()
         })
         .listen(selected)
         .listen(hovering)

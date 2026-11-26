@@ -102,6 +102,11 @@ impl LuniFlex {
         }
     }
 
+    pub fn scope(mut self, world: &World, f: impl FnOnce(&mut LuniFlex)) {
+        f(&mut self);
+        world.insert(self);
+    }
+
     pub fn child(&mut self, child: LuniChild) -> impl Descriptor<Target = Handle<Val<IRect>>> {
         LuniFlexChildBuilder { luni: self, child }
     }

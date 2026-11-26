@@ -164,7 +164,13 @@ impl Element for BrushListPanel {
             let button = world.insert(Button {
                 common,
                 rect: button_rect,
-                theme: ButtonTheme::surface(&theme),
+                theme: ButtonTheme {
+                    active_color: theme.color.surface,
+                    active_on_color: theme.color.on_surface,
+                    press: world.insert(Val::new(0.0)),
+                    hover: world.insert(Val::new(0.0)),
+                    ..ButtonTheme::surface(&theme)
+                },
                 image: None,
                 selected,
                 hovering: world.insert(Val::new(false)),
