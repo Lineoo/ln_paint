@@ -153,7 +153,7 @@ impl Element for DebugPanel {
         let compact = b(compact_rect, Icon::DATABASE_ZAP);
         world.observer(compact, move |&ButtonClick, world| {
             log::debug!("on next startup database will be compacted");
-            let save = world.single_fetch::<Save>();
+            let mut save = world.single_fetch_mut::<Save>();
             let mut sn_doc = save.sn_read();
             sn_doc.set_compact_on_startup(true);
             save.sn_write(&sn_doc);

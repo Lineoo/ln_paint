@@ -113,9 +113,10 @@ impl Save {
         }
     }
 
-    pub fn sn_write(&self, sn_doc: &SceneDocument) {
+    pub fn sn_write(&mut self, sn_doc: &SceneDocument) {
         if let Some(path) = &self.path {
             sn_doc.write(&path.sn, &path.sn_tmp);
+            self.sn = SceneFile::parse(sn_doc);
         }
     }
 
@@ -438,7 +439,7 @@ impl Autosave {
     pub fn autosave_all(world: &World) {
         let start = Instant::now();
 
-        let save = world.single_fetch_mut::<Save>();
+        let mut save = world.single_fetch_mut::<Save>();
         let mut sn_doc = save.sn_read();
         let mut write = save.db.begin_write().unwrap();
         write.set_quick_repair(true);
