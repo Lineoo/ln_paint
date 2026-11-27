@@ -79,12 +79,15 @@ flush
 默认 `trigger` 调用是及时的
 
 - 允许 zero-copy 和内部可变性等功能，但这种功能很少
+- 因为触发的 observer 是未知的无法保证没有借用冲突
 - 缺点：生命周期管理不当可能会触发可变性检查导致 panic 或出现*循环访问*导致栈溢出
 
 队列 `queue_trigger` 延迟调用
 
 - 不必操心声明周期，一般用这个，除非有特殊需求
 - 取点：需要事件 ownership 而不是 reference
+
+结论：总是用 `queue_trigger`，别用 `trigger`
 
 ## 约定顺序 ##
 
@@ -102,7 +105,7 @@ flush
 使用一个简单的标签系统来标记执行位置。
 
 - `init` 来自 World 默认状态，一般只有 `Lnwin` 能接触
-- `<foo>` 表示 foo 调用 queue 进行展平后的 flush 过程内，且没有给予新标签
+- `foo |` 表示 foo 调用 queue 进行展平后的 flush 过程内，且没有给予新标签
 - `foo Handle` 表示在 foo 阶段插入节点时
 - `foo {Handle}` 表示在 foo 阶段使用 `insert_with` 实例化节点时
 - `bar ~Handle` 表示在 bar 阶段移除节点时

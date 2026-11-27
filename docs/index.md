@@ -76,7 +76,8 @@
     - `wrapper` 总汇
 - `input/` 输入系统
     - `collider` 核心交互体
-    - `mouse`
+    - `drag`
+    - `hold`
     - `pointer` 统一的指针事件与捕获
     - `timer`
 - `color/` 颜色系统

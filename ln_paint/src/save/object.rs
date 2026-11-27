@@ -43,14 +43,16 @@ impl Element for Objects {
                     }))
                 }
             };
-            world.insert(Object {
+            let object = world.insert(Object {
                 uuid: Uuid::from_u128(uuid),
                 handle,
             });
+            world.dependency(object, handle);
         }
 
         world.insert(Autosave(Box::new(|world, task| {
             let mut table = task.write.open_table(TABLE_LAYER_OBJECT).unwrap();
+            table.retain(|_, _| false).unwrap();
             world.foreach_fetch::<Object>(|obj| {
                 let data = match obj.handle {
                     ObjectHandle::ColorSnip(handle) => {

@@ -24,6 +24,7 @@ pub enum PointerEvent {
     Move(PointerCapture),
     Release(PointerCapture),
     Scroll { pointer: Pointer, delta: DVec2 },
+    Menu(Pointer),
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -52,7 +53,10 @@ pub struct PointerReacquire {
 impl PointerEvent {
     pub fn pointer(&self) -> Pointer {
         match self {
-            Self::Enter(pointer) | Self::Leave(pointer) | Self::Hover(pointer) => *pointer,
+            Self::Enter(pointer)
+            | Self::Leave(pointer)
+            | Self::Hover(pointer)
+            | Self::Menu(pointer) => *pointer,
             Self::Scroll { pointer, .. } => *pointer,
             Self::Press(capture) | Self::Move(capture) | Self::Release(capture) => capture.pointer,
         }
@@ -118,12 +122,19 @@ impl Element for PointerTool {
                     state,
                     ..
                 } => {
-                    let kind = match button {
-                        ButtonSource::Mouse(MouseButton::Left) => PointerKind::Mouse,
+                    let (kind, menu) = match button {
+                        ButtonSource::Mouse(MouseButton::Left | MouseButton::Right) => (
+                            PointerKind::Mouse,
+                            matches!(button, ButtonSource::Mouse(MouseButton::Right)),
+                        ),
                         ButtonSource::Mouse(_) => return,
-                        ButtonSource::Touch { finger_id, .. } => PointerKind::Touch(*finger_id),
-                        ButtonSource::TabletTool { kind, .. } => PointerKind::TabletTool(*kind),
-                        ButtonSource::Unknown(_) => PointerKind::Unknown,
+                        ButtonSource::Touch { finger_id, .. } => {
+                            (PointerKind::Touch(*finger_id), false)
+                        }
+                        ButtonSource::TabletTool { kind, .. } => {
+                            (PointerKind::TabletTool(*kind), false)
+                        }
+                        ButtonSource::Unknown(_) => (PointerKind::Unknown, false),
                     };
                     let pointer = this.state(kind);
                     pointer.pointer.screen = lnwindow.cursor_to_screen(*position);
@@ -133,9 +144,17 @@ impl Element for PointerTool {
                     match state {
                         ElementState::Pressed => {
                             pointer.pointer.force = button_force(button);
-                            this.press(world, kind);
+                            if menu {
+                                this.menu(world, kind);
+                            } else {
+                                this.press(world, kind);
+                            }
                         }
-                        ElementState::Released => this.release(world, kind),
+                        ElementState::Released => {
+                            if !menu {
+                                this.release(world, kind);
+                            }
+                        }
                     }
                 }
 
@@ -270,6 +289,22 @@ impl PointerTool {
             .or_else(|| self.pointers.values().find(|state| state.hover.is_some()))?;
 
         state.hover.map(|target| (state.pointer, target))
+    }
+
+    fn menu(&mut self, world: &World, kind: PointerKind) {
+        let pointer = self.pointers[&kind].pointer;
+        let Some(hit) = ToolControl::intersect_main(world, &pointer) else {
+            return;
+        };
+
+        let position = world.fetch(hit.camera).screen_to_world(pointer.screen);
+        world.queue_trigger(
+            hit.handle,
+            PointerEvent::Menu(Pointer {
+                position,
+                ..pointer
+            }),
+        );
     }
 
     fn press(&mut self, world: &World, kind: PointerKind) {

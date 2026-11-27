@@ -34,3 +34,6 @@ pixel = "Pixel"
 blur = "Blur"
 smudge = "Smudge"
 tint = "Tint"
+
+[menu]
+delete = "Delete"

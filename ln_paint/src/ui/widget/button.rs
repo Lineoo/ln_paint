@@ -2,11 +2,16 @@ use ln_world::{Element, Handle, HandleGeneric, World};
 
 use crate::{
     color::srgb::{Srgb, SrgbLinear},
-    input::{collider::ToolRectCollider, drag::Drag, pointer::PointerEvent},
+    input::{collider::ToolRectCollider, drag::Drag, hold::Hold, pointer::PointerEvent},
     ui::{
         common::WidgetCommon,
         layout::transform::{Transform, TransformValue},
-        renderer::{canvas::Canvas, rrect::RRect, svg::PixImage},
+        renderer::{
+            canvas::Canvas,
+            rrect::RRect,
+            svg::PixImage,
+            text::{Text, TextAttr},
+        },
         theme::Theme,
     },
     unit::IRect,
@@ -39,11 +44,30 @@ pub struct ButtonImage {
     pub transform: TransformValue,
 }
 
+pub struct ButtonText {
+    pub common: WidgetCommon,
+    pub source: Handle<Button>,
+    pub text: Handle<Val<String>>,
+    pub transform: TransformValue,
+    pub attr: TextAttr,
+}
+
+pub struct ButtonImageText {
+    pub common: WidgetCommon,
+    pub source: Handle<Button>,
+    pub image: Handle<Val<PixImage>>,
+    pub text: Handle<Val<String>>,
+    pub image_transform: TransformValue,
+    pub text_transform: TransformValue,
+    pub attr: TextAttr,
+}
+
 pub struct ButtonToggle {
     pub source: Handle<Button>,
 }
 
 pub struct ButtonClick;
+pub struct ButtonHold;
 
 impl ButtonTheme {
     pub fn surface(theme: &Theme) -> Self {
@@ -128,7 +152,9 @@ impl Element for Button {
         });
 
         let mut drag = Drag::default();
+        let hold = Hold::default();
         let mut dragging = false;
+        let mut held = false;
         world.observer(this, move |event: &PointerEvent, world| match event {
             PointerEvent::Enter(_) | PointerEvent::Leave(_) => {
                 let hover = matches!(event, PointerEvent::Enter(_));
@@ -137,26 +163,34 @@ impl Element for Button {
             }
             PointerEvent::Press(_) => {
                 dragging = false;
+                held = false;
                 world.fetch_mut(pressed).val = true;
                 world.queue_trigger(pressed, ValChanged);
             }
             PointerEvent::Move(_) => {
+                if held {
+                    return;
+                }
                 if let Some(event) = drag.update(event) {
                     dragging = true;
-                    world.trigger(this, &event);
+                    world.queue_trigger(this, event);
+                } else if hold.reached(event) {
+                    held = true;
+                    world.queue_trigger(this, ButtonHold);
                 }
             }
             PointerEvent::Release(_) => {
-                if !dragging {
+                if !dragging && !held {
                     world.queue_trigger(this, ButtonClick);
                 }
-                if let Some(event) = drag.update(event) {
-                    world.trigger(this, &event);
+                if !held && let Some(event) = drag.update(event) {
+                    world.queue_trigger(this, event);
                 }
+                held = false;
                 world.fetch_mut(pressed).val = false;
                 world.queue_trigger(pressed, ValChanged);
             }
-            PointerEvent::Hover(_) | PointerEvent::Scroll { .. } => {}
+            PointerEvent::Hover(_) | PointerEvent::Scroll { .. } | PointerEvent::Menu(_) => {}
         });
     }
 }
@@ -178,6 +212,45 @@ impl Element for ButtonImage {
             data: bmp.val.bytes.clone(),
             data_width: bmp.val.bytes_width,
             data_height: bmp.val.bytes_height,
+        });
+    }
+}
+
+impl Element for ButtonText {
+    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
+        world.scope("button_text");
+        world.set_autodeps(Some(this));
+
+        let button = world.fetch(self.source);
+        world.insert(Text {
+            text: self.text,
+            rect: world.build(Transform::new(self.transform, button.rect)),
+            attr: self.attr.clone(),
+            order: 10,
+            common: self.common,
+            modulate: button.theme.on_color,
+            outdated: false,
+        });
+    }
+}
+
+impl Element for ButtonImageText {
+    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
+        world.scope("button_image_text");
+        world.set_autodeps(Some(this));
+
+        world.insert(ButtonImage {
+            common: self.common,
+            source: self.source,
+            image: self.image,
+            transform: self.image_transform,
+        });
+        world.insert(ButtonText {
+            common: self.common,
+            source: self.source,
+            text: self.text,
+            transform: self.text_transform,
+            attr: self.attr.clone(),
         });
     }
 }

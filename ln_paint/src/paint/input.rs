@@ -326,6 +326,10 @@ impl Element for LayerDrag {
         let hold = Hold::default();
         let mut state = LayerDragState::None;
         world.observer(this, move |event: &PointerEvent, world| {
+            if matches!(event, PointerEvent::Menu(_)) {
+                return;
+            }
+
             let mut this = world.fetch_mut(this);
             let page = &mut *world.single_fetch_mut::<LayerPage>();
             let container = page.nest;
@@ -389,8 +393,8 @@ impl Element for LayerDrag {
                     if held {
                         match target {
                             Some(target) => {
-                                world.trigger(target, &PointerEvent::Press(press.clone()));
-                                world.trigger(target, &PointerEvent::Move(capture.clone()));
+                                world.queue_trigger(target, PointerEvent::Press(press.clone()));
+                                world.queue_trigger(target, PointerEvent::Move(capture.clone()));
                                 LayerDragState::Object {
                                     target,
                                     capture: capture.clone(),
@@ -409,24 +413,24 @@ impl Element for LayerDrag {
                 }
                 (LayerDragState::Pending { press, target }, PointerEvent::Release(capture)) => {
                     if !dragged && let Some(target) = target {
-                        world.trigger(target, &PointerEvent::Press(press));
-                        world.trigger(target, &PointerEvent::Release(capture.clone()));
+                        world.queue_trigger(target, PointerEvent::Press(press));
+                        world.queue_trigger(target, PointerEvent::Release(capture.clone()));
                     }
                     LayerDragState::None
                 }
                 (LayerDragState::Object { target, capture }, PointerEvent::Press(_)) => {
-                    world.trigger(target, &PointerEvent::Release(capture));
+                    world.queue_trigger(target, PointerEvent::Release(capture));
                     grab(&mut this, utils, world, container, center, pinch)
                 }
                 (LayerDragState::Object { target, .. }, PointerEvent::Move(capture)) => {
-                    world.trigger(target, &PointerEvent::Move(capture.clone()));
+                    world.queue_trigger(target, PointerEvent::Move(capture.clone()));
                     LayerDragState::Object {
                         target,
                         capture: capture.clone(),
                     }
                 }
                 (LayerDragState::Object { target, .. }, PointerEvent::Release(capture)) => {
-                    world.trigger(target, &PointerEvent::Release(capture.clone()));
+                    world.queue_trigger(target, PointerEvent::Release(capture.clone()));
                     LayerDragState::None
                 }
 
@@ -656,6 +660,9 @@ impl Element for LayerDraw {
         world.observer(this, move |event: &PointerEvent, world| {
             if let PointerEvent::Scroll { .. } = event {
                 world.queue_trigger(world.single::<LayerDrag>(), event.clone());
+                return;
+            }
+            if matches!(event, PointerEvent::Menu(_)) {
                 return;
             }
 

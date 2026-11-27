@@ -34,3 +34,6 @@ pixel = "بكسل"
 blur = "تمويه"
 smudge = "مزج"
 tint = "صبغة"
+
+[menu]
+delete = "حذف"

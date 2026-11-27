@@ -79,7 +79,7 @@ impl Element for ToolControl {
     fn when_remove(&mut self, world: &World, this: Handle<Self>) {
         let mut camera = world.fetch_mut(self.common.camera);
         camera.colliders.retain(|&x| x != this);
-        world.trigger(world.single::<Lnwindow>(), &ToolControlUpdate);
+        world.queue_trigger(world.single::<Lnwindow>(), ToolControlUpdate);
     }
 }
 

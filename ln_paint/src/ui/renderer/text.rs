@@ -39,6 +39,7 @@ pub struct Text {
     pub outdated: bool,
 }
 
+#[derive(Clone)]
 pub struct TextAttr {
     pub metrics: Metrics,
     pub attrs: Attrs<'static>,

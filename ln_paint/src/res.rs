@@ -20,6 +20,7 @@ impl Icon {
     pub const SETTINGS:         &'static [u8] = include_bytes!("../res/icon/settings.svg"           );
     pub const SQUARE_DASHED:    &'static [u8] = include_bytes!("../res/icon/square-dashed.svg"      );
     pub const TIMER:            &'static [u8] = include_bytes!("../res/icon/timer.svg"              );
+    pub const TRASH:            &'static [u8] = include_bytes!("../res/icon/trash.svg"              );
     pub const UNDO_2:           &'static [u8] = include_bytes!("../res/icon/undo-2.svg"             );
 }
 

@@ -17,7 +17,7 @@ use winit::{
 };
 
 use crate::{
-    input::{mouse::MouseTool, pointer::PointerTool},
+    input::pointer::PointerTool,
     render::{
         Render,
         camera::{Camera, CameraDescriptor, CameraPipeline},
@@ -171,7 +171,6 @@ impl Element for Lnwindow {
         world.insert_with(WireframePipeline::from_world);
         world.insert_with(VtorPipeline::from_world);
         world.insert_with(TextPipeline::from_world);
-        world.insert(MouseTool::default());
         world.insert(PointerTool::default());
 
         let rect = world.insert(Val::new(self.window_rect()));

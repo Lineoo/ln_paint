@@ -34,3 +34,6 @@ pixel = "像素"
 blur = "模糊"
 smudge = "混色"
 tint = "着色"
+
+[menu]
+delete = "删除"

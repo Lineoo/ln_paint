@@ -275,7 +275,7 @@ impl Element for BrushListPanel {
                     DragStatus::Dragging => PointerEvent::Move(drag.capture.clone()),
                     DragStatus::End => PointerEvent::Release(drag.capture.clone()),
                 };
-                world.trigger(container, &event);
+                world.queue_trigger(container, event);
             });
 
             world.observer(button, move |event: &PointerEvent, world| {

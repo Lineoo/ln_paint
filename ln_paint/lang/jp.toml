@@ -34,3 +34,6 @@ pixel = "ピクセル"
 blur = "ぼかし"
 smudge = "混色"
 tint = "着色"
+
+[menu]
+delete = "削除"

@@ -682,7 +682,7 @@ impl World {
         let trace = self.scope.get_mut().clone();
         let buf = self.queue.try_iter().collect::<Vec<_>>();
         for cmd in buf {
-            self.scope(format!("<{}>", cmd.label));
+            self.scope(format!("{} |", cmd.label));
             (cmd.action)(self);
             self.flush();
         }
@@ -743,7 +743,11 @@ impl World {
     fn available_unchecked(&self, handle: impl HandleGeneric) -> Result<(), WorldError> {
         let occupied = self.occupied.borrow();
         if occupied.get(&handle.untyped()).is_some_and(|cnt| *cnt < 0) {
-            panic!("{}", WorldError::Unavailable(self.info(handle)));
+            panic!(
+                "{} [{}]",
+                WorldError::Unavailable(self.info(handle)),
+                self.label()
+            );
         }
 
         Ok(())
@@ -761,7 +765,11 @@ impl World {
     fn available_mut_unchecked(&self, handle: impl HandleGeneric) -> Result<(), WorldError> {
         let occupied = self.occupied.borrow();
         if occupied.get(&handle.untyped()).is_some_and(|cnt| *cnt != 0) {
-            panic!("{}", WorldError::UnavailableMut(self.info(handle)));
+            panic!(
+                "{} [{}]",
+                WorldError::UnavailableMut(self.info(handle)),
+                self.label()
+            );
         }
 
         Ok(())
@@ -1013,9 +1021,7 @@ impl World {
     }
 
     pub fn queue_trigger<E: Send + 'static>(&self, target: impl HandleGeneric, event: E) {
-        let label = self.label();
         self.queue(move |world| {
-            world.scope(format!("{} |", label));
             world.trigger(target, &event);
         });
     }
