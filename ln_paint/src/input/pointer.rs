@@ -29,6 +29,7 @@ pub enum PointerEvent {
 #[derive(Debug, Clone, Copy)]
 pub struct Pointer {
     pub screen: DVec2,
+    pub pixel: DVec2,
     pub kind: PointerKind,
     pub tilt: Vec2,
     pub force: Option<f32>,
@@ -97,10 +98,10 @@ impl Element for PointerTool {
                     position, source, ..
                 } => {
                     let kind = PointerKind::from(source.clone());
-                    let screen = lnwindow.cursor_to_screen(*position);
 
                     let state = this.state(kind);
-                    state.pointer.screen = screen;
+                    state.pointer.screen = lnwindow.cursor_to_screen(*position);
+                    state.pointer.pixel = DVec2::new(position.x, position.y);
                     state.pointer.tilt = source_tilt(source);
                     state.pointer.force = source_force(source);
 
@@ -124,10 +125,9 @@ impl Element for PointerTool {
                         ButtonSource::TabletTool { kind, .. } => PointerKind::TabletTool(*kind),
                         ButtonSource::Unknown(_) => PointerKind::Unknown,
                     };
-                    let screen = lnwindow.cursor_to_screen(*position);
-
                     let pointer = this.state(kind);
-                    pointer.pointer.screen = screen;
+                    pointer.pointer.screen = lnwindow.cursor_to_screen(*position);
+                    pointer.pointer.pixel = DVec2::new(position.x, position.y);
                     pointer.pointer.tilt = button_tilt(button);
 
                     match state {
@@ -155,20 +155,19 @@ impl Element for PointerTool {
                 }
 
                 WindowEvent::PointerEntered { position, kind, .. } => {
-                    let screen = lnwindow.cursor_to_screen(*position);
-
                     let pointer = this.state(*kind);
-                    pointer.pointer.screen = screen;
+                    pointer.pointer.screen = lnwindow.cursor_to_screen(*position);
+                    pointer.pointer.pixel = DVec2::new(position.x, position.y);
 
                     this.update_hover(world, *kind, false);
                 }
 
                 WindowEvent::PointerLeft { position, kind, .. } => {
-                    if let Some(position) = position {
-                        let screen = lnwindow.cursor_to_screen(*position);
-                        if let Some(state) = this.pointers.get_mut(kind) {
-                            state.pointer.screen = screen;
-                        }
+                    if let Some(position) = position
+                        && let Some(state) = this.pointers.get_mut(kind)
+                    {
+                        state.pointer.screen = lnwindow.cursor_to_screen(*position);
+                        state.pointer.pixel = DVec2::new(position.x, position.y);
                     }
 
                     let Some(state) = this.pointers.get(kind) else {
@@ -227,6 +226,7 @@ impl PointerTool {
         self.pointers.entry(kind).or_insert_with(|| PointerState {
             pointer: Pointer {
                 screen: DVec2::ZERO,
+                pixel: DVec2::ZERO,
                 kind,
                 tilt: Vec2::ZERO,
                 force: None,

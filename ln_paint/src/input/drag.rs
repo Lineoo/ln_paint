@@ -2,12 +2,12 @@ use glam::DVec2;
 
 use crate::input::pointer::{PointerCapture, PointerEvent};
 
-/// Screen-space distance from the press point that starts a drag.
-const THRESHOLD: f64 = 0.005;
+/// Screen-pixel distance from the press point that starts a drag.
+const THRESHOLD: f64 = 20.0;
 
 /// Drag gesture state, fed with pointer events.
 ///
-/// `threshold` is compared against the screen-space distance from the press point.
+/// `threshold` is compared against the screen-pixel distance from the press point.
 pub struct Drag {
     threshold: f64,
     last: DVec2,
@@ -17,7 +17,7 @@ pub struct Drag {
 pub struct DragEvent {
     pub capture: PointerCapture,
     pub status: DragStatus,
-    /// screen-space movement since the previous update
+    /// screen-pixel movement since the previous update
     pub delta: DVec2,
 }
 
@@ -39,18 +39,18 @@ impl Drag {
 
     pub fn update(&mut self, event: &PointerEvent) -> Option<DragEvent> {
         let capture = event.capture()?;
-        let screen = capture.pointer.screen;
+        let pixel = capture.pointer.pixel;
 
         let status = match event {
             PointerEvent::Press(_) => {
-                self.last = screen;
+                self.last = pixel;
                 self.active = false;
                 return None;
             }
             PointerEvent::Move(_) => match self.active {
                 true => DragStatus::Dragging,
                 false => {
-                    let distance = (capture.pointer.screen - capture.start.screen).length();
+                    let distance = (capture.pointer.pixel - capture.start.pixel).length();
                     if distance <= self.threshold {
                         return None;
                     }
@@ -68,8 +68,8 @@ impl Drag {
             _ => return None,
         };
 
-        let delta = screen - self.last;
-        self.last = screen;
+        let delta = pixel - self.last;
+        self.last = pixel;
         Some(DragEvent {
             capture: capture.clone(),
             status,

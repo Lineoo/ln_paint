@@ -1,4 +1,4 @@
-use glam::{IVec2, Vec2};
+use glam::{DVec2, IVec2, Vec2};
 use ln_world::{Element, Handle, World};
 use winit::event::{ButtonSource, ElementState, MouseButton, PointerKind, WindowEvent};
 
@@ -35,6 +35,7 @@ impl Element for MouseTool {
                 let root = world.single_fetch::<RootCamera>().0;
                 let pointer = Pointer {
                     screen,
+                    pixel: DVec2::new(position.x, position.y),
                     kind: PointerKind::Mouse,
                     tilt: Vec2::ZERO,
                     force: Some(1.0),

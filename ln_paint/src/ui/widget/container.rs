@@ -1,8 +1,10 @@
 use glam::I64Vec2;
 use ln_world::{Element, Handle, World};
+use winit::dpi::PhysicalPosition;
 
 use crate::{
     input::{drag::Drag, pointer::PointerEvent},
+    lnwin::Lnwindow,
     render::nest::Nest,
     ui::{renderer::rrect::RRect, theme::Theme},
     unit::{FI64Ext, IRect},
@@ -46,7 +48,9 @@ impl Element for Container {
                     let this = world.fetch(this);
                     let nest = world.fetch(this.nest);
                     let parent_camera = world.fetch(nest.common.camera);
-                    parent_camera.screen_to_world_relative(drag.delta)
+                    let lnwindow = world.single_fetch::<Lnwindow>();
+                    let cursor = PhysicalPosition::new(drag.delta.x, drag.delta.y);
+                    parent_camera.screen_to_world_relative(lnwindow.cursor_to_screen(cursor))
                 }
             };
 
