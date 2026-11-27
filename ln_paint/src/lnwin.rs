@@ -5,7 +5,7 @@ use std::{
 
 use glam::{DVec2, I64Vec2, IVec2, UVec2};
 use hashbrown::HashMap;
-use ln_world::{Element, Handle, ViewRef, World};
+use ln_world::{Element, Handle, World};
 #[cfg(target_os = "android")]
 use winit::platform::android::activity::AndroidApp;
 use winit::{
@@ -90,45 +90,37 @@ impl ApplicationHandler for Lnwin {
             let lnwindow = self.world.insert(lnwindow);
             self.windows.insert(window_id, lnwindow);
         } else {
-            for &view in self.windows.values() {
-                self.world.enter(view, || {
-                    let mut render = self.world.single_fetch_mut::<Render>();
-                    let lnwindow = self.world.single_fetch::<Lnwindow>();
-                    render.target_recreate(&lnwindow);
-                });
-            }
+            let mut render = self.world.single_fetch_mut::<Render>();
+            let lnwindow = self.world.single_fetch::<Lnwindow>();
+            render.target_recreate(&lnwindow);
         }
 
         self.world.flush();
     }
 
     fn new_events(&mut self, event_loop: &dyn ActiveEventLoop, _cause: StartCause) {
-        for &view in self.windows.values() {
-            self.world.enter(view, || {
-                let now = Instant::now();
-                let mut earliest = None;
-                self.world.foreach_fetch::<Task>(|task| {
-                    let earliest = earliest.get_or_insert(task.instant);
-                    if task.instant < *earliest {
-                        *earliest = task.instant;
-                    }
-                    if task.instant <= now {
-                        let task = task.retrieve();
-                        self.world.queue(move |world| {
-                            world.remove_with(task, |task, world| {
-                                log::debug!("Oi!");
-                                (task.content)(world)
-                            });
-                        });
-                    }
+        let now = Instant::now();
+        let mut earliest = None;
+        self.world.foreach_fetch::<Task>(|task| {
+            let earliest = earliest.get_or_insert(task.instant);
+            if task.instant < *earliest {
+                *earliest = task.instant;
+            }
+            if task.instant <= now {
+                let task = task.retrieve();
+                self.world.queue(move |world| {
+                    world.remove_with(task, |task, world| {
+                        log::debug!("Oi!");
+                        (task.content)(world)
+                    });
                 });
-                if let Some(earliest) = earliest {
-                    log::debug!("Lets wait!");
-                    event_loop.set_control_flow(ControlFlow::WaitUntil(earliest));
-                } else {
-                    event_loop.set_control_flow(ControlFlow::Wait);
-                }
-            })
+            }
+        });
+        if let Some(earliest) = earliest {
+            log::debug!("Lets wait!");
+            event_loop.set_control_flow(ControlFlow::WaitUntil(earliest));
+        } else {
+            event_loop.set_control_flow(ControlFlow::Wait);
         }
 
         self.world.flush();
@@ -140,14 +132,12 @@ impl ApplicationHandler for Lnwin {
         window_id: WindowId,
         event: WindowEvent,
     ) {
-        if let Some(&view) = self.windows.get(&window_id) {
-            self.world.enter(view, || {
-                if let Ok(lnwindow) = self.world.try_single::<Lnwindow>() {
-                    self.world.trigger(lnwindow, &event);
-                } else {
-                    self.windows.remove(&window_id);
-                }
-            });
+        if let Some(&lnwindow) = self.windows.get(&window_id) {
+            if self.world.validate(lnwindow).is_err() {
+                self.windows.remove(&window_id);
+            } else {
+                self.world.trigger(lnwindow, &event);
+            }
 
             self.world.flush();
         }
@@ -170,9 +160,7 @@ impl Element for Lnwindow {
         world.scope("lnwindow");
         world.set_autodeps(Some(this));
 
-        let here = world.here();
-        world.enter(this, || world.insert(ViewRef(here)));
-        world.enter_queue(this, move |world| {
+        world.queue(move |world| {
             world.scope("lnwindow");
             world.set_autodeps(Some(this));
 

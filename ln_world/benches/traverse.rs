@@ -96,7 +96,7 @@ fn traverse50x2_cached(b: &mut Bencher) {
 }
 
 fn traverse_control(world: &World) {
-    world.foreach_enter::<Camera>(|camera| {
+    world.foreach::<Camera>(|camera| {
         world.foreach_fetch::<RenderControl>(|control| {
             test::black_box((camera, control));
         });
@@ -107,12 +107,10 @@ fn setup_world(camera: usize, control: usize) -> World {
     let mut world = World::new();
 
     for _ in 0..camera {
-        let camera = world.insert(Camera);
-        world.enter(camera, || {
-            for _ in 0..control {
-                world.insert(RenderControl);
-            }
-        });
+        world.insert(Camera);
+        for _ in 0..control {
+            world.insert(RenderControl);
+        }
     }
 
     // setup
@@ -124,13 +122,11 @@ fn setup_world_cached(camera: usize, control: usize) -> World {
     let mut world = World::new();
 
     for _ in 0..camera {
-        let camera = world.insert(Camera);
-        world.enter(camera, || {
-            for _ in 0..control {
-                world.insert(RenderControl);
-            }
-            world.queue_cache::<RenderControl>();
-        });
+        world.insert(Camera);
+        for _ in 0..control {
+            world.insert(RenderControl);
+        }
+        world.queue_cache::<RenderControl>();
     }
 
     // setup

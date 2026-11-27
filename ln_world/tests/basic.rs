@@ -1,10 +1,6 @@
 use ln_world::*;
 
 #[derive(Debug, PartialEq, Eq)]
-struct TestBlanker;
-impl Element for TestBlanker {}
-
-#[derive(Debug, PartialEq, Eq)]
 struct TestInserter(usize);
 impl Element for TestInserter {}
 
@@ -154,119 +150,6 @@ fn multi_dependency_grand_parent() {
     assert!(world.validate(grand_parent).is_err());
     assert!(world.validate(parent).is_err());
     assert!(world.validate(child).is_err());
-}
-
-#[test]
-fn views() {
-    let mut world = World::default();
-
-    let view1 = world.insert(TestBlanker);
-    let view2 = world.insert(TestBlanker);
-
-    let node1 = world.enter(view1, || world.insert(TestInserter(1)));
-    let node2 = world.enter(view2, || world.insert(TestInserter(2)));
-
-    world.flush();
-
-    assert!(world.enter(view1, || world.validate(node1).is_ok()));
-    assert!(world.enter(view2, || world.validate(node2).is_ok()));
-    assert!(world.enter(view1, || world.validate(node2).is_err()));
-    assert!(world.enter(view2, || world.validate(node1).is_err()));
-}
-
-#[test]
-fn view_refs_deps() {
-    let mut world = World::default();
-
-    let view1 = world.insert(TestBlanker);
-    let view2 = world.insert(TestBlanker);
-    let view3 = world.insert(TestBlanker);
-
-    let node1 = world.enter(view1, || world.insert(TestInserter(1)));
-    let node2 = world.enter(view2, || world.insert(TestInserter(2)));
-    let node3 = world.enter(view3, || world.insert(TestInserter(3)));
-
-    world.enter(view3, || world.dependency(node3, node1));
-
-    world.enter(view2, || world.insert(ViewRef(view1.untyped())));
-    world.enter(view3, || world.insert(ViewRef(view2.untyped())));
-
-    world.flush();
-
-    world.enter(view1, || world.remove(node1));
-
-    world.flush();
-
-    assert!(world.enter(view3, || world.validate(node1).is_err()));
-    assert!(world.enter(view3, || world.validate(node2).is_ok()));
-    assert!(world.enter(view3, || world.validate(node3).is_err()));
-}
-
-#[test]
-fn view_refs_chain() {
-    let mut world = World::default();
-
-    let view1 = world.insert(TestBlanker);
-    let view2 = world.insert(TestBlanker);
-    let view3 = world.insert(TestBlanker);
-
-    let node1 = world.enter(view1, || world.insert(TestInserter(1)));
-    let node2 = world.enter(view2, || world.insert(TestInserter(2)));
-    let node3 = world.enter(view3, || world.insert(TestInserter(3)));
-
-    world.enter(view2, || world.insert(ViewRef(view1.untyped())));
-    world.enter(view2, || world.insert(ViewRef(view3.untyped())));
-    world.enter(view3, || world.insert(ViewRef(view2.untyped())));
-
-    world.flush();
-
-    assert!(world.enter(view3, || world.validate(node1).is_ok()));
-    assert!(world.enter(view2, || world.validate(node1).is_ok()));
-    assert!(world.enter(view1, || world.validate(node1).is_ok()));
-
-    assert!(world.enter(view3, || world.validate(node2).is_ok()));
-    assert!(world.enter(view2, || world.validate(node2).is_ok()));
-    assert!(world.enter(view1, || world.validate(node2).is_err()));
-
-    assert!(world.enter(view3, || world.validate(node3).is_ok()));
-    assert!(world.enter(view2, || world.validate(node3).is_ok()));
-    assert!(world.enter(view1, || world.validate(node3).is_err()));
-}
-
-#[test]
-fn elem_refs_chain() {
-    let mut world = World::default();
-
-    let view1 = world.insert(TestBlanker);
-    let view2 = world.insert(TestBlanker);
-    let view3 = world.insert(TestBlanker);
-
-    let node1a = world.enter(view1, || world.insert(TestInserter(11)));
-    let node1b = world.enter(view1, || world.insert(TestInserter(12)));
-    let node2 = world.enter(view2, || world.insert(TestInserter(2)));
-    let node3 = world.enter(view3, || world.insert(TestInserter(3)));
-
-    world.enter(view1, || world.insert(ViewRef(view2.untyped())));
-    world.enter(view2, || world.insert(ElemRef(node1a.untyped())));
-    world.enter(view2, || world.insert(ViewRef(view3.untyped())));
-    world.enter(view3, || world.insert(ElemRef(node1b.untyped())));
-
-    world.flush();
-
-    assert!(world.enter(view1, || world.validate(node1a).is_ok()));
-    assert!(world.enter(view1, || world.validate(node1b).is_ok()));
-    assert!(world.enter(view1, || world.validate(node2).is_ok()));
-    assert!(world.enter(view1, || world.validate(node3).is_ok()));
-
-    assert!(world.enter(view2, || world.validate(node1a).is_ok()));
-    assert!(world.enter(view2, || world.validate(node1b).is_ok()));
-    assert!(world.enter(view2, || world.validate(node2).is_ok()));
-    assert!(world.enter(view2, || world.validate(node3).is_ok()));
-
-    assert!(world.enter(view3, || world.validate(node1a).is_err()));
-    assert!(world.enter(view3, || world.validate(node1b).is_ok()));
-    assert!(world.enter(view3, || world.validate(node2).is_err()));
-    assert!(world.enter(view3, || world.validate(node3).is_ok()));
 }
 
 #[test]
