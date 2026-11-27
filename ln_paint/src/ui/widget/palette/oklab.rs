@@ -47,12 +47,7 @@ pub struct OklabBarMaterial {
     oklab: Oklab,
 }
 
-pub struct ColorOklab(pub Oklab);
-pub struct SetColorOklab(pub Oklab);
-
-fn thumb_color(oklab: Oklab) -> SrgbLinear {
-    oklab.to_srgb_linear()
-}
+pub struct OklabPick(pub Oklab);
 
 fn polar_thumb(rect: IRect, oklab: Oklab) -> IRect {
     IRect::new_half(
@@ -90,52 +85,58 @@ impl OklabPolar {
             let rect = world.fetch(this.rect).val;
             polar_thumb(rect, this.oklab)
         })
+        .listen(this)
         .listen(self.rect)
         .finish();
         let thumb_light_rect = ValBind::transfer(world, thumb_rect, |rect| rect.expand(1));
-        let thumb_shadow_rect = ValBind::transfer(world, thumb_rect, |rect| rect.expand(2));
+        let thumb_dark_rect = ValBind::transfer(world, thumb_rect, |rect| rect.expand(2));
+        let thumb_color = ValBind::new(world, move |world| {
+            let this = world.fetch(this);
+            this.oklab.to_srgb_linear()
+        })
+        .listen(this)
+        .finish();
 
         let quad = world.insert(QuadMesh {
             common: self.common,
             rect: self.rect,
-            order: 60,
+            order: 100,
             material: OklabPolarMaterial { oklab: self.oklab },
         });
 
         let chroma_indicator = world.insert(Vtor {
             common: self.common,
             rect: self.rect,
-            order: 70,
+            order: 100,
             color: SrgbLinear(Vec4::new(0.2, 0.2, 0.2, 0.4)),
             path: chroma_to_path(Vec2::new(self.oklab.0.y, self.oklab.0.z).length()),
             outdated: false,
         });
 
-        let thumb_color_val = world.insert(Val::new(thumb_color(self.oklab)));
         world.insert(RRect {
             common: self.common,
-            rect: thumb_rect,
-            order: 150,
-            color: thumb_color_val,
-            radius: THUMB_RADIUS,
+            rect: thumb_dark_rect,
+            order: 100,
+            color: world.insert(Val::new(SrgbLinear::BLACK)),
+            radius: THUMB_RADIUS + 2.0,
             width: 0.0,
         });
 
         world.insert(RRect {
             common: self.common,
             rect: thumb_light_rect,
-            order: 140,
-            color: world.insert(Val::new(SrgbLinear(Vec4::ONE))),
+            order: 100,
+            color: world.insert(Val::new(SrgbLinear::WHITE)),
             radius: THUMB_RADIUS + 1.0,
             width: 0.0,
         });
 
         world.insert(RRect {
             common: self.common,
-            rect: thumb_shadow_rect,
-            order: 130,
-            color: world.insert(Val::new(SrgbLinear(Vec4::W))),
-            radius: THUMB_RADIUS + 2.0,
+            rect: thumb_rect,
+            order: 100,
+            color: thumb_color,
+            radius: THUMB_RADIUS,
             width: 0.0,
         });
 
@@ -159,22 +160,15 @@ impl OklabPolar {
             this.oklab.0.y = (uv.x * 0.8 - 0.4).clamp(-0.4, 0.4);
             this.oklab.0.z = (uv.y * 0.8 - 0.4).clamp(-0.4, 0.4);
             this.oklab = this.oklab.clip_srgb();
-            world.queue_trigger(this.handle(), ColorOklab(this.oklab));
+            world.queue_trigger(this.handle(), OklabPick(this.oklab));
         });
 
-        world.observer(this, move |&SetColorOklab(oklab), world| {
-            let mut this = world.fetch_mut(this);
+        world.observer(this, move |ValChanged, world| {
+            let this = world.fetch(this);
             let mut chroma_indicator = world.fetch_mut(chroma_indicator);
-            let rect = world.fetch(this.rect).val;
-            let mut thumb_rect = world.fetch_mut(thumb_rect);
-            let mut thumb_color_val = world.fetch_mut(thumb_color_val);
-            this.oklab = oklab;
-            chroma_indicator.path = chroma_to_path(Vec2::new(oklab.0.y, oklab.0.z).length());
+            chroma_indicator.path =
+                chroma_to_path(Vec2::new(this.oklab.0.y, this.oklab.0.z).length());
             chroma_indicator.outdated = true;
-            thumb_rect.val = polar_thumb(rect, this.oklab);
-            thumb_color_val.val = thumb_color(oklab);
-            world.queue_trigger(thumb_rect.handle(), ValChanged);
-            world.queue_trigger(thumb_color_val.handle(), ValChanged);
             world.queue_trigger(quad, SetQuadMaterial(this.mat()));
         });
     }
@@ -196,43 +190,49 @@ impl OklabBar {
             let rect = world.fetch(this.rect).val;
             bar_thumb(rect, this.oklab)
         })
+        .listen(this)
         .listen(self.rect)
         .finish();
         let thumb_light_rect = ValBind::transfer(world, thumb_rect, |rect| rect.expand(1));
-        let thumb_shadow_rect = ValBind::transfer(world, thumb_rect, |rect| rect.expand(2));
+        let thumb_dark_rect = ValBind::transfer(world, thumb_rect, |rect| rect.expand(2));
+        let thumb_color = ValBind::new(world, move |world| {
+            let this = world.fetch(this);
+            this.oklab.to_srgb_linear()
+        })
+        .listen(this)
+        .finish();
 
         let quad = world.insert(QuadMesh {
             common: self.common,
             rect: self.rect,
-            order: 60,
+            order: 100,
             material: OklabBarMaterial { oklab: self.oklab },
         });
 
-        let thumb_color_val = world.insert(Val::new(thumb_color(self.oklab)));
         world.insert(RRect {
             common: self.common,
-            rect: thumb_rect,
-            order: 150,
-            color: thumb_color_val,
-            radius: THUMB_RADIUS,
+            rect: thumb_dark_rect,
+            order: 100,
+            color: world.insert(Val::new(SrgbLinear::BLACK)),
+            radius: THUMB_RADIUS + 2.0,
             width: 0.0,
         });
 
         world.insert(RRect {
             common: self.common,
             rect: thumb_light_rect,
-            order: 140,
-            color: world.insert(Val::new(SrgbLinear(Vec4::ONE))),
+            order: 100,
+            color: world.insert(Val::new(SrgbLinear::WHITE)),
             radius: THUMB_RADIUS + 1.0,
             width: 0.0,
         });
 
         world.insert(RRect {
             common: self.common,
-            rect: thumb_shadow_rect,
-            order: 130,
-            color: world.insert(Val::new(SrgbLinear(Vec4::W))),
-            radius: THUMB_RADIUS + 2.0,
+            rect: thumb_rect,
+            order: 100,
+            color: thumb_color,
+            radius: THUMB_RADIUS,
             width: 0.0,
         });
 
@@ -255,19 +255,11 @@ impl OklabBar {
 
             this.oklab.0.x = uv.y.clamp(0.0, 1.0);
             this.oklab = this.oklab.clip_srgb();
-            world.queue_trigger(this.handle(), ColorOklab(this.oklab));
+            world.queue_trigger(this.handle(), OklabPick(this.oklab));
         });
 
-        world.observer(this, move |&SetColorOklab(oklab), world| {
-            let mut this = world.fetch_mut(this);
-            let rect = world.fetch(this.rect).val;
-            let mut thumb_rect = world.fetch_mut(thumb_rect);
-            let mut thumb_color_val = world.fetch_mut(thumb_color_val);
-            this.oklab = oklab;
-            thumb_rect.val = bar_thumb(rect, this.oklab);
-            thumb_color_val.val = thumb_color(oklab);
-            world.queue_trigger(thumb_rect.handle(), ValChanged);
-            world.queue_trigger(thumb_color_val.handle(), ValChanged);
+        world.observer(this, move |ValChanged, world| {
+            let this = world.fetch(this);
             world.queue_trigger(quad, SetQuadMaterial(this.mat()));
         });
     }

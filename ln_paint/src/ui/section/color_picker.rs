@@ -19,8 +19,8 @@ use crate::{
             button::{Button, ButtonTheme, ButtonToggle},
             container::Container,
             palette::{
-                hsl::{ColorHsla, HslRing, HslSquare, INNER_RADIUS, SetColorHsla},
-                oklab::{ColorOklab, OklabBar, OklabPolar, SetColorOklab},
+                hsl::{HslPick, HslRing, HslSquare, INNER_RADIUS},
+                oklab::{OklabBar, OklabPick, OklabPolar},
             },
             tabs::{TabEntry, Tabs},
         },
@@ -260,21 +260,23 @@ impl Element for LayerHslPalette {
         });
 
         let layer = world.single::<LayerPage>();
-        world.observer(ring, move |&ColorHsla(hsla), world| {
+        world.observer(ring, move |&HslPick(hsla), world| {
             let mut layer = world.fetch_mut(layer);
             layer.set_color(hsla.to_srgb());
             world.queue_trigger(layer.handle(), ValChanged);
         });
-        world.observer(square, move |&ColorHsla(hsla), world| {
+        world.observer(square, move |&HslPick(hsla), world| {
             let mut layer = world.fetch_mut(layer);
             layer.set_color(hsla.to_srgb());
             world.queue_trigger(layer.handle(), ValChanged);
         });
         world.observer(layer, move |&ValChanged, world| {
             let layer = world.fetch(layer);
-            let hsla = Hsl::from_srgb(layer.color());
-            world.trigger(ring, &SetColorHsla(hsla));
-            world.trigger(square, &SetColorHsla(hsla));
+            let hsl = Hsl::from_srgb(layer.color());
+            world.fetch_mut(ring).hsl = hsl;
+            world.fetch_mut(square).hsl = hsl;
+            world.queue_trigger(ring, ValChanged);
+            world.queue_trigger(square, ValChanged);
         });
     }
 }
@@ -332,12 +334,12 @@ impl Element for LayerOklabPalette {
         });
 
         let layer = world.single::<LayerPage>();
-        world.observer(polar, move |&ColorOklab(color), world| {
+        world.observer(polar, move |&OklabPick(color), world| {
             let mut layer = world.fetch_mut(layer);
             layer.set_color(color.to_srgb_linear().to_srgb());
             world.queue_trigger(layer.handle(), ValChanged);
         });
-        world.observer(bar, move |&ColorOklab(color), world| {
+        world.observer(bar, move |&OklabPick(color), world| {
             let mut layer = world.fetch_mut(layer);
             layer.set_color(color.to_srgb_linear().to_srgb());
             world.queue_trigger(layer.handle(), ValChanged);
@@ -345,8 +347,10 @@ impl Element for LayerOklabPalette {
         world.observer(layer, move |&ValChanged, world| {
             let layer = world.fetch(layer);
             let oklab = Oklab::from_srgb_linear(layer.color().to_linear());
-            world.trigger(polar, &SetColorOklab(oklab));
-            world.trigger(bar, &SetColorOklab(oklab));
+            world.fetch_mut(polar).oklab = oklab;
+            world.fetch_mut(bar).oklab = oklab;
+            world.queue_trigger(polar, ValChanged);
+            world.queue_trigger(bar, ValChanged);
         });
     }
 }

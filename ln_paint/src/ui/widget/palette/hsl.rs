@@ -21,25 +21,17 @@ use crate::{
     val::{Val, ValBind, ValChanged},
 };
 
-/// Inner radius of the hue ring, normalized so that the outer radius is
-/// [`OUTER_RADIUS`]. The saturation-lightness square is inscribed in it.
 pub const INNER_RADIUS: f32 = 0.4;
-
-/// Outer radius of the hue ring, normalized so that it touches the panel rect.
 pub const OUTER_RADIUS: f32 = 0.5;
 
 const THUMB_RADIUS: f32 = 5.0;
 
-/// Saturation-lightness square panel whose x axis stands for saturation and
-/// y axis stands for lightness.
 pub struct HslSquare {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,
     pub hsl: Hsl,
 }
 
-/// Hue ring panel. The hue is picked on the annulus between
-/// [`HslRing::inner_radius`] and [`OUTER_RADIUS`].
 pub struct HslRing {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,
@@ -61,12 +53,7 @@ pub struct HslRingMaterial {
     _pad: [u32; 3],
 }
 
-pub struct ColorHsla(pub Hsl);
-pub struct SetColorHsla(pub Hsl);
-
-fn thumb_color(hsl: Hsl) -> SrgbLinear {
-    hsl.to_srgb().to_linear()
-}
+pub struct HslPick(pub Hsl);
 
 fn square_thumb(rect: IRect, hsl: Hsl) -> IRect {
     let center = rect.origin + (Vec2::new(hsl.0.y, hsl.0.z) * rect.extend.as_vec2()).as_ivec2();
@@ -91,32 +78,38 @@ impl HslSquare {
             let rect = world.fetch(this.rect).val;
             square_thumb(rect, this.hsl)
         })
+        .listen(this)
         .listen(self.rect)
         .finish();
         let thumb_light_rect = ValBind::transfer(world, thumb_rect, |rect| rect.expand(1));
-        let thumb_shadow_rect = ValBind::transfer(world, thumb_rect, |rect| rect.expand(2));
+        let thumb_dark_rect = ValBind::transfer(world, thumb_rect, |rect| rect.expand(2));
+        let thumb_color = ValBind::new(world, move |world| {
+            let this = world.fetch(this);
+            this.hsl.to_srgb().to_linear()
+        })
+        .listen(this)
+        .finish();
 
         let quad = world.insert(QuadMesh {
             common: self.common,
             rect: self.rect,
-            order: 60,
+            order: 100,
             material: HslSquareMaterial { hsl: self.hsl },
         });
 
-        let thumb_color_val = world.insert(Val::new(thumb_color(self.hsl)));
         world.insert(RRect {
             common: self.common,
-            rect: thumb_rect,
-            order: 150,
-            color: thumb_color_val,
-            radius: THUMB_RADIUS,
+            rect: thumb_dark_rect,
+            order: 100,
+            color: world.insert(Val::new(SrgbLinear(Vec4::W))),
+            radius: THUMB_RADIUS + 2.0,
             width: 0.0,
         });
 
         world.insert(RRect {
             common: self.common,
             rect: thumb_light_rect,
-            order: 140,
+            order: 100,
             color: world.insert(Val::new(SrgbLinear(Vec4::ONE))),
             radius: THUMB_RADIUS + 1.0,
             width: 0.0,
@@ -124,10 +117,10 @@ impl HslSquare {
 
         world.insert(RRect {
             common: self.common,
-            rect: thumb_shadow_rect,
-            order: 130,
-            color: world.insert(Val::new(SrgbLinear(Vec4::W))),
-            radius: THUMB_RADIUS + 2.0,
+            rect: thumb_rect,
+            order: 100,
+            color: thumb_color,
+            radius: THUMB_RADIUS,
             width: 0.0,
         });
 
@@ -150,19 +143,11 @@ impl HslSquare {
 
             this.hsl.0.y = uv.x.clamp(0.0, 1.0);
             this.hsl.0.z = uv.y.clamp(0.0, 1.0);
-            world.queue_trigger(this.handle(), ColorHsla(this.hsl));
+            world.queue_trigger(this.handle(), HslPick(this.hsl));
         });
 
-        world.observer(this, move |&SetColorHsla(hsl), world| {
-            let mut this = world.fetch_mut(this);
-            let rect = world.fetch(this.rect).val;
-            let mut thumb_rect = world.fetch_mut(thumb_rect);
-            let mut thumb_color_val = world.fetch_mut(thumb_color_val);
-            this.hsl = hsl.clamp();
-            thumb_rect.val = square_thumb(rect, this.hsl);
-            thumb_color_val.val = thumb_color(this.hsl);
-            world.queue_trigger(thumb_rect.handle(), ValChanged);
-            world.queue_trigger(thumb_color_val.handle(), ValChanged);
+        world.observer(this, move |ValChanged, world| {
+            let this = world.fetch(this);
             world.queue_trigger(quad, SetQuadMaterial(this.mat()));
         });
     }
@@ -184,15 +169,22 @@ impl HslRing {
             let rect = world.fetch(this.rect).val;
             ring_thumb(rect, this.hsl, this.inner_radius)
         })
+        .listen(this)
         .listen(self.rect)
         .finish();
         let thumb_light_rect = ValBind::transfer(world, thumb_rect, |rect| rect.expand(1));
-        let thumb_shadow_rect = ValBind::transfer(world, thumb_rect, |rect| rect.expand(2));
+        let thumb_dark_rect = ValBind::transfer(world, thumb_rect, |rect| rect.expand(2));
+        let thumb_color = ValBind::new(world, move |world| {
+            let this = world.fetch(this);
+            this.hsl.to_srgb().to_linear()
+        })
+        .listen(this)
+        .finish();
 
         let quad = world.insert(QuadMesh {
             common: self.common,
             rect: self.rect,
-            order: 60,
+            order: 100,
             material: HslRingMaterial {
                 hsl: self.hsl,
                 inner_radius: self.inner_radius,
@@ -200,20 +192,19 @@ impl HslRing {
             },
         });
 
-        let thumb_color_val = world.insert(Val::new(thumb_color(self.hsl)));
         world.insert(RRect {
             common: self.common,
-            rect: thumb_rect,
-            order: 150,
-            color: thumb_color_val,
-            radius: THUMB_RADIUS,
+            rect: thumb_dark_rect,
+            order: 100,
+            color: world.insert(Val::new(SrgbLinear(Vec4::W))),
+            radius: THUMB_RADIUS + 2.0,
             width: 0.0,
         });
 
         world.insert(RRect {
             common: self.common,
             rect: thumb_light_rect,
-            order: 140,
+            order: 100,
             color: world.insert(Val::new(SrgbLinear(Vec4::ONE))),
             radius: THUMB_RADIUS + 1.0,
             width: 0.0,
@@ -221,10 +212,10 @@ impl HslRing {
 
         world.insert(RRect {
             common: self.common,
-            rect: thumb_shadow_rect,
-            order: 130,
-            color: world.insert(Val::new(SrgbLinear(Vec4::W))),
-            radius: THUMB_RADIUS + 2.0,
+            rect: thumb_rect,
+            order: 100,
+            color: thumb_color,
+            radius: THUMB_RADIUS,
             width: 0.0,
         });
 
@@ -249,19 +240,11 @@ impl HslRing {
             let delta = uv - Vec2::splat(0.5);
 
             this.hsl.0.x = (delta.y.atan2(delta.x) / TAU).rem_euclid(1.0);
-            world.queue_trigger(this.handle(), ColorHsla(this.hsl));
+            world.queue_trigger(this.handle(), HslPick(this.hsl));
         });
 
-        world.observer(this, move |&SetColorHsla(hsl), world| {
-            let mut this = world.fetch_mut(this);
-            let rect = world.fetch(this.rect).val;
-            let mut thumb_rect = world.fetch_mut(thumb_rect);
-            let mut thumb_color_val = world.fetch_mut(thumb_color_val);
-            this.hsl = hsl.clamp();
-            thumb_rect.val = ring_thumb(rect, this.hsl, this.inner_radius);
-            thumb_color_val.val = thumb_color(hsl);
-            world.queue_trigger(thumb_rect.handle(), ValChanged);
-            world.queue_trigger(thumb_color_val.handle(), ValChanged);
+        world.observer(this, move |ValChanged, world| {
+            let this = world.fetch(this);
             world.queue_trigger(quad, SetQuadMaterial(this.mat()));
         });
     }
