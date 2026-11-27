@@ -8,6 +8,7 @@ use crate::{
     },
     input::{collider::ToolRectCollider, drag::Drag, mouse::MouseMenu, pointer::PointerEvent},
     paint::{input::LayerDrag, wrapper::LayerPage},
+    res::Icon,
     ui::{
         common::WidgetCommon,
         layout::transform::{Transform, TransformValue},
@@ -97,7 +98,7 @@ impl Element for ColorSnip {
         })
         .listen(hover)
         .animate(theme.animation);
-        let icon = svg_render(include_bytes!("../../../res/interface/pipette.svg"));
+        let icon = svg_render(Icon::PIPETTE);
         world.insert(Canvas {
             common: WidgetCommon {
                 visible,

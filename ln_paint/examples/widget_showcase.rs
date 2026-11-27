@@ -5,10 +5,14 @@ use glam::Vec4;
 use ln_paint::{
     color::{hsl::Hsl, oklab::Oklab},
     lnwin::Lnwin,
+    res::Icon,
     ui::{
         common::WidgetCommon,
-        layout::luni::{
-            LuniAlign, LuniAxis, LuniChild, LuniChildTemplate, LuniFlex, LuniParent, LuniRect,
+        layout::{
+            luni::{
+                LuniAlign, LuniAxis, LuniChild, LuniChildTemplate, LuniFlex, LuniParent, LuniRect,
+            },
+            transform::TransformValue,
         },
         renderer::{
             rrect::RRect,
@@ -129,7 +133,7 @@ impl Element for WidgetShowcase {
                 )
                 .scope(world, |luni| {
                     let mut b = |color, on_color| {
-                        world.insert(Button {
+                        let button = world.insert(Button {
                             common: self.common,
                             rect: world.build(luni.child(LuniChild::default())),
                             theme: ButtonTheme {
@@ -137,13 +141,16 @@ impl Element for WidgetShowcase {
                                 on_color,
                                 ..ButtonTheme::surface(&theme)
                             },
-                            image: Some(ButtonImage::new(
-                                svg_render(include_bytes!("../res/interface/pen.svg")),
-                                8,
-                            )),
                             selected: world.insert(Val::new(false)),
                             hovering: world.insert(Val::new(false)),
-                        })
+                        });
+
+                        world.insert(ButtonImage {
+                            common: self.common,
+                            source: button,
+                            image: world.insert(Val::new(svg_render(Icon::PEN))),
+                            transform: TransformValue::center(8),
+                        });
                     };
 
                     let c = &theme.color;

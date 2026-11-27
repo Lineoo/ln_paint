@@ -8,6 +8,7 @@ use crate::{
     input::drag::{DragEvent, DragStatus},
     paint::wrapper::LayerPage,
     render::nest::{NestAttr, NestBuilder, NestRect},
+    res::Icon,
     ui::{
         common::WidgetCommon,
         layout::transform::{Transform, TransformValue},
@@ -15,7 +16,7 @@ use crate::{
         renderer::{rrect::RRect, svg::svg_render},
         section::{debug_panel::DebugPanel, layer_selection::LayerSelectionPanel},
         widget::{
-            button::{Button, ButtonImage, ButtonTheme, ButtonToggle},
+            button::{Button, ButtonTheme, ButtonToggle},
             container::Container,
             palette::{
                 hsl::{ColorHsla, HslRing, HslSquare, INNER_RADIUS, SetColorHsla},
@@ -85,37 +86,24 @@ impl Element for ColorPickerPanel {
         world.insert(Tabs {
             common: self.common,
             rect: self.rect,
-            // TODO TabItem like SliderLabel
             tabs: vec![
                 TabEntry {
-                    icon: ButtonImage::new(
-                        svg_render(include_bytes!("../../../res/interface/palette.svg")),
-                        12,
-                    ),
+                    icon: world.insert(Val::new(svg_render(Icon::PALETTE))),
                     rect: hsl_rect,
                     visible: hsl_visible,
                 },
                 TabEntry {
-                    icon: ButtonImage::new(
-                        svg_render(include_bytes!("../../../res/interface/palette.svg")),
-                        12,
-                    ),
+                    icon: world.insert(Val::new(svg_render(Icon::PALETTE))),
                     rect: oklab_rect,
                     visible: oklab_visible,
                 },
                 TabEntry {
-                    icon: ButtonImage::new(
-                        svg_render(include_bytes!("../../../res/interface/layers.svg")),
-                        12,
-                    ),
+                    icon: world.insert(Val::new(svg_render(Icon::LAYERS))),
                     rect: layer_rect,
                     visible: layer_visible,
                 },
                 TabEntry {
-                    icon: ButtonImage::new(
-                        svg_render(include_bytes!("../../../res/interface/bug.svg")),
-                        12,
-                    ),
+                    icon: world.insert(Val::new(svg_render(Icon::BUG))),
                     rect: debug_rect,
                     visible: debug_visible,
                 },
@@ -144,7 +132,6 @@ impl Element for ColorPickerButton {
             common: self.common,
             rect: self.rect,
             theme: ButtonTheme::surface(&theme),
-            image: None,
             selected: self.selected,
             hovering: world.insert(Val::new(false)),
         });

@@ -18,6 +18,7 @@ use crate::{
     color::srgb::{Srgb, SrgbLinear},
     lnwin::Lnwindow,
     render::{MSAA_STATE, Render, RenderDrawControl, RenderPrepareControl, camera::CameraPipeline},
+    res::{SourceHanSansCN, SourceHanSerifCN},
     shaders::shader_compile,
     ui::common::WidgetCommon,
     unit::{FI64Ext, IRect, MinMax},
@@ -542,21 +543,16 @@ impl TextPipeline {
         // cosmic text cannot find system fonts on android, so we load them by ourselves
         #[cfg(target_os = "android")]
         {
-            let sans_reg = include_bytes!("../../../fonts/SourceHanSansCN-Regular.otf").to_vec();
-            let serif_reg = include_bytes!("../../../fonts/SourceHanSerifCN-Regular.otf").to_vec();
-            let sans_bld = include_bytes!("../../../fonts/SourceHanSansCN-Bold.otf").to_vec();
-            let serif_bld = include_bytes!("../../../fonts/SourceHanSerifCN-Bold.otf").to_vec();
-
-            database.load_font_data(sans_reg);
-            database.load_font_data(serif_reg);
-            database.load_font_data(sans_bld);
-            database.load_font_data(serif_bld);
+            database.load_font_data(SourceHanSansCN::REGULAR.to_vec());
+            database.load_font_data(SourceHanSansCN::BOLD.to_vec());
+            database.load_font_data(SourceHanSerifCN::REGULAR.to_vec());
+            database.load_font_data(SourceHanSerifCN::BOLD.to_vec());
         }
 
         // default fonts
         database.set_monospace_family("Noto Sans Mono");
-        database.set_sans_serif_family("Source Han Sans CN");
-        database.set_serif_family("Source Han Serif CN");
+        database.set_sans_serif_family(SourceHanSansCN::FAMILY_NAME);
+        database.set_serif_family(SourceHanSerifCN::FAMILY_NAME);
 
         font_system
     }

@@ -3,6 +3,7 @@ pub mod input;
 pub mod lnwin;
 pub mod paint;
 pub mod render;
+pub mod res;
 pub mod save;
 pub mod shaders;
 pub mod ui;

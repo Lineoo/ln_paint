@@ -153,7 +153,6 @@ impl Element for LayerSelectionPanel {
                 common,
                 rect: button_rect,
                 theme: ButtonTheme::surface(&theme),
-                image: None,
                 selected,
                 hovering: world.insert(Val::new(false)),
             });

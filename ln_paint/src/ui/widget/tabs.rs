@@ -12,7 +12,7 @@ use crate::{
             },
             transform::{Transform, TransformEdge, TransformValue},
         },
-        renderer::rrect::RRect,
+        renderer::{rrect::RRect, svg::PixImage},
         widget::button::{Button, ButtonClick, ButtonImage, ButtonTheme},
     },
     unit::IRect,
@@ -27,13 +27,13 @@ pub struct Tabs {
 }
 
 pub struct TabEntry {
-    pub icon: ButtonImage,
+    pub icon: Handle<Val<PixImage>>,
     pub rect: Handle<Val<IRect>>,
     pub visible: Handle<Val<bool>>,
 }
 
-impl Tabs {
-    pub fn init(&self, world: &World, handle: Handle<Self>) {
+impl Element for Tabs {
+    fn when_insert(&mut self, world: &World, handle: Handle<Self>) {
         world.scope("tabs");
         world.set_autodeps(Some(handle));
         world.dependency(handle, self.rect);
@@ -108,9 +108,6 @@ impl Tabs {
         );
 
         for (i, entry) in self.tabs.iter().enumerate() {
-            // FIXME deep duplication
-            let icon = entry.icon.clone();
-
             let button_rect = world.build(luni.child(LuniChild::default()));
             let active = self.active;
             let button_selected = ValBind::new(world, move |world| world.fetch(active).val == i)
@@ -126,9 +123,14 @@ impl Tabs {
                     active_on_color: theme.color.on_primary_container,
                     ..ButtonTheme::surface(&theme)
                 },
-                image: Some(icon),
                 selected: button_selected,
                 hovering: world.insert(Val::new(false)),
+            });
+            world.insert(ButtonImage {
+                common: self.common,
+                source: button,
+                image: entry.icon,
+                transform: TransformValue::center(12),
             });
 
             let indicator_rect = world.build(Transform::new(
@@ -210,11 +212,5 @@ fn main_transform() -> TransformValue {
             anchor: 1.0,
             offset: 0,
         },
-    }
-}
-
-impl Element for Tabs {
-    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
-        self.init(world, this);
     }
 }

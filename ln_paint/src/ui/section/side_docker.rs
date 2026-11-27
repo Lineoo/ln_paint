@@ -7,6 +7,7 @@ use crate::{
         input::{LayerDrag, LayerDraw, LayerInputMode},
         wrapper::LayerPage,
     },
+    res::Icon,
     ui::{
         common::WidgetCommon,
         layout::{
@@ -86,14 +87,20 @@ impl Element for SideDocker {
 
         let docker_button = |luni: &mut LuniFlex, image_bytes: &[u8]| {
             let rect = world.build(luni.child(LuniChild::default()));
-            Button {
+            let button = world.insert(Button {
                 common: self.common,
                 rect,
                 theme: ButtonTheme::surface(&theme),
-                image: Some(ButtonImage::new(svg_render(image_bytes), 8)),
                 selected: world.insert(Val::new(false)),
                 hovering: world.insert(Val::new(false)),
-            }
+            });
+            world.insert(ButtonImage {
+                common: self.common,
+                source: button,
+                image: world.insert(Val::new(svg_render(image_bytes))),
+                transform: TransformValue::center(8),
+            });
+            button
         };
 
         let brush_visible = world.insert(Val::new(false));
@@ -105,13 +112,16 @@ impl Element for SideDocker {
                 common: self.common,
                 rect: brush_menu_rect,
                 theme: ButtonTheme::surface(&theme),
-                image: Some(ButtonImage::new(
-                    svg_render(include_bytes!("../../../res/interface/pen.svg")),
-                    8,
-                )),
                 selected: brush_visible,
                 hovering: world.insert(Val::new(false)),
             });
+            world.insert(ButtonImage {
+                common: self.common,
+                source: brush_menu,
+                image: world.insert(Val::new(svg_render(Icon::PEN))),
+                transform: TransformValue::center(8),
+            });
+
             world.insert(ButtonToggle { source: brush_menu });
 
             let brush_panel_rect = world.build(Transform::anchor(
@@ -144,12 +154,14 @@ impl Element for SideDocker {
                 common: self.common,
                 rect: world.build(luni.child(LuniChild::default())),
                 theme: ButtonTheme::surface(&theme),
-                image: Some(ButtonImage::new(
-                    svg_render(include_bytes!("../../../res/interface/eraser.svg")),
-                    8,
-                )),
                 selected: eraser_selected,
                 hovering: world.insert(Val::new(false)),
+            });
+            world.insert(ButtonImage {
+                common: self.common,
+                source: eraser,
+                image: world.insert(Val::new(svg_render(Icon::ERASER))),
+                transform: TransformValue::center(8),
             });
             world.observer(eraser, move |&ButtonClick, world| {
                 let mut page = world.fetch_mut(page);
@@ -200,12 +212,14 @@ impl Element for SideDocker {
                 common: self.common,
                 rect,
                 theme: ButtonTheme::surface(&theme),
-                image: Some(ButtonImage::new(
-                    svg_render(include_bytes!("../../../res/interface/square-dashed.svg")),
-                    8,
-                )),
                 selected,
                 hovering: world.insert(Val::new(false)),
+            });
+            world.insert(ButtonImage {
+                common: self.common,
+                source: selection,
+                image: world.insert(Val::new(svg_render(Icon::SQUARE_DASHED))),
+                transform: TransformValue::center(8),
             });
             world.observer(selection, move |&ButtonClick, world| {
                 let mut input = world.single_fetch_mut::<LayerDraw>();
@@ -218,20 +232,14 @@ impl Element for SideDocker {
             });
         }
         {
-            let undo = world.insert(docker_button(
-                &mut luni,
-                include_bytes!("../../../res/interface/undo-2.svg"),
-            ));
+            let undo = docker_button(&mut luni, Icon::UNDO_2);
             world.observer(undo, move |&ButtonClick, world| {
                 let mut layer = world.fetch_mut::<LayerPage>(page);
                 layer.undo();
             });
         }
         {
-            let redo = world.insert(docker_button(
-                &mut luni,
-                include_bytes!("../../../res/interface/redo-2.svg"),
-            ));
+            let redo = docker_button(&mut luni, Icon::REDO_2);
             world.observer(redo, move |&ButtonClick, world| {
                 let mut layer = world.fetch_mut::<LayerPage>(page);
                 layer.redo();
@@ -293,10 +301,7 @@ impl Element for SideDocker {
             });
         }
         {
-            let touch = world.insert(docker_button(
-                &mut luni,
-                include_bytes!("../../../res/interface/pointer.svg"),
-            ));
+            let touch = docker_button(&mut luni, Icon::POINTER);
             world.insert(ButtonToggle { source: touch });
             world.observer(touch, move |&ButtonClick, world| {
                 let mut input = world.single_fetch_mut::<LayerDrag>();
@@ -304,10 +309,7 @@ impl Element for SideDocker {
             });
         }
         {
-            let pipette = world.insert(docker_button(
-                &mut luni,
-                include_bytes!("../../../res/interface/pipette.svg"),
-            ));
+            let pipette = docker_button(&mut luni, Icon::PIPETTE);
             world.insert(ButtonToggle { source: pipette });
             world.observer(pipette, move |&ButtonClick, world| {
                 let mut input = world.single_fetch_mut::<LayerDraw>();

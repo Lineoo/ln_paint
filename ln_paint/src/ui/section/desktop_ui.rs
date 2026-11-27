@@ -10,6 +10,7 @@ use crate::{
         wrapper::LayerPage,
     },
     render::nest::{NestAttr, NestBuilder},
+    res::Icon,
     ui::{
         common::WidgetCommon,
         i18n::trp,
@@ -188,17 +189,25 @@ impl Element for ToolBar {
             },
         });
 
-        let docker_button =
-            |rect: Handle<Val<IRect>>, image_bytes: &[u8], selected: Handle<Val<bool>>| {
-                world.insert(Button {
-                    common,
-                    rect,
-                    theme: ButtonTheme::surface(&theme),
-                    image: Some(ButtonImage::new(svg_render(image_bytes), 8)),
-                    selected,
-                    hovering: world.insert(Val::new(false)),
-                })
-            };
+        let docker_button = |rect, image_bytes: &[u8], selected| {
+            let button = world.insert(Button {
+                common,
+                rect,
+                theme: ButtonTheme::surface(&theme),
+                selected: match selected {
+                    Some(x) => x,
+                    None => world.insert(Val::new(false)),
+                },
+                hovering: world.insert(Val::new(false)),
+            });
+            world.insert(ButtonImage {
+                common: self.common,
+                source: button,
+                image: world.insert(Val::new(svg_render(image_bytes))),
+                transform: TransformValue::center(8),
+            });
+            button
+        };
 
         let eraser_selected = ValBind::new(world, move |world| {
             matches!(
@@ -230,23 +239,11 @@ impl Element for ToolBar {
         );
 
         let undo_rect = world.build(luni.child(LuniChild::default()));
-        let undo = docker_button(
-            undo_rect,
-            include_bytes!("../../../res/interface/undo-2.svg"),
-            world.insert(Val::new(false)),
-        );
+        let undo = docker_button(undo_rect, Icon::UNDO_2, None);
         let redo_rect = world.build(luni.child(LuniChild::default()));
-        let redo = docker_button(
-            redo_rect,
-            include_bytes!("../../../res/interface/redo-2.svg"),
-            world.insert(Val::new(false)),
-        );
+        let redo = docker_button(redo_rect, Icon::REDO_2, None);
         let eraser_rect = world.build(luni.child(LuniChild::default()));
-        let eraser = docker_button(
-            eraser_rect,
-            include_bytes!("../../../res/interface/eraser.svg"),
-            eraser_selected,
-        );
+        let eraser = docker_button(eraser_rect, Icon::ERASER, Some(eraser_selected));
 
         let slider_rect = world.build(luni.child(LuniChild {
             basis: Some(200),
@@ -288,17 +285,9 @@ impl Element for ToolBar {
         });
 
         let touch_rect = world.build(luni.child(LuniChild::default()));
-        let touch = docker_button(
-            touch_rect,
-            include_bytes!("../../../res/interface/pointer.svg"),
-            world.insert(Val::new(false)),
-        );
+        let touch = docker_button(touch_rect, Icon::POINTER, None);
         let pipette_rect = world.build(luni.child(LuniChild::default()));
-        let pipette = docker_button(
-            pipette_rect,
-            include_bytes!("../../../res/interface/pipette.svg"),
-            world.insert(Val::new(false)),
-        );
+        let pipette = docker_button(pipette_rect, Icon::PIPETTE, None);
 
         world.insert(luni);
 
@@ -544,34 +533,22 @@ impl Element for VerbosePanel {
             rect: self.rect,
             tabs: vec![
                 TabEntry {
-                    icon: ButtonImage::new(
-                        svg_render(include_bytes!("../../../res/interface/brush.svg")),
-                        12,
-                    ),
+                    icon: world.insert(Val::new(svg_render(Icon::BRUSH))),
                     rect: brush_rect,
                     visible: brush_visible,
                 },
                 TabEntry {
-                    icon: ButtonImage::new(
-                        svg_render(include_bytes!("../../../res/interface/settings.svg")),
-                        12,
-                    ),
+                    icon: world.insert(Val::new(svg_render(Icon::SETTINGS))),
                     rect: settings_rect,
                     visible: settings_visible,
                 },
                 TabEntry {
-                    icon: ButtonImage::new(
-                        svg_render(include_bytes!("../../../res/interface/layers.svg")),
-                        12,
-                    ),
+                    icon: world.insert(Val::new(svg_render(Icon::LAYERS))),
                     rect: layer_rect,
                     visible: layer_visible,
                 },
                 TabEntry {
-                    icon: ButtonImage::new(
-                        svg_render(include_bytes!("../../../res/interface/bug.svg")),
-                        12,
-                    ),
+                    icon: world.insert(Val::new(svg_render(Icon::BUG))),
                     rect: debug_rect,
                     visible: debug_visible,
                 },

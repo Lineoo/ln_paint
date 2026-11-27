@@ -8,6 +8,7 @@ use crate::{
     },
     paint::wrapper::LayerPage,
     render::nest::{NestAttr, NestBuilder},
+    res::Icon,
     ui::{
         common::WidgetCommon,
         i18n::tr,
@@ -26,7 +27,7 @@ use crate::{
         },
         section::settings::SettingPanel,
         widget::{
-            button::{Button, ButtonClick, ButtonImage, ButtonTheme},
+            button::{Button, ButtonClick, ButtonTheme},
             container::Container,
             tabs::{TabEntry, Tabs},
         },
@@ -74,18 +75,12 @@ impl Element for BrushPanel {
             rect: self.rect,
             tabs: vec![
                 TabEntry {
-                    icon: ButtonImage::new(
-                        svg_render(include_bytes!("../../../res/interface/brush.svg")),
-                        12,
-                    ),
+                    icon: world.insert(Val::new(svg_render(Icon::BRUSH))),
                     rect: list_rect,
                     visible: list_visible,
                 },
                 TabEntry {
-                    icon: ButtonImage::new(
-                        svg_render(include_bytes!("../../../res/interface/settings.svg")),
-                        12,
-                    ),
+                    icon: world.insert(Val::new(svg_render(Icon::SETTINGS))),
                     rect: settings_rect,
                     visible: settings_visible,
                 },
@@ -170,7 +165,6 @@ impl Element for BrushListPanel {
                     hover: world.insert(Val::new(0.0)),
                     ..ButtonTheme::surface(&theme)
                 },
-                image: None,
                 selected,
                 hovering: world.insert(Val::new(false)),
             });

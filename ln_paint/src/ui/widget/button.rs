@@ -1,4 +1,3 @@
-use glam::{IVec2, UVec2};
 use ln_world::{Element, Handle, HandleGeneric, World};
 
 use crate::{
@@ -18,7 +17,6 @@ pub struct Button {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,
     pub theme: ButtonTheme,
-    pub image: Option<ButtonImage>,
     pub selected: Handle<Val<bool>>,
     pub hovering: Handle<Val<bool>>,
 }
@@ -34,11 +32,11 @@ pub struct ButtonTheme {
     pub corner_radius: Handle<Val<f32>>,
 }
 
-// TODO use SliderLabel style
-#[derive(Clone)]
 pub struct ButtonImage {
+    pub common: WidgetCommon,
+    pub source: Handle<Button>,
+    pub image: Handle<Val<PixImage>>,
     pub transform: TransformValue,
-    pub bmp: PixImage,
 }
 
 pub struct ButtonToggle {
@@ -58,18 +56,6 @@ impl ButtonTheme {
             press: theme.state.press,
             focus: theme.state.focus,
             corner_radius: theme.shape.corner_radius,
-        }
-    }
-}
-
-impl ButtonImage {
-    pub fn new(bmp: PixImage, size: u32) -> Self {
-        ButtonImage {
-            transform: TransformValue::anchor(
-                (0.5, 0.5),
-                IRect::new_half(IVec2::ZERO, UVec2::splat(size)),
-            ),
-            bmp,
         }
     }
 }
@@ -141,20 +127,6 @@ impl Element for Button {
             order: 10,
         });
 
-        if let Some(image) = &self.image {
-            let icon_rect = world.build(Transform::new(image.transform, self.rect));
-            world.insert(Canvas {
-                common: self.common,
-                rect: icon_rect,
-                order: 11,
-                modulate: self.theme.on_color,
-                // FIXME: deep clone
-                data: image.bmp.bytes.clone(),
-                data_width: image.bmp.bytes_width,
-                data_height: image.bmp.bytes_height,
-            });
-        }
-
         let mut drag = Drag::default();
         let mut dragging = false;
         world.observer(this, move |event: &PointerEvent, world| match event {
@@ -185,6 +157,27 @@ impl Element for Button {
                 world.queue_trigger(pressed, ValChanged);
             }
             PointerEvent::Hover(_) | PointerEvent::Scroll { .. } => {}
+        });
+    }
+}
+
+impl Element for ButtonImage {
+    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
+        world.scope("button_image");
+        world.set_autodeps(Some(this));
+
+        let button = world.fetch(self.source);
+        let bmp = world.fetch(self.image);
+        let rect = world.build(Transform::new(self.transform, button.rect));
+        world.insert(Canvas {
+            common: self.common,
+            rect,
+            order: 10,
+            modulate: button.theme.on_color,
+            // FIXME deep clone
+            data: bmp.val.bytes.clone(),
+            data_width: bmp.val.bytes_width,
+            data_height: bmp.val.bytes_height,
         });
     }
 }

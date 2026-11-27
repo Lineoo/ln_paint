@@ -7,6 +7,7 @@ type SetFunc<T> = Box<dyn Fn(&World, T) + Send + 'static>;
 type TransFunc<T> = Box<dyn Fn(&World) -> T + Send + 'static>;
 
 /// simple field for data, without any insert/remove behavior
+#[repr(transparent)]
 pub struct Val<T> {
     pub val: T,
 }

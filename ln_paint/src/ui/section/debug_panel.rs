@@ -8,6 +8,7 @@ use crate::{
         Render,
         nest::{NestAttr, NestBuilder},
     },
+    res::Icon,
     save::Save,
     ui::{
         common::WidgetCommon,
@@ -89,28 +90,28 @@ impl Element for DebugPanel {
             }
         });
 
-        let docker_button = |rect: Handle<Val<IRect>>, image_bytes: &[u8]| {
-            world.insert(Button {
-                common: WidgetCommon {
-                    camera: common.camera,
-                    ..self.common
-                },
+        let b = |rect: Handle<Val<IRect>>, image_bytes: &[u8]| {
+            let button = world.insert(Button {
+                common,
                 rect,
                 theme: ButtonTheme::surface(&theme),
-                image: Some(ButtonImage::new(svg_render(image_bytes), 8)),
                 selected: world.insert(Val::new(false)),
                 hovering: world.insert(Val::new(false)),
-            })
+            });
+            world.insert(ButtonImage {
+                common,
+                source: button,
+                image: world.insert(Val::new(svg_render(image_bytes))),
+                transform: TransformValue::center(8),
+            });
+            button
         };
 
         let compass_rect = world.build(Transform::new(
             TransformValue::anchor((0.0, 0.0), IRect::new(20, 20, 40, 40)),
             local,
         ));
-        let compass = docker_button(
-            compass_rect,
-            include_bytes!("../../../res/interface/compass.svg"),
-        );
+        let compass = b(compass_rect, Icon::COMPASS);
         world.observer(compass, move |&ButtonClick, world| {
             let container = world.single_fetch::<LayerPage>().nest;
             let utils = world.single_fetch::<LayerPage>().camera_utils;
@@ -125,10 +126,7 @@ impl Element for DebugPanel {
             TransformValue::anchor((0.33, 0.0), IRect::new(-10, 20, 10, 40)),
             local,
         ));
-        let page_debug = docker_button(
-            page_debug_rect,
-            include_bytes!("../../../res/interface/bug.svg"),
-        );
+        let page_debug = b(page_debug_rect, Icon::BUG);
         world.insert(ButtonToggle { source: page_debug });
         world.observer(page_debug, move |&ButtonClick, world| {
             let mut layer = world.single_fetch_mut::<LayerPage>();
@@ -139,10 +137,7 @@ impl Element for DebugPanel {
             TransformValue::anchor((0.67, 0.0), IRect::new(-10, 20, 10, 40)),
             local,
         ));
-        let render_profile = docker_button(
-            render_profile_rect,
-            include_bytes!("../../../res/interface/timer.svg"),
-        );
+        let render_profile = b(render_profile_rect, Icon::TIMER);
         world.insert(ButtonToggle {
             source: render_profile,
         });
@@ -155,10 +150,7 @@ impl Element for DebugPanel {
             TransformValue::anchor((1.0, 0.0), IRect::new(-40, 20, -20, 40)),
             local,
         ));
-        let compact = docker_button(
-            compact_rect,
-            include_bytes!("../../../res/interface/database-zap.svg"),
-        );
+        let compact = b(compact_rect, Icon::DATABASE_ZAP);
         world.observer(compact, move |&ButtonClick, world| {
             log::debug!("on next startup database will be compacted");
             let save = world.single_fetch::<Save>();
