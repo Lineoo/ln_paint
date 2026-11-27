@@ -3,17 +3,26 @@ use std::sync::Arc;
 use cosmic_text::{Align, Attrs, Family, Metrics};
 use glam::Vec4;
 use ln_paint::{
-    color::{hsl::Hsl, oklab::Oklab}, lnwin::Lnwin, ui::{
-        common::WidgetCommon, layout::luni::{
+    color::{hsl::Hsl, oklab::Oklab},
+    lnwin::Lnwin,
+    ui::{
+        common::WidgetCommon,
+        layout::luni::{
             LuniAlign, LuniAxis, LuniChild, LuniChildTemplate, LuniFlex, LuniParent, LuniRect,
-        }, renderer::{
+        },
+        renderer::{
             rrect::RRect,
             svg::svg_render,
             text::{Text, TextAttr},
-        }, widget::{
-            button::{Button, ButtonImage, ButtonTheme}, palette::{hsl::HslSquare, oklab::OklabPolar}, slider::Slider,
         },
-    }, unit::{Axis, IRect}, val::Val,
+        widget::{
+            button::{Button, ButtonImage, ButtonTheme},
+            palette::{hsl::HslSquare, oklab::OklabPolar},
+            slider::Slider,
+        },
+    },
+    unit::{Axis, IRect},
+    val::Val,
 };
 use ln_world::{Element, Handle, World};
 use winit::event_loop::EventLoop;

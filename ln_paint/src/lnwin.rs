@@ -20,7 +20,7 @@ use crate::{
     input::{mouse::MouseTool, pointer::PointerTool},
     render::{
         Render,
-        camera::{Camera, CameraDescriptor, UICamera},
+        camera::{Camera, CameraDescriptor, CameraPipeline},
         nest::Nest,
     },
     save::{AutosaveScheduler, Save},
@@ -160,86 +160,72 @@ impl Element for Lnwindow {
         world.scope("lnwindow");
         world.set_autodeps(Some(this));
 
+        world.insert(pollster::block_on(Render::new(self)));
+        world.insert_with(CameraPipeline::from_world);
+        world.insert_with(CanvasPipeline::from_world);
+        world.insert_with(QuadMeshPipeline::<HslSquareMaterial>::from_world);
+        world.insert_with(QuadMeshPipeline::<HslRingMaterial>::from_world);
+        world.insert_with(QuadMeshPipeline::<OklabPolarMaterial>::from_world);
+        world.insert_with(QuadMeshPipeline::<OklabBarMaterial>::from_world);
+        world.insert_with(QuadMeshPipeline::<RRectMaterial>::from_world);
+        world.insert_with(WireframePipeline::from_world);
+        world.insert_with(VtorPipeline::from_world);
+        world.insert_with(TextPipeline::from_world);
+        world.insert(MouseTool::default());
+        world.insert(PointerTool::default());
+
+        let rect = world.insert(Val::new(self.window_rect()));
+        let camera = CameraDescriptor {
+            center: self.surface_center(),
+            zoom: i64::q32_from_f64(self.scale_factor().log2()),
+        };
+        let camera = world.insert_with(|world| world.build(camera));
+        let visible = world.insert(Val::new(true));
+        let theme_hue = world.insert(Val::new(0.67));
+        let theme_scheme = world.insert(Val::new(ThemeScheme::Dark));
+        let theme = world.insert(Theme::source(world, theme_hue, theme_scheme));
+        world.insert(RootCamera(camera));
+        let common = WidgetCommon {
+            camera,
+            visible,
+            theme,
+        };
+
+        world.observer(this, move |event: &WindowEvent, world| match event {
+            WindowEvent::CloseRequested => {
+                world.queue(|world| {
+                    world.scope("window-closed-cleanup");
+                    world.clear();
+                });
+            }
+            WindowEvent::SurfaceResized(_) => {
+                let lnwindow = world.fetch(this);
+                let mut rect = world.fetch_mut(rect);
+                let mut camera = world.fetch_mut(camera);
+
+                let scale = lnwindow.scale_factor();
+                let next = lnwindow.window_rect();
+                let size = lnwindow.window.surface_size();
+
+                rect.val = next;
+                world.queue_trigger(rect.handle(), ValChanged);
+
+                camera.center = lnwindow.surface_center();
+                camera.zoom = i64::q32_from_f64(scale.log2());
+                camera.surface_size = UVec2::new(size.width, size.height);
+                camera.upload();
+                lnwindow.window.request_redraw();
+
+                for &nest in &camera.nests {
+                    world.queue(move |world| Nest::refresh_camera(world, nest));
+                }
+            }
+            _ => (),
+        });
+
         world.queue(move |world| {
-            world.scope("lnwindow");
+            world.scope("lnwindow-payload");
             world.set_autodeps(Some(this));
-
-            let lnwindow = world.fetch(this);
-            world.insert(pollster::block_on(Render::new(&lnwindow)));
-            drop(lnwindow);
-            world.flush();
-
-            Camera::init(world);
-
-            world.flush();
-
-            world.insert(CanvasPipeline::from_world(world));
-            world.insert(QuadMeshPipeline::<HslSquareMaterial>::from_world(world));
-            world.insert(QuadMeshPipeline::<HslRingMaterial>::from_world(world));
-            world.insert(QuadMeshPipeline::<OklabPolarMaterial>::from_world(world));
-            world.insert(QuadMeshPipeline::<OklabBarMaterial>::from_world(world));
-            world.insert(QuadMeshPipeline::<RRectMaterial>::from_world(world));
-            world.insert(WireframePipeline::from_world(world));
-            world.insert(VtorPipeline::from_world(world));
-            world.insert(TextPipeline::from_world(world));
-
-            world.flush();
-
-            world.insert(MouseTool::default());
-            world.insert(PointerTool::default());
-
-            world.flush();
-
-            let lnwindow = world.fetch(this);
-            let rect = world.insert(Val::new(lnwindow.window_rect()));
-            let camera = world.insert(world.build(CameraDescriptor {
-                center: lnwindow.surface_center(),
-                zoom: i64::q32_from_f64(lnwindow.scale_factor().log2()),
-            }));
-            let visible = world.insert(Val::new(true));
-            let theme_hue = world.insert(Val::new(0.67));
-            let theme_scheme = world.insert(Val::new(ThemeScheme::Dark));
-            let theme = world.insert(Theme::source(world, theme_hue, theme_scheme));
-            world.insert(UICamera(camera));
-            let common = WidgetCommon {
-                camera,
-                visible,
-                theme,
-            };
-            drop(lnwindow);
-
-            world.observer(this, move |event: &WindowEvent, world| match event {
-                WindowEvent::CloseRequested => {
-                    world.queue(|world| {
-                        world.clear();
-                    });
-                }
-                WindowEvent::SurfaceResized(_) => {
-                    let lnwindow = world.fetch(this);
-                    let mut rect = world.fetch_mut(rect);
-                    let mut camera = world.fetch_mut(camera);
-
-                    let scale = lnwindow.scale_factor();
-                    let next = lnwindow.window_rect();
-                    let size = lnwindow.window.surface_size();
-
-                    rect.val = next;
-                    world.queue_trigger(rect.handle(), ValChanged);
-
-                    camera.center = lnwindow.surface_center();
-                    camera.zoom = i64::q32_from_f64(scale.log2());
-                    camera.surface_size = UVec2::new(size.width, size.height);
-                    camera.upload();
-                    lnwindow.window.request_redraw();
-
-                    for &nest in &camera.nests {
-                        world.queue(move |world| Nest::refresh_camera(world, nest));
-                    }
-                }
-                _ => (),
-            });
-
-            world.flush();
 
             let this = world.fetch(this);
             if let Some(payload) = &this.payload {
@@ -347,6 +333,10 @@ impl Lnwindow {
         I64Vec2::q32_from_f64(size / scale / 2.0)
     }
 }
+
+pub struct RootCamera(pub Handle<Camera>);
+
+impl Element for RootCamera {}
 
 pub struct Task {
     pub instant: Instant,

@@ -17,11 +17,8 @@ use wgpu::*;
 use winit::{dpi::PhysicalSize, event::WindowEvent};
 
 use crate::{
-    lnwin::Lnwindow,
-    render::{
-        camera::{Camera, UICamera},
-        export::Export,
-    },
+    lnwin::{Lnwindow, RootCamera},
+    render::{camera::Camera, export::Export},
     ui::common::WidgetCommon,
     unit::URect,
     val::ValChanged,
@@ -540,8 +537,8 @@ impl Render {
 
         // redraw
 
-        let ui_camera = world.single_fetch::<UICamera>().0;
-        let camera = world.fetch(ui_camera);
+        let root = world.single_fetch::<RootCamera>().0;
+        let camera = world.fetch(root);
         Render::draw(
             &camera,
             world,

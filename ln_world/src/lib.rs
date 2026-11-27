@@ -150,11 +150,11 @@ impl fmt::Debug for HandleInfo {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Handle<{}>({}v{})\x1b[2m[{}]\x1b[0m",
+            "Handle[{}]<{}>({}v{})",
+            self.trace,
             shorter_type(self.class),
             self.handle.0,
             self.handle.1,
-            self.trace
         )
     }
 }
@@ -378,12 +378,13 @@ impl World {
 
         // delay execution
         let trace = self.label();
-        let label = format!("{} {:?}", trace, handle);
         self.queue(move |world| {
-            world.scope(label);
+            world.scope(format!("{} {{{:?}}}", trace, handle));
 
             // initialize element
             let element = element(world);
+
+            world.scope(format!("{} {:?}", trace, handle));
 
             // get type table ready
             let storage = world.storages.entry(TypeId::of::<T>()).or_insert_with(|| {
@@ -433,16 +434,13 @@ impl World {
     /// Cell-mode removal cannot access the element immediately so we can't return the owned value of removed element.
     pub fn try_remove(&self, handle: impl HandleGeneric) -> Result<usize, WorldError> {
         let handle = handle.untyped();
+        let info = self.info(handle);
 
         self.available_mut(handle)?;
         let mut cnt = 1;
 
-        // when_remove
-        // SAFETY: we have checked the mutability
-        let tid = self.indices.get(&handle).unwrap().tid;
-        let storage = self.storages.get(&tid).unwrap().as_ref() as *const _;
-        let storage = storage as *mut dyn StorageGeneral;
-        unsafe { (*storage).when_remove(self, handle) };
+        let trace = self.scope.borrow().clone();
+        self.scope(format!("{} ~{:?}", trace.label, info));
 
         // cleanup parents' dependencies
         let mut dependencies = self.dependencies.borrow_mut();
@@ -475,6 +473,15 @@ impl World {
             // TODO proper ops
             // cnt += self.remove(child)?;
         }
+
+        // when_remove
+        // SAFETY: we have checked the mutability
+        let tid = self.indices.get(&handle).unwrap().tid;
+        let storage = self.storages.get(&tid).unwrap().as_ref() as *const _;
+        let storage = storage as *mut dyn StorageGeneral;
+        unsafe { (*storage).when_remove(self, handle) };
+
+        self.scope.replace(trace.clone());
 
         // write immediate record
         let mut removed = self.removed.borrow_mut();
@@ -506,16 +513,13 @@ impl World {
         recycle: impl FnOnce(T, &World) + Send + 'static,
     ) -> Result<usize, WorldError> {
         let handle = handle.untyped();
+        let info = self.info(handle);
 
         self.available_mut(handle)?;
         let mut cnt = 1;
 
-        // when_remove
-        // SAFETY: we have checked the mutability
-        let tid = self.indices.get(&handle).unwrap().tid;
-        let storage = self.storages.get(&tid).unwrap().as_ref() as *const _;
-        let storage = storage as *mut dyn StorageGeneral;
-        unsafe { (*storage).when_remove(self, handle) };
+        let trace = self.scope.borrow().clone();
+        self.scope(format!("{} ~{:?}", trace.label, info));
 
         // cleanup parents' dependencies
         let mut dependencies = self.dependencies.borrow_mut();
@@ -549,6 +553,15 @@ impl World {
             // cnt += self.remove(child)?;
         }
 
+        // when_remove
+        // SAFETY: we have checked the mutability
+        let tid = self.indices.get(&handle).unwrap().tid;
+        let storage = self.storages.get(&tid).unwrap().as_ref() as *const _;
+        let storage = storage as *mut dyn StorageGeneral;
+        unsafe { (*storage).when_remove(self, handle) };
+
+        self.scope.replace(trace.clone());
+
         // write immediate record
         let mut removed = self.removed.borrow_mut();
         removed.insert(handle.untyped());
@@ -558,6 +571,8 @@ impl World {
         self.cache.borrow_mut().remove(&tid);
 
         self.queue(move |world| {
+            world.scope(format!("{} ~{{{:?}}}", trace.label, info));
+
             // update typetable
             world.indices.remove(&handle.untyped());
 
@@ -636,6 +651,7 @@ impl World {
     pub fn commander(&self) -> Commander {
         Commander {
             inner: self.commander.clone(),
+            label: self.label().into(),
         }
     }
 
@@ -655,6 +671,7 @@ impl World {
     pub fn queue(&self, f: impl FnOnce(&mut World) + Send + 'static) {
         let result = self.commander.send(WorldCommand {
             action: Box::new(f),
+            label: self.label().into(),
         });
         if let Err(err) = result {
             log::error!("error in world queue ops: {err}");
@@ -662,19 +679,15 @@ impl World {
     }
 
     pub fn flush(&mut self) {
-        let scope_origin = self.scope.get_mut().clone();
+        let trace = self.scope.get_mut().clone();
         let buf = self.queue.try_iter().collect::<Vec<_>>();
         for cmd in buf {
-            let scope = self.scope.get_mut();
-            *scope = WorldScope {
-                label: "flush".into(),
-                autodeps: None,
-            };
+            self.scope(format!("<{}>", cmd.label));
             (cmd.action)(self);
             self.flush();
         }
         let scope = self.scope.get_mut();
-        *scope = scope_origin;
+        *scope = trace;
     }
 
     fn get_storage<T: Element>(&self, tid: TypeId) -> Option<&Storage<T>> {
@@ -964,9 +977,17 @@ impl World {
 
     /// Will immediately triggered and acquire mutable access to `target`.
     pub fn trigger<E: Send + 'static>(&self, target: impl HandleGeneric, event: &E) -> usize {
+        let info = self.info(target);
+        let trace = self.scope.borrow().clone();
+
         if let Err(e) = self.validate(target) {
             // TODO silent return
-            log::warn!("{e} [{}]", self.label());
+            log::warn!(
+                "{e} [{} .<{}>{:?}]",
+                trace.label,
+                shorter_type(type_name::<E>()),
+                info,
+            );
             return 0;
         }
 
@@ -974,24 +995,27 @@ impl World {
         if let Ok(observers) = self.try_single_fetch::<Observers<E>>()
             && let Some(observers) = observers.members.get(&target.untyped())
         {
-            let trg_label = self.label();
             for mut observer in observers.iter().filter_map(|x| self.try_fetch_mut(*x).ok()) {
-                // This will help user to see the trigger chain as well.
-                // For example, `init [lnwindow] [brush]` means the event had crossed two observers
-                // in order, which are separately added in `lnwindow` scope and `brush` scope, while
-                // the event itself is triggered in `init` scope.
-                self.scope(format!("{} [{}]", trg_label, observer.label));
+                self.scope(format!(
+                    "{} .[{}]<{}>{:?}",
+                    trace.label,
+                    observer.label,
+                    shorter_type(type_name::<E>()),
+                    info,
+                ));
                 (observer.action)(event, self);
                 cnt += 1;
             }
-            self.scope(trg_label);
         }
 
+        self.scope.replace(trace);
         cnt
     }
 
     pub fn queue_trigger<E: Send + 'static>(&self, target: impl HandleGeneric, event: E) {
+        let label = self.label();
         self.queue(move |world| {
+            world.scope(format!("{} |", label));
             world.trigger(target, &event);
         });
     }
@@ -1161,18 +1185,21 @@ impl Element for () {}
 
 struct WorldCommand {
     action: Box<dyn FnOnce(&mut World) + Send>,
+    label: Cow<'static, str>,
 }
 
 /// A flexible command access to world.
 #[derive(Debug, Clone)]
 pub struct Commander {
     inner: Sender<WorldCommand>,
+    label: Cow<'static, str>,
 }
 
 impl Commander {
     pub fn queue(&self, f: impl FnOnce(&mut World) + Send + 'static) {
         let result = self.inner.send(WorldCommand {
             action: Box::new(f),
+            label: self.label.clone(),
         });
         if let Err(err) = result {
             log::error!("error in world queue ops: {err}");

@@ -13,7 +13,7 @@ use wgpu::{CommandEncoderDescriptor, ComputePassDescriptor};
 
 use crate::{
     color::srgb::{Srgb, SrgbLinear, SrgbLinearPremultipliedEncoded},
-    lnwin::Lnwindow,
+    lnwin::{Lnwindow, RootCamera},
     paint::{
         CacheLayerChunk, CacheLayers, ChunkPool, ChunkRenderer, DEFAULT_CHUNK_SIZE,
         DEFAULT_MIPMAP_CAP, PaintPipeline, PlainLayer, RawLayer, Standalone,
@@ -29,7 +29,7 @@ use crate::{
     },
     render::{
         Render, RenderDrawControl, RenderPrepareControl,
-        camera::{CameraBind, CameraUtils, UICamera},
+        camera::{CameraPipeline, CameraUtils},
         nest::{Nest, NestAttr},
     },
     save::{Autosave, Save, object::Objects},
@@ -120,7 +120,7 @@ pub struct LayerPage {
 impl LayerPage {
     pub fn new(world: &World, common: WidgetCommon, rect: Handle<Val<IRect>>) -> Self {
         let render = world.single_fetch::<Render>();
-        let camera_bind = world.single_fetch::<CameraBind>();
+        let camera_bind = world.single_fetch::<CameraPipeline>();
         let save = world.single_fetch::<Save>();
 
         let lp = Arc::new(PaintPipeline::new(
@@ -157,7 +157,7 @@ impl LayerPage {
                 .unwrap();
         });
 
-        let ui_camera = world.single_fetch::<UICamera>().0;
+        let root_camera = world.single_fetch::<RootCamera>().0;
 
         let attr = NestAttr {
             center: save.sn().page_camera.center,
@@ -194,7 +194,7 @@ impl LayerPage {
             UVec2::new(1, 1),
         )));
         let cursor_common = WidgetCommon {
-            camera: ui_camera,
+            camera: root_camera,
             visible: cursor_visible,
             theme: common.theme,
         };

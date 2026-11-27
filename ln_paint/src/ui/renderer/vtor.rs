@@ -13,7 +13,7 @@ use wgpu::{
 use crate::{
     color::srgb::SrgbLinear,
     lnwin::Lnwindow,
-    render::{MSAA_STATE, Render, RenderDrawControl, RenderPrepareControl, camera::CameraBind},
+    render::{MSAA_STATE, Render, RenderDrawControl, RenderPrepareControl, camera::CameraPipeline},
     shaders::shader_compile,
     ui::common::WidgetCommon,
     unit::IRect,
@@ -259,7 +259,7 @@ pub fn logo() -> Path {
 impl VtorPipeline {
     pub fn from_world(world: &World) -> Self {
         let render = world.single_fetch::<Render>();
-        let camera = world.single_fetch::<CameraBind>();
+        let camera = world.single_fetch::<CameraPipeline>();
         let device = &render.device;
 
         let shader = device.create_shader_module(ShaderModuleDescriptor {

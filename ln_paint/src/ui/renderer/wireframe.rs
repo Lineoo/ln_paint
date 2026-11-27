@@ -8,7 +8,7 @@ use wgpu::{
 use crate::{
     color::srgb::SrgbLinear,
     lnwin::Lnwindow,
-    render::{MSAA_STATE, Render, RenderDrawControl, camera::CameraBind},
+    render::{MSAA_STATE, Render, RenderDrawControl, camera::CameraPipeline},
     shaders::shader_compile,
     ui::common::WidgetCommon,
     unit::IRect,
@@ -169,7 +169,7 @@ impl Wireframe {
 impl WireframePipeline {
     pub fn from_world(world: &World) -> Self {
         let render = world.single_fetch::<Render>();
-        let camera = world.single_fetch::<CameraBind>();
+        let camera = world.single_fetch::<CameraPipeline>();
         let device = &render.device;
 
         let shader = device.create_shader_module(ShaderModuleDescriptor {

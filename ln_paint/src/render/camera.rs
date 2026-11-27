@@ -34,12 +34,9 @@ pub struct CameraDescriptor {
     pub zoom: i64,
 }
 
-pub struct CameraBind {
+pub struct CameraPipeline {
     pub layout: BindGroupLayout,
 }
-
-// TODO move to lnwin
-pub struct UICamera(pub Handle<Camera>);
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -57,7 +54,7 @@ impl Descriptor for CameraDescriptor {
 
     fn when_build(self, world: &World) -> Self::Target {
         let render = world.single_fetch::<Render>();
-        let binding = world.single_fetch::<CameraBind>();
+        let binding = world.single_fetch::<CameraPipeline>();
 
         let device = &render.device;
         let size = render.target_size();
@@ -109,7 +106,7 @@ impl Descriptor for CameraDescriptor {
 
 impl Element for Camera {}
 
-impl Element for CameraBind {}
+impl Element for CameraPipeline {}
 
 impl Camera {
     #[inline]
@@ -133,27 +130,6 @@ impl Camera {
         pf.into()
     }
 
-    pub fn init(world: &World) {
-        let render = world.single_fetch::<Render>();
-        let device = &render.device;
-
-        let layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-            label: Some("camera_bind"),
-            entries: &[BindGroupLayoutEntry {
-                binding: 0,
-                visibility: ShaderStages::VERTEX_FRAGMENT,
-                ty: BindingType::Buffer {
-                    ty: BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
-                },
-                count: None,
-            }],
-        });
-
-        world.insert(CameraBind { layout });
-    }
-
     pub fn upload(&self) {
         let transform = Mat2::from_scale_angle(
             Vec2::splat(self.zoom.q32_as_f64().exp2() as f32) * 2. / self.surface_size.as_vec2(),
@@ -172,6 +148,29 @@ impl Camera {
                 _pad: 0,
             }),
         );
+    }
+}
+
+impl CameraPipeline {
+    pub fn from_world(world: &World) -> Self {
+        let render = world.single_fetch::<Render>();
+        let device = &render.device;
+
+        let layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+            label: Some("camera_bind"),
+            entries: &[BindGroupLayoutEntry {
+                binding: 0,
+                visibility: ShaderStages::VERTEX_FRAGMENT,
+                ty: BindingType::Buffer {
+                    ty: BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }],
+        });
+
+        CameraPipeline { layout }
     }
 }
 
@@ -413,5 +412,4 @@ impl CameraUtils {
     }
 }
 
-impl Element for UICamera {}
 impl Element for CameraUtils {}

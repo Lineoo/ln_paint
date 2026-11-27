@@ -15,16 +15,12 @@ use crate::{
         hold::Hold,
         pointer::{Pointer, PointerCapture, PointerEvent, PointerReacquire, PointerTool},
     },
-    lnwin::Lnwindow,
+    lnwin::{Lnwindow, RootCamera},
     paint::{
         brush::{Dab, param::BrushParamKey},
         wrapper::LayerPage,
     },
-    render::{
-        RenderPrepareControl,
-        camera::{CameraUtils, UICamera},
-        nest::Nest,
-    },
+    render::{RenderPrepareControl, camera::CameraUtils, nest::Nest},
     save::Save,
     ui::{
         theme::{Theme, ThemeScheme},
@@ -691,8 +687,8 @@ impl Element for LayerDraw {
             }
 
             let page_camera = world.fetch(page.common.camera);
-            let ui_camera = world.single_fetch::<UICamera>().0;
-            let camera = world.fetch(ui_camera);
+            let root_camera = world.single_fetch::<RootCamera>().0;
+            let camera = world.fetch(root_camera);
             let save = world.single_fetch::<Save>();
 
             let mut offset = DVec2::ZERO;

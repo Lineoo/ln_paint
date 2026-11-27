@@ -17,7 +17,7 @@ use wgpu::{
 use crate::{
     color::srgb::{Srgb, SrgbLinear},
     lnwin::Lnwindow,
-    render::{MSAA_STATE, Render, RenderDrawControl, RenderPrepareControl, camera::CameraBind},
+    render::{MSAA_STATE, Render, RenderDrawControl, RenderPrepareControl, camera::CameraPipeline},
     shaders::shader_compile,
     ui::common::WidgetCommon,
     unit::{FI64Ext, IRect, MinMax},
@@ -401,7 +401,7 @@ impl TextInstance {
 impl TextPipeline {
     pub fn from_world(world: &World) -> Self {
         let render = world.single_fetch::<Render>();
-        let camera = world.single_fetch::<CameraBind>();
+        let camera = world.single_fetch::<CameraPipeline>();
         let device = &render.device;
 
         let shader = device.create_shader_module(ShaderModuleDescriptor {

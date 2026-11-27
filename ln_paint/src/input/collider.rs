@@ -3,8 +3,8 @@ use ln_world::{Element, Handle, HandleAny, World};
 
 use crate::{
     input::pointer::Pointer,
-    lnwin::Lnwindow,
-    render::camera::{Camera, UICamera},
+    lnwin::{Lnwindow, RootCamera},
+    render::camera::Camera,
     ui::common::WidgetCommon,
     unit::{FI64Ext, IRect},
     val::{Val, ValChanged},
@@ -27,7 +27,7 @@ pub struct ToolControlUpdate;
 
 impl ToolControl {
     pub fn intersect_main(world: &World, pointer: &Pointer) -> Option<ToolHitResult> {
-        let ui = world.single_fetch::<UICamera>().0;
+        let ui = world.single_fetch::<RootCamera>().0;
 
         if let Some(value) = Self::intersect(world, pointer, ui) {
             return Some(value);
@@ -79,7 +79,7 @@ impl Element for ToolControl {
     fn when_remove(&mut self, world: &World, this: Handle<Self>) {
         let mut camera = world.fetch_mut(self.common.camera);
         camera.colliders.retain(|&x| x != this);
-        world.queue_trigger(world.single::<Lnwindow>(), ToolControlUpdate);
+        world.trigger(world.single::<Lnwindow>(), &ToolControlUpdate);
     }
 }
 

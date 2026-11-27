@@ -4,8 +4,7 @@ use winit::event::{ButtonSource, ElementState, MouseButton, PointerKind, WindowE
 
 use crate::{
     input::{collider::ToolControl, pointer::Pointer},
-    lnwin::Lnwindow,
-    render::camera::UICamera,
+    lnwin::{Lnwindow, RootCamera},
     unit::FI64Ext,
 };
 
@@ -33,13 +32,13 @@ impl Element for MouseTool {
                 let screen = lnwindow.cursor_to_screen(*position);
                 drop(lnwindow);
 
-                let ui = world.single_fetch::<UICamera>().0;
+                let root = world.single_fetch::<RootCamera>().0;
                 let pointer = Pointer {
                     screen,
                     kind: PointerKind::Mouse,
                     tilt: Vec2::ZERO,
                     force: Some(1.0),
-                    position: world.fetch(ui).screen_to_world(screen),
+                    position: world.fetch(root).screen_to_world(screen),
                 };
 
                 let Some(hit) = ToolControl::intersect_main(world, &pointer) else {

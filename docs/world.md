@@ -61,10 +61,12 @@ flush
   insert-index    #### fetch-available now
   insert-hook     ==> `when_insert`
 ...
+insert-deps       *children* `when_insert`
+...
 remove            input `HandleGeneric`
+  remove-deps     *children* `when_remove`
   remove-hook     ==> `when_remove` (immediately!)
   remove-record   #### fetch-unavailable now
-  remove-deps
 ...
 flush
   remove-index
@@ -94,6 +96,22 @@ flush
 4. **observer** 添加必要的事件控制
 
 不是强制的，有复杂控制流的时候怎么方便怎么来。
+
+## trace ##
+
+使用一个简单的标签系统来标记执行位置。
+
+- `init` 来自 World 默认状态，一般只有 `Lnwin` 能接触
+- `<foo>` 表示 foo 调用 queue 进行展平后的 flush 过程内，且没有给予新标签
+- `foo Handle` 表示在 foo 阶段插入节点时
+- `foo {Handle}` 表示在 foo 阶段使用 `insert_with` 实例化节点时
+- `bar ~Handle` 表示在 bar 阶段移除节点时
+- `bar ~Handle ~Handle` 表示在 bar 阶段移除节点时，通过 dependency 移除依赖子节点时
+- `bar ~{Handle}` 表示在 bar 阶段使用 `remove_with` 回收节点时
+- `foo .[baz]<PointerEvent>Handle` 表示在 foo 阶段传递 `PointerEvent` 触发了一个来自 `baz` 阶段添加的 observer
+- `foo | .[baz]<PointerEvent>Handle` 表示 `PointerEvent` 是通过 `queue_trigger` 传递的
+
+Handle 的显示格式是 `Handle[trace]<type>({index}v{gen})`
 
 ## Storage - Validation - Cache 模型 ##
 
