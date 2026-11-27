@@ -119,8 +119,8 @@ impl Element for Tabs {
                 theme: ButtonTheme {
                     color: theme.color.surface_container,
                     on_color: theme.color.on_surface,
-                    active_color: theme.color.primary_container,
-                    active_on_color: theme.color.on_primary_container,
+                    active_color: theme.color.secondary_container,
+                    active_on_color: theme.color.on_secondary_container,
                     ..ButtonTheme::surface(&theme)
                 },
                 selected: button_selected,

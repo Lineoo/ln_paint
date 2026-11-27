@@ -28,7 +28,7 @@ pub struct VtorPipeline {
 pub struct Vtor {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,
-    pub color: SrgbLinear,
+    pub color: Handle<Val<SrgbLinear>>,
     pub order: isize,
     pub path: Path,
     pub outdated: bool,
@@ -49,14 +49,13 @@ struct VtorUniform {
     color: SrgbLinear,
 }
 
-pub struct SetVtorColor(pub SrgbLinear);
-
 impl Vtor {
     pub fn init(&mut self, world: &World, this: Handle<Self>) {
         world.scope("vtor");
         world.set_autodeps(Some(this));
 
         let rect = world.fetch(self.rect).val;
+        let color = world.fetch(self.color).val;
         let render = world.single_fetch::<Render>();
         let pipeline = world.single_fetch::<VtorPipeline>();
 
@@ -64,7 +63,7 @@ impl Vtor {
         let instance = world.insert(Vtor::gen_path_buffer(
             self.path.clone(),
             rect,
-            self.color,
+            color,
             &pipeline,
             &render.device,
         ));
@@ -72,17 +71,19 @@ impl Vtor {
         world.insert(RenderPrepareControl {
             prepare: Box::new(move |world| {
                 let mut this = world.fetch_mut(this);
-                let mut instance = world.fetch_mut(instance);
-                let rect = world.fetch(this.rect).val;
-                let render = world.single_fetch::<Render>();
-                let pipeline = world.single_fetch::<VtorPipeline>();
-
                 if this.outdated {
                     this.outdated = false;
+
+                    let mut instance = world.fetch_mut(instance);
+                    let rect = world.fetch(this.rect).val;
+                    let color = world.fetch(this.color).val;
+                    let render = world.single_fetch::<Render>();
+                    let pipeline = world.single_fetch::<VtorPipeline>();
+
                     *instance = Vtor::gen_path_buffer(
                         this.path.clone(),
                         rect,
-                        this.color,
+                        color,
                         &pipeline,
                         &render.device,
                     );
@@ -128,15 +129,15 @@ impl Vtor {
             lnwindow.window.request_redraw();
         });
 
-        world.observer(this, move |&SetVtorColor(color), world| {
-            let mut this = world.fetch_mut(this);
+        world.observer(self.color, move |ValChanged, world| {
+            let this = world.fetch(this);
+            let color = world.fetch(this.color).val;
             let instance = world.fetch(instance);
             let render = world.single_fetch::<Render>();
-
-            this.color = color;
-            render
-                .queue
-                .write_buffer(&instance.color_uniform, 0, bytemuck::bytes_of(&color));
+            let bytes = bytemuck::bytes_of(&color);
+            render.queue.write_buffer(&instance.color_uniform, 0, bytes);
+            let lnwindow = world.single_fetch::<Lnwindow>();
+            lnwindow.window.request_redraw();
         });
     }
 

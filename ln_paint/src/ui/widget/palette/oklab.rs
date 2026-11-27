@@ -1,4 +1,4 @@
-use glam::{I64Vec2, IVec2, UVec2, Vec2, Vec4};
+use glam::{I64Vec2, IVec2, UVec2, Vec2};
 use ln_world::{Element, Handle, HandleGeneric, World};
 use lyon::{
     math::Point,
@@ -75,10 +75,12 @@ fn chroma_to_path(c: f32) -> Path {
     builder.build()
 }
 
-impl OklabPolar {
-    fn init(&mut self, world: &World, this: Handle<Self>) {
+impl Element for OklabPolar {
+    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
         world.scope("oklab_polar");
         world.set_autodeps(Some(this));
+
+        let theme = world.fetch(self.common.theme);
 
         let thumb_rect = ValBind::new(world, move |world| {
             let this = world.fetch(this);
@@ -96,6 +98,28 @@ impl OklabPolar {
         })
         .listen(this)
         .finish();
+        let chroma_indicator_color = ValBind::new(world, move |world| {
+            let this = world.fetch(this);
+            match this.oklab.0.x > 0.5 {
+                false => SrgbLinear::WHITE * 0.4,
+                true => SrgbLinear::BLACK * 0.4,
+            }
+        })
+        .listen(this)
+        .animate(theme.animation);
+
+        world.insert(Vtor {
+            common: self.common,
+            rect: self.rect,
+            color: theme.color.surface_container,
+            order: 100,
+            path: {
+                let mut builder = Path::builder();
+                builder.add_circle(Point::new(0.5, 0.5), 0.5, Winding::Positive);
+                builder.build()
+            },
+            outdated: false,
+        });
 
         let quad = world.insert(QuadMesh {
             common: self.common,
@@ -108,7 +132,7 @@ impl OklabPolar {
             common: self.common,
             rect: self.rect,
             order: 100,
-            color: SrgbLinear(Vec4::new(0.2, 0.2, 0.2, 0.4)),
+            color: chroma_indicator_color,
             path: chroma_to_path(Vec2::new(self.oklab.0.y, self.oklab.0.z).length()),
             outdated: false,
         });
@@ -169,21 +193,22 @@ impl OklabPolar {
             chroma_indicator.path =
                 chroma_to_path(Vec2::new(this.oklab.0.y, this.oklab.0.z).length());
             chroma_indicator.outdated = true;
-            world.queue_trigger(quad, SetQuadMaterial(this.mat()));
+            world.queue_trigger(
+                quad,
+                SetQuadMaterial(OklabPolarMaterial { oklab: this.oklab }),
+            );
         });
-    }
-
-    fn mat(&self) -> OklabPolarMaterial {
-        OklabPolarMaterial { oklab: self.oklab }
     }
 }
 
-impl OklabBar {
-    fn init(&mut self, world: &World, this: Handle<Self>) {
+impl Element for OklabBar {
+    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
         world.scope("oklab_bar");
         world.set_autodeps(Some(this));
         world.dependency(this, self.rect);
         world.dependency(this, self.common.visible);
+
+        let theme = world.fetch(self.common.theme);
 
         let thumb_rect = ValBind::new(world, move |world| {
             let this = world.fetch(this);
@@ -201,6 +226,15 @@ impl OklabBar {
         })
         .listen(this)
         .finish();
+
+        world.insert(RRect {
+            common: self.common,
+            rect: self.rect,
+            order: 100,
+            color: theme.color.surface_container,
+            radius: 0.0,
+            width: 0.0,
+        });
 
         let quad = world.insert(QuadMesh {
             common: self.common,
@@ -260,12 +294,11 @@ impl OklabBar {
 
         world.observer(this, move |ValChanged, world| {
             let this = world.fetch(this);
-            world.queue_trigger(quad, SetQuadMaterial(this.mat()));
+            world.queue_trigger(
+                quad,
+                SetQuadMaterial(OklabBarMaterial { oklab: this.oklab }),
+            );
         });
-    }
-
-    fn mat(&self) -> OklabBarMaterial {
-        OklabBarMaterial { oklab: self.oklab }
     }
 }
 
@@ -294,17 +327,5 @@ impl QuadMaterial for OklabBarMaterial {
 
     fn fragment() -> Option<&'static str> {
         Some("main")
-    }
-}
-
-impl Element for OklabPolar {
-    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
-        self.init(world, this);
-    }
-}
-
-impl Element for OklabBar {
-    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
-        self.init(world, this);
     }
 }

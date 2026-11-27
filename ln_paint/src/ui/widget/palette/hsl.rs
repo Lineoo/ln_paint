@@ -68,8 +68,8 @@ fn ring_thumb(rect: IRect, hsl: Hsl, inner_radius: f32) -> IRect {
     IRect::new_half(center, UVec2::splat(THUMB_RADIUS as u32))
 }
 
-impl HslSquare {
-    fn init(&mut self, world: &World, this: Handle<Self>) {
+impl Element for HslSquare {
+    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
         world.scope("hsl_square");
         world.set_autodeps(Some(this));
 
@@ -148,17 +148,13 @@ impl HslSquare {
 
         world.observer(this, move |ValChanged, world| {
             let this = world.fetch(this);
-            world.queue_trigger(quad, SetQuadMaterial(this.mat()));
+            world.queue_trigger(quad, SetQuadMaterial(HslSquareMaterial { hsl: this.hsl }));
         });
-    }
-
-    fn mat(&self) -> HslSquareMaterial {
-        HslSquareMaterial { hsl: self.hsl }
     }
 }
 
-impl HslRing {
-    fn init(&mut self, world: &World, this: Handle<Self>) {
+impl Element for HslRing {
+    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
         world.scope("hsl_ring");
         world.set_autodeps(Some(this));
         world.dependency(this, self.rect);
@@ -245,16 +241,15 @@ impl HslRing {
 
         world.observer(this, move |ValChanged, world| {
             let this = world.fetch(this);
-            world.queue_trigger(quad, SetQuadMaterial(this.mat()));
+            world.queue_trigger(
+                quad,
+                SetQuadMaterial(HslRingMaterial {
+                    hsl: this.hsl,
+                    inner_radius: this.inner_radius,
+                    _pad: [0; 3],
+                }),
+            );
         });
-    }
-
-    fn mat(&self) -> HslRingMaterial {
-        HslRingMaterial {
-            hsl: self.hsl,
-            inner_radius: self.inner_radius,
-            _pad: [0; 3],
-        }
     }
 }
 
@@ -287,17 +282,5 @@ impl QuadMaterial for HslRingMaterial {
 
     fn edge(&self) -> UVec2 {
         UVec2::splat(2)
-    }
-}
-
-impl Element for HslSquare {
-    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
-        self.init(world, this);
-    }
-}
-
-impl Element for HslRing {
-    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
-        self.init(world, this);
     }
 }
