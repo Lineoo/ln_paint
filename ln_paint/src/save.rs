@@ -8,14 +8,16 @@ use std::{
     time::{Duration, Instant, SystemTime},
 };
 
-use ln_world::{Element, Handle, World, WorldError};
+use ln_world::{Element, Handle, World};
 use redb::{Database, WriteTransaction, backends::InMemoryBackend};
 use toml_edit::{DocumentMut, Item, Value};
+use winit::event::WindowEvent;
 
 #[cfg(target_os = "android")]
 use crate::lnwin::LnAndroid;
 use crate::{
     input::timer::{Timer, TimerHit},
+    lnwin::Lnwindow,
     paint::{
         input::{OffsetCorrection, TiltCorrection},
         wrapper::PageContainerArchive,
@@ -24,7 +26,7 @@ use crate::{
         chunk::{TABLE_LAYER_CHUNK, TABLE_LAYER_CHUNK_RAW},
         object::TABLE_LAYER_OBJECT,
     },
-    ui::theme::ThemeArchive,
+    ui::theme::ThemeScheme,
 };
 
 /// The format version of the database.
@@ -51,49 +53,51 @@ struct SavePaths {
 }
 
 impl Save {
-    pub fn init(world: &World) {
-        let Err(WorldError::SingletonNoSuch(_)) = world.try_single::<Save>() else {
-            log::warn!("duplicated database initialization!");
-            return;
-        };
-
+    pub fn from_world(world: &World) -> Self {
         let tmp = std::env::var_os("LNPAINT_TMP_SAVE").is_some();
 
         if tmp {
             log::warn!("temporary save enabled by LNPAINT_TMP_SAVE");
 
-            let sn = SceneFile::default();
             let mut db = Database::builder()
                 .create_with_backend(InMemoryBackend::new())
                 .unwrap();
+            log::debug!("in memory database created");
+
             let mut sn_doc = SceneDocument::default();
+            let sn = SceneFile::parse(&sn_doc);
             Save::touch(&sn, &mut sn_doc, &mut db, None).unwrap();
             let db = Arc::new(db);
-
-            world.insert(Save { sn, db, path: None });
+            let path = None;
+            Save { sn, db, path }
         } else {
             let path = Save::get_paths(world);
             std::fs::create_dir_all(&path.db.parent().unwrap()).unwrap();
             Save::create_backup(Some(&path.db), "old", true, BACKUP_SLOT);
 
-            let sn = SceneFile::read(&path.sn);
-            let db = if let Ok(mut db) = Database::open(&path.db) {
+            if let Ok(mut db) = Database::open(&path.db) {
                 log::debug!("database loaded");
+
                 let mut sn_doc = SceneDocument::read(&path.sn);
+                let sn = SceneFile::parse(&sn_doc);
                 Save::touch(&sn, &mut sn_doc, &mut db, Some(&path.db)).unwrap();
                 sn_doc.write(&path.sn, &path.sn_tmp);
-                Arc::new(db)
+
+                let db = Arc::new(db);
+                let path = Some(path);
+                Save { sn, db, path }
             } else {
                 let mut db = Database::create(&path.db).unwrap();
                 log::debug!("database created");
+
                 let mut sn_doc = SceneDocument::read(&path.sn);
+                let sn = SceneFile::parse(&sn_doc);
                 Save::touch(&sn, &mut sn_doc, &mut db, Some(&path.db)).unwrap();
                 sn_doc.write(&path.sn, &path.sn_tmp);
-                Arc::new(db)
-            };
-
-            let path = Some(path);
-            world.insert(Save { sn, db, path });
+                let db = Arc::new(db);
+                let path = Some(path);
+                Save { sn, db, path }
+            }
         }
     }
 
@@ -257,44 +261,109 @@ impl Save {
     }
 }
 
+impl Element for Save {}
+
+// Scene File //
+
 /// read-only deserialized copy from origin scene file
-#[derive(Default, serde::Deserialize)]
+#[derive(Default)]
 pub struct SceneFile {
     pub database_version: Option<u32>,
-    #[serde(default)]
     pub compact_on_startup: bool,
-    pub desktop_mode: Option<bool>,
-    #[serde(default)]
+    pub desktop_mode: bool,
     pub theme: ThemeArchive,
-    #[serde(default)]
     pub page_camera: PageContainerArchive,
     pub tilt_correction: Option<TiltCorrection>,
     pub offset_correction: Option<OffsetCorrection>,
 }
 
+#[derive(Default)]
+pub struct ThemeArchive {
+    pub scheme: Option<ThemeScheme>,
+    pub hue: Option<f32>,
+}
+
 impl SceneFile {
-    fn read(sn_file: &Path) -> Self {
-        match std::fs::read_to_string(&sn_file) {
-            Ok(text) => match toml_edit::de::from_str(&text) {
-                Ok(sn) => sn,
-                Err(err) => {
-                    log::warn!("scene toml parse error: {err}, use default scene to continue");
-                    SceneFile::default()
-                }
+    /// Parsing is hand-written since user's configuration file should be treated as untrusted, while
+    /// attempting to make default Deserialize derivation work is too complex for me.
+    fn parse(sn_doc: &SceneDocument) -> Self {
+        let t = sn_doc.doc.as_table();
+        SceneFile {
+            database_version: t
+                .get("database_version")
+                .and_then(|x| x.as_integer())
+                .map(|x| x as u32),
+            compact_on_startup: t
+                .get("compact_on_startup")
+                .and_then(|x| x.as_bool())
+                .unwrap_or(false),
+            desktop_mode: t
+                .get("desktop_mode")
+                .and_then(|x| x.as_bool())
+                .unwrap_or(false),
+            theme: ThemeArchive {
+                scheme: t
+                    .get("theme")
+                    .and_then(|x| x.get("scheme"))
+                    .and_then(deserialize_item)
+                    .and_then(|x: String| match x.as_str() {
+                        "dark" => Some(ThemeScheme::Dark),
+                        "light" => Some(ThemeScheme::Light),
+                        "dark_variant" => Some(ThemeScheme::DarkVariant),
+                        "light_variant" => Some(ThemeScheme::LightVariant),
+                        "neutral" => Some(ThemeScheme::Neutral),
+                        "neutral_variant" => Some(ThemeScheme::NeutralVariant),
+                        unknown => {
+                            log::warn!("unknown color scheme: {unknown}");
+                            None
+                        }
+                    }),
+                hue: t
+                    .get("theme")
+                    .and_then(|x| x.get("hue"))
+                    .and_then(deserialize_item),
             },
-            Err(err) => match err.kind() {
-                ErrorKind::NotFound => {
-                    log::warn!("scene not found: {err}, use default scene to continue");
-                    SceneFile::default()
-                }
-                err => {
-                    log::warn!("scene read failed: {err}, use default scene to continue");
-                    SceneFile::default()
-                }
-            },
+            page_camera: t
+                .get("page_camera")
+                .and_then(deserialize_item)
+                .unwrap_or_else(|| {
+                    log::warn!("use default page_camera");
+                    Default::default()
+                }),
+            tilt_correction: t
+                .get("tilt_correction")
+                .and_then(deserialize_item)
+                .unwrap_or_default(),
+            offset_correction: t
+                .get("offset_correction")
+                .and_then(deserialize_item)
+                .unwrap_or_default(),
         }
     }
 }
+
+/// I don't know why or how they make deserializing so hard to use, fking non-sense at all.
+///
+/// `toml_edit` support to use [`ValueDeserializer`](toml_edit::de::ValueDeserializer) to deserialize
+/// values, but which is inaccessible through simpler API other than using `IntoDeserializer`. Why
+/// there is anyone think it is a good idea to use implicit, anonymous `Into`-ish style API?
+fn deserialize_item<'de, T: serde::Deserialize<'de>>(item: &Item) -> Option<T> {
+    let value = match item.clone().into_value() {
+        Ok(x) => x,
+        // Item::None
+        Err(_) => return None,
+    };
+    let deserializer = serde::de::IntoDeserializer::into_deserializer(value);
+    match <T as serde::Deserialize>::deserialize(deserializer) {
+        Ok(x) => Some(x),
+        Err(err) => {
+            log::warn!("failed deserializing toml item:\n {err}");
+            None
+        }
+    }
+}
+
+// Scene Document //
 
 #[derive(Debug, Default)]
 pub struct SceneDocument {
@@ -353,7 +422,6 @@ impl SceneDocument {
         };
     }
 }
-
 pub struct Autosave(pub Box<dyn FnMut(&World, AutosaveTask) + Send>);
 
 pub struct AutosaveTask<'a> {
@@ -392,6 +460,30 @@ impl Autosave {
     }
 }
 
+impl Element for Autosave {}
+
+impl Element for AutosaveScheduler {
+    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
+        world.scope("autosave_scheduler");
+        world.set_autodeps(Some(this));
+
+        let timer = world.insert(Timer::new(self.autosave_duration));
+        world.observer(timer, move |TimerHit, world| {
+            Autosave::autosave_all(world);
+        });
+
+        world.observer(
+            world.single::<Lnwindow>(),
+            |event: &WindowEvent, world| match event {
+                WindowEvent::CloseRequested => Autosave::autosave_all(world),
+                #[cfg(target_os = "android")]
+                WindowEvent::Focused(false) => Autosave::autosave_all(world),
+                _ => (),
+            },
+        );
+    }
+}
+
 #[cfg(target_os = "android")]
 pub fn get_file_path(world: &World, filename: &str) -> PathBuf {
     let app = world.single_fetch::<LnAndroid>();
@@ -410,19 +502,3 @@ pub fn get_file_path(_world: &World, filename: &str) -> PathBuf {
     path.push(filename);
     path
 }
-
-impl Element for Autosave {}
-
-impl Element for AutosaveScheduler {
-    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
-        world.scope("autosave_scheduler");
-        world.set_autodeps(Some(this));
-
-        let timer = world.insert(Timer::new(self.autosave_duration));
-        world.observer(timer, move |TimerHit, world| {
-            Autosave::autosave_all(world);
-        });
-    }
-}
-
-impl Element for Save {}

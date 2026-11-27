@@ -38,6 +38,7 @@ pub struct CameraBind {
     pub layout: BindGroupLayout,
 }
 
+// TODO move to lnwin
 pub struct UICamera(pub Handle<Camera>);
 
 #[repr(C)]

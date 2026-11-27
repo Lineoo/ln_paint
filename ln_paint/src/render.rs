@@ -822,17 +822,11 @@ impl Element for Render {
         if self.device.features().contains(Features::PIPELINE_CACHE) {
             use wgpu::util::pipeline_cache_key;
 
-            use crate::save::{Autosave, Save, get_file_path};
+            use crate::save::{Autosave, get_file_path};
 
             let filename = pipeline_cache_key(&self.adapter.get_info());
             let path = get_file_path(world, &filename.unwrap());
-
-            let save = world.single_fetch::<Save>();
-            let data = match save.sn().compact_on_startup {
-                // drop previous cache so we could start over
-                true => None,
-                false => std::fs::read(path).ok(),
-            };
+            let data = std::fs::read(path).ok();
 
             // SAFETY: NOT safe. The cache is on users' device, we cannot determine that by ourselves.
             self.cache = Some(unsafe {

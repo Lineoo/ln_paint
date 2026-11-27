@@ -23,7 +23,7 @@ use crate::{
         camera::{Camera, CameraDescriptor, UICamera},
         nest::Nest,
     },
-    save::{Autosave, AutosaveScheduler, Save},
+    save::{AutosaveScheduler, Save},
     ui::{
         common::WidgetCommon,
         renderer::{
@@ -176,12 +176,6 @@ impl Element for Lnwindow {
             world.scope("lnwindow");
             world.set_autodeps(Some(this));
 
-            // TODO async save initialization
-            Save::init(world);
-            world.insert(AutosaveScheduler {
-                autosave_duration: Duration::from_secs(180),
-            });
-
             let lnwindow = world.fetch(this);
             world.insert(pollster::block_on(Render::new(&lnwindow)));
             drop(lnwindow);
@@ -200,26 +194,6 @@ impl Element for Lnwindow {
             world.insert(WireframePipeline::from_world(world));
             world.insert(VtorPipeline::from_world(world));
             world.insert(TextPipeline::from_world(world));
-            let save = world.single_fetch::<Save>();
-            let scheme = match save.sn().theme.scheme.as_ref().map(String::as_str) {
-                Some("dark") => ThemeScheme::Dark,
-                Some("light") => ThemeScheme::Light,
-                Some("dark_variant") => ThemeScheme::DarkVariant,
-                Some("light_variant") => ThemeScheme::LightVariant,
-                Some("neutral") => ThemeScheme::Neutral,
-                Some("neutral_variant") => ThemeScheme::NeutralVariant,
-                Some(unknown) => {
-                    log::warn!("unknown color scheme: {unknown}");
-                    ThemeScheme::Dark
-                }
-                None => ThemeScheme::Dark,
-            };
-            let theme = world.insert(Theme::source(
-                world,
-                world.insert(Val::new(0.67)),
-                world.insert(Val::new(scheme)),
-            ));
-            drop(save);
 
             world.flush();
 
@@ -235,23 +209,23 @@ impl Element for Lnwindow {
                 zoom: i64::q32_from_f64(lnwindow.scale_factor().log2()),
             }));
             let visible = world.insert(Val::new(true));
+            let theme_hue = world.insert(Val::new(0.67));
+            let theme_scheme = world.insert(Val::new(ThemeScheme::Dark));
+            let theme = world.insert(Theme::source(world, theme_hue, theme_scheme));
+            world.insert(UICamera(camera));
             let common = WidgetCommon {
                 camera,
                 visible,
                 theme,
             };
-            world.insert(UICamera(camera));
             drop(lnwindow);
 
             world.observer(this, move |event: &WindowEvent, world| match event {
                 WindowEvent::CloseRequested => {
-                    Autosave::autosave_all(world);
                     world.queue(|world| {
                         world.clear();
                     });
                 }
-                #[cfg(target_os = "android")]
-                WindowEvent::Focused(false) => Autosave::autosave_all(world),
                 WindowEvent::SurfaceResized(_) => {
                     let lnwindow = world.fetch(this);
                     let mut rect = world.fetch_mut(rect);
@@ -283,10 +257,27 @@ impl Element for Lnwindow {
             if let Some(payload) = &this.payload {
                 payload(world, common, rect);
             } else {
-                let save = world.single_fetch::<Save>();
-                let use_desktop = std::env::var_os("LNPAINT_DESKTOP_UI").is_some()
-                    || save.sn().desktop_mode.is_some_and(|x| x);
-                drop(save);
+                // TODO async save initialization
+                let save = Save::from_world(world);
+
+                let use_desktop =
+                    std::env::var_os("LNPAINT_DESKTOP_UI").is_some() || save.sn().desktop_mode;
+
+                if let Some(scheme) = save.sn().theme.scheme {
+                    let mut theme_scheme = world.fetch_mut(theme_scheme);
+                    theme_scheme.val = scheme;
+                    world.queue_trigger(theme_scheme.handle(), ValChanged);
+                }
+                if let Some(hue) = save.sn().theme.hue {
+                    let mut theme_hue = world.fetch_mut(theme_hue);
+                    theme_hue.val = hue;
+                    world.queue_trigger(theme_hue.handle(), ValChanged);
+                }
+
+                world.insert(save);
+                world.insert(AutosaveScheduler {
+                    autosave_duration: Duration::from_secs(180),
+                });
 
                 if use_desktop {
                     log::warn!("using experimental desktop ui");

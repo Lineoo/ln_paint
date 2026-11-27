@@ -68,12 +68,6 @@ pub enum ThemeScheme {
     NeutralVariant,
 }
 
-#[derive(Default, serde::Serialize, serde::Deserialize)]
-pub struct ThemeArchive {
-    pub scheme: Option<String>,
-    pub hue: Option<f32>,
-}
-
 #[rustfmt::skip]
 mod consts {
     use std::f32::consts::TAU;

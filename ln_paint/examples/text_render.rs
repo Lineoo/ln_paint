@@ -1,13 +1,18 @@
 use std::sync::Arc;
 
 use cosmic_text::{Align, Attrs, Family, Metrics};
-use glam::Vec4;
 use ln_paint::{
-    color::srgb::SrgbLinear, lnwin::Lnwin, ui::{
+    lnwin::Lnwin,
+    ui::{
         common::WidgetCommon,
         layout::transform::{Transform, TransformValue},
-        renderer::text::{Text, TextAttr},
-    }, unit::IRect, val::Val,
+        renderer::{
+            rrect::RRect,
+            text::{Text, TextAttr},
+        },
+    },
+    unit::IRect,
+    val::Val,
 };
 use ln_world::{Element, Handle, World};
 use winit::event_loop::EventLoop;
@@ -22,7 +27,7 @@ fn main() {
 
     let lnwin = Lnwin {
         payload: Some(Arc::new(|world, common, rect| {
-            world.insert(TextPreview { common, rect });
+            world.insert(TextRender { common, rect });
         })),
         ..Default::default()
     };
@@ -31,19 +36,27 @@ fn main() {
     event_loop.run_app(lnwin).unwrap();
 }
 
-pub struct TextPreview {
+pub struct TextRender {
     pub common: WidgetCommon,
     pub rect: Handle<Val<IRect>>,
 }
 
-impl Element for TextPreview {
+impl Element for TextRender {
     fn when_insert(&mut self, world: &World, this: Handle<Self>) {
-        world.scope("text_preview");
+        world.scope("text_render");
         world.set_autodeps(Some(this));
         world.dependency(this, self.common.visible);
 
-        let color = world.insert(Val::new(SrgbLinear(Vec4::new(0.3, 0.2, 0.0, 1.0))));
-        let black = world.insert(Val::new(SrgbLinear::BLACK));
+        let theme = world.fetch(self.common.theme);
+
+        world.insert(RRect {
+            common: self.common,
+            rect: self.rect,
+            order: -200,
+            color: theme.color.surface,
+            radius: 0.0,
+            width: 0.0,
+        });
 
         let row = |top: i32, height: i32| {
             world.build(Transform::anchor(
@@ -86,11 +99,11 @@ impl Element for TextPreview {
         };
 
         world.insert(text(
-            "文本渲染测试 / Text Rendering".into(),
+            "Text Render".into(),
             title,
             Metrics::new(32.0, 38.0),
             FONT_SANS,
-            color,
+            theme.color.primary,
         ));
 
         world.insert(text(
@@ -99,7 +112,7 @@ impl Element for TextPreview {
             latin,
             Metrics::new(18.0, 24.0),
             FONT_MONO,
-            black,
+            theme.color.on_surface,
         ));
 
         world.insert(text(
@@ -108,7 +121,7 @@ impl Element for TextPreview {
             cjk,
             Metrics::new(18.0, 26.0),
             FONT_SANS,
-            black,
+            theme.color.on_surface,
         ));
 
         world.insert(text(
@@ -116,7 +129,7 @@ impl Element for TextPreview {
             emoji,
             Metrics::new(24.0, 36.0),
             FONT_EMOJI,
-            black,
+            theme.color.on_surface,
         ));
 
         for (rect, align) in [
@@ -134,7 +147,7 @@ impl Element for TextPreview {
                 },
                 order: 10,
                 common: self.common,
-                modulate: color,
+                modulate: theme.color.primary,
                 outdated: false,
             });
         }
@@ -144,7 +157,7 @@ impl Element for TextPreview {
             small,
             Metrics::new(12.0, 18.0),
             FONT_SANS,
-            black,
+            theme.color.on_surface,
         ));
     }
 }
