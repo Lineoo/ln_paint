@@ -676,9 +676,6 @@ impl Element for LayerPage {
                 let child = world.fetch(container.child);
                 let container_rect = world.fetch(container.rect).val;
 
-                let (start, end) = extra.diagnosis.assign("main > layers");
-                extra.diagnosis.write(rpass, start);
-
                 let camera = extra.camera;
                 let view_rect = container.inner_rect(
                     container_rect,
@@ -707,8 +704,6 @@ impl Element for LayerPage {
                         rpass.draw(0..4, 0..1);
                     }
                 }
-
-                extra.diagnosis.write(rpass, end);
             }),
         });
     }

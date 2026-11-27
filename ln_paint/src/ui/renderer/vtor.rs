@@ -102,19 +102,12 @@ impl Vtor {
                 if instance.len == 0 {
                     return;
                 }
-
-                let key = format!("main > vtor");
-                let (start, end) = extra.diagnosis.assign_string(key);
-                extra.diagnosis.write(rpass, start);
-
                 rpass.set_pipeline(&pipeline.pipeline);
                 rpass.set_vertex_buffer(0, instance.vertex_buffer.slice(..));
                 rpass.set_index_buffer(instance.index_buffer.slice(..), IndexFormat::Uint16);
                 rpass.set_bind_group(0, &camera.bind, &[]);
                 rpass.set_bind_group(1, &instance.vtor_bind, &[]);
                 rpass.draw_indexed(0..instance.len, 0, 0..1);
-
-                extra.diagnosis.write(rpass, end);
             }),
         });
 

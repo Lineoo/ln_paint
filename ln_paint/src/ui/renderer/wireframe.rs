@@ -107,15 +107,10 @@ impl Wireframe {
                 let pipeline = world.single_fetch::<WireframePipeline>();
                 let camera = extra.camera;
 
-                let (start, end) = extra.diagnosis.assign("main > wireframe");
-                extra.diagnosis.write(rpass, start);
-
                 rpass.set_pipeline(&pipeline.pipeline);
                 rpass.set_bind_group(0, &camera.bind, &[]);
                 rpass.set_bind_group(1, &bind, &[]);
                 rpass.draw(0..4, 0..1);
-
-                extra.diagnosis.write(rpass, end);
             }),
         });
 

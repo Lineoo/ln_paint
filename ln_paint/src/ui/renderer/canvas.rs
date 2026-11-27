@@ -78,15 +78,10 @@ impl Canvas {
                 let pipeline = world.single_fetch::<CanvasPipeline>();
                 let camera = extra.camera;
 
-                let (start, end) = extra.diagnosis.assign("main > canvas");
-                extra.diagnosis.write(rpass, start);
-
                 rpass.set_pipeline(&pipeline.pipeline);
                 rpass.set_bind_group(0, &camera.bind, &[]);
                 rpass.set_bind_group(1, &instance.bind, &[]);
                 rpass.draw(0..4, 0..1);
-
-                extra.diagnosis.write(rpass, end);
             }),
         });
 

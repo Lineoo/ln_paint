@@ -209,9 +209,6 @@ impl Element for Text {
                     return;
                 };
 
-                let (start, end) = extra.diagnosis.assign("main > text");
-                extra.diagnosis.write(rpass, start);
-
                 rpass.set_pipeline(&pipeline.render_pipeline);
                 rpass.set_bind_group(0, &extra.camera.bind, &[]);
                 rpass.set_bind_group(1, &instance.material_bind, &[]);
@@ -232,8 +229,6 @@ impl Element for Text {
                     extra.scissor.extend.x,
                     extra.scissor.extend.y,
                 );
-
-                extra.diagnosis.write(rpass, end);
             }),
         });
 

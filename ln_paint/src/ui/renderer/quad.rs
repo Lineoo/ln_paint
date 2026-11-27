@@ -104,16 +104,10 @@ impl<M: QuadMaterial> QuadMesh<M> {
                 let pipeline = world.single_fetch::<QuadMeshPipeline<M>>();
                 let camera = extra.camera;
 
-                let key = format!("main > quad > {}", M::label());
-                let (start, end) = extra.diagnosis.assign_string(key);
-                extra.diagnosis.write(rpass, start);
-
                 rpass.set_pipeline(&pipeline.pipeline);
                 rpass.set_bind_group(0, &camera.bind, &[]);
                 rpass.set_bind_group(1, &bind, &[]);
                 rpass.draw(0..4, 0..1);
-
-                extra.diagnosis.write(rpass, end);
             }),
         });
 
