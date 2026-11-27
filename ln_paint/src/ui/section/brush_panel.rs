@@ -12,7 +12,6 @@ use crate::{
         common::WidgetCommon,
         i18n::tr,
         layout::{
-            anim::Animator,
             luni::{
                 LuniAlign, LuniAxis, LuniChild, LuniChildTemplate, LuniDistribution, LuniFlex,
                 LuniParent, LuniRect,
@@ -178,7 +177,7 @@ impl Element for BrushListPanel {
 
             let outline_rect =
                 world.build(Transform::new(TransformValue::shrink(-2, -2), button_rect));
-            let outline_color_anim = ValBind::new(world, move |world| {
+            let outline_color = ValBind::new(world, move |world| {
                 let this = world.fetch(this);
                 let theme = world.fetch(this.common.theme);
                 let selected_val = world.fetch(selected).val;
@@ -190,8 +189,7 @@ impl Element for BrushListPanel {
             .listen(selected)
             .listen(theme.color.primary)
             .listen(theme.color.surface)
-            .finish();
-            let outline_color = world.build(Animator::new(outline_color_anim, theme.animation));
+            .animate(theme.animation);
             world.insert(RRect {
                 common,
                 rect: outline_rect,

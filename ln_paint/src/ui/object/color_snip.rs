@@ -10,10 +10,7 @@ use crate::{
     paint::{input::LayerDrag, wrapper::LayerPage},
     ui::{
         common::WidgetCommon,
-        layout::{
-            anim::Animator,
-            transform::{Transform, TransformValue},
-        },
+        layout::transform::{Transform, TransformValue},
         renderer::{canvas::Canvas, rrect::RRect, svg::svg_render},
     },
     unit::{FI64Ext, IRect},
@@ -99,8 +96,7 @@ impl Element for ColorSnip {
             on_color * opacity
         })
         .listen(hover)
-        .finish();
-        let icon_modulate = world.build(Animator::new(icon_modulate, theme.animation));
+        .animate(theme.animation);
         let icon = svg_render(include_bytes!("../../../res/interface/pipette.svg"));
         world.insert(Canvas {
             common: WidgetCommon {

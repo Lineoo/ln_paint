@@ -6,14 +6,16 @@ use crate::{
     input::{collider::ToolRectCollider, pointer::PointerEvent},
     ui::{
         common::WidgetCommon,
-        layout::anim::{Animator, AnimatorSnap},
         renderer::{
             rrect::RRect,
             text::{Text, TextAttr},
         },
     },
     unit::{Axis, FI64Ext, IRect},
-    val::{Val, ValBind, ValChanged},
+    val::{
+        Val, ValBind, ValChanged,
+        anim::{Animator, AnimatorSnap},
+    },
 };
 
 pub struct SliderValue(pub f32);

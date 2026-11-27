@@ -50,6 +50,8 @@
         > - 类似 section 但是主要用于放在画布内
         - `color_snip`
     - `layout/` 基础排版
+        - `luni` Web 风格的 Flexbox 排版
+        - `transform` 游戏引擎风格的四边定位
     - `common` 通用属性
     - `i18n` 本地化
 - `paint/` 绘制系统
@@ -91,6 +93,7 @@
 - `shaders/` 着色器编译
 - `unit/` 单位
 - `val` 数据绑定
+    - `anim` 数据动画
 
 ### `ln_world/` 管理系统
 

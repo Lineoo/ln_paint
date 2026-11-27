@@ -1,6 +1,6 @@
-use ln_world::{Element, Handle, HandleGeneric, World};
+pub mod anim;
 
-use crate::ui::layout::anim::{AnimationType, Animator};
+use ln_world::{Element, Handle, HandleGeneric, World};
 
 type GetFunc<T> = Box<dyn Fn(&World) -> &T + Send + 'static>;
 type SetFunc<T> = Box<dyn Fn(&World, T) + Send + 'static>;
@@ -91,9 +91,9 @@ impl<'w, T: Send + 'static> ValBind<'w, T, Val<T>> {
 
     pub fn animate(&self, factor: f32) -> Handle<Val<T>>
     where
-        T: AnimationType,
+        T: anim::AnimationType,
     {
-        self.world.build(Animator::new(self.finish(), factor))
+        self.world.build(anim::Animator::new(self.finish(), factor))
     }
 }
 
