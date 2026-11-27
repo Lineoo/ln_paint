@@ -119,10 +119,10 @@ impl IRect {
         }
     }
 
-    pub fn new_half(center: IVec2, half: UVec2) -> IRect {
+    pub const fn new_half(center: IVec2, half: UVec2) -> IRect {
         IRect {
-            origin: center - half.as_ivec2(),
-            extend: half * 2,
+            origin: IVec2::new(center.x - half.x as i32, center.y - half.y as i32),
+            extend: UVec2::new(half.x * 2, half.y * 2),
         }
     }
 

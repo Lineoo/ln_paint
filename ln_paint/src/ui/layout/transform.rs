@@ -1,3 +1,4 @@
+use glam::{IVec2, UVec2};
 use ln_world::{Descriptor, Handle, World};
 
 use crate::{
@@ -117,6 +118,10 @@ impl TransformValue {
                 offset: 0,
             },
         }
+    }
+
+    pub const fn center(half: u32) -> TransformValue {
+        TransformValue::anchor((0.5, 0.5), IRect::new_half(IVec2::ZERO, UVec2::splat(half)))
     }
 
     pub fn compute(&self, source: IRect) -> IRect {

@@ -34,6 +34,7 @@ pub struct ButtonTheme {
     pub corner_radius: Handle<Val<f32>>,
 }
 
+// TODO use SliderLabel style
 #[derive(Clone)]
 pub struct ButtonImage {
     pub transform: TransformValue,
@@ -147,6 +148,7 @@ impl Element for Button {
                 rect: icon_rect,
                 order: 11,
                 modulate: self.theme.on_color,
+                // FIXME: deep clone
                 data: image.bmp.bytes.clone(),
                 data_width: image.bmp.bytes_width,
                 data_height: image.bmp.bytes_height,
