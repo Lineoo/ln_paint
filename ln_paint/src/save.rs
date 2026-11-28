@@ -1,4 +1,6 @@
 pub mod chunk;
+#[cfg(target_os = "linux")]
+pub mod fuse;
 pub mod object;
 
 use std::{
