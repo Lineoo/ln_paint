@@ -181,6 +181,11 @@ impl Element for LayerDrag {
                 if let Some(last_instant) = timer.replace(Instant::now()) {
                     let dt = last_instant.elapsed().as_secs_f64();
                     if this.velocity.length_squared() > 1e-3 || this.zoom_velocity.abs() > 1e-3 {
+                        log::trace!(
+                            "drag inertia dt={dt:.4} velocity={:?} zoom_velocity={}",
+                            this.velocity,
+                            this.zoom_velocity,
+                        );
                         let mut utils = world.fetch_mut(page.camera_utils);
                         utils.read_camera(world, page.nest);
                         this.velocity *= (this.damping as f64).powf(dt).min(1.0);
@@ -465,6 +470,13 @@ impl Element for LayerDrag {
                         term_zoom_velocity = zoom_velocity;
                     }
 
+                    log::trace!(
+                        "drag grab term {:?} release={is_release} members={} dt={dt:.5} center_delta={:?} term_velocity={term_velocity:?} term_zoom_velocity={term_zoom_velocity}",
+                        capture.pointer.kind,
+                        capture.members.len(),
+                        (prev_center - last_center).q32_as_f64(),
+                    );
+
                     if !capture.members.is_empty() {
                         this.velocity = DVec2::ZERO;
                         this.zoom_velocity = match (is_release, capture.members.len()) {
@@ -491,6 +503,8 @@ impl Element for LayerDrag {
                         }
                     } else {
                         this.velocity = term_velocity;
+                        // inertia is advanced by RenderPrepareControl, which only runs on redraw
+                        lnwindow.window.request_redraw();
                         LayerDragState::None
                     }
                 }
@@ -530,6 +544,11 @@ impl Element for LayerDrag {
                     } else {
                         utils.write_camera(world, container);
                         let dt = last_instant.elapsed().as_secs_f64();
+                        log::trace!(
+                            "drag grab move {:?} dt={dt:.5} center_delta={:?} velocity={velocity:?}",
+                            capture.pointer.kind,
+                            (prev_center - last_center).q32_as_f64(),
+                        );
 
                         // only the latest point in a pointer event batch is valid
                         // .. > (.. .. last) > (.. .. prev) > (now .. ..)
@@ -617,6 +636,15 @@ impl Element for LayerDrag {
 
                 _ => unreachable!(),
             };
+
+            if matches!(event, PointerEvent::Release(_)) {
+                log::trace!(
+                    "drag release applied {:?} velocity={:?} zoom_velocity={}",
+                    event.pointer().kind,
+                    this.velocity,
+                    this.zoom_velocity,
+                );
+            }
 
             if this.blocking
                 && matches!(event, PointerEvent::Release(_))

@@ -110,6 +110,12 @@ impl Element for PointerTool {
                     state.pointer.force = source_force(source);
 
                     if this.pointers[&kind].capture.is_some() {
+                        let pointer = this.pointers[&kind].pointer;
+                        log::trace!(
+                            "pointer move {kind:?} pixel={:?} screen={:?}",
+                            pointer.pixel,
+                            pointer.screen,
+                        );
                         this.move_capture(world, kind);
                     } else {
                         this.update_hover(world, kind, true);
@@ -144,6 +150,11 @@ impl Element for PointerTool {
                     match state {
                         ElementState::Pressed => {
                             pointer.pointer.force = button_force(button);
+                            log::trace!(
+                                "pointer press {kind:?} pixel={:?} screen={:?}",
+                                pointer.pointer.pixel,
+                                pointer.pointer.screen,
+                            );
                             if menu {
                                 this.menu(world, kind);
                             } else {
@@ -151,6 +162,11 @@ impl Element for PointerTool {
                             }
                         }
                         ElementState::Released => {
+                            log::trace!(
+                                "pointer release {kind:?} pixel={:?} screen={:?}",
+                                pointer.pointer.pixel,
+                                pointer.pointer.screen,
+                            );
                             if !menu {
                                 this.release(world, kind);
                             }
@@ -170,6 +186,7 @@ impl Element for PointerTool {
                         MouseScrollDelta::PixelDelta(delta) => DVec2::new(delta.x, -delta.y),
                     };
 
+                    log::trace!("pointer scroll pixel={:?} delta={delta:?}", pointer.pixel);
                     world.queue_trigger(target, PointerEvent::Scroll { pointer, delta });
                 }
 
@@ -177,6 +194,11 @@ impl Element for PointerTool {
                     let pointer = this.state(*kind);
                     pointer.pointer.screen = lnwindow.cursor_to_screen(*position);
                     pointer.pointer.pixel = DVec2::new(position.x, position.y);
+                    log::trace!(
+                        "pointer entered {kind:?} pixel={:?} screen={:?}",
+                        pointer.pointer.pixel,
+                        pointer.pointer.screen,
+                    );
 
                     this.update_hover(world, *kind, false);
                 }
@@ -194,6 +216,11 @@ impl Element for PointerTool {
                     };
                     let pointer = state.pointer;
                     let hover = state.hover;
+                    log::trace!(
+                        "pointer left {kind:?} pixel={:?} screen={:?}",
+                        pointer.pixel,
+                        pointer.screen,
+                    );
 
                     if let Some((target, event)) = this.finish(world, *kind) {
                         world.queue_trigger(target, event);
