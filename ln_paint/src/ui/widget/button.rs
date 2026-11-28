@@ -1,4 +1,4 @@
-use ln_world::{Element, Handle, HandleGeneric, World};
+use lnworld::{Element, Handle, HandleGeneric, World};
 
 use crate::{
     color::srgb::{Srgb, SrgbLinear},

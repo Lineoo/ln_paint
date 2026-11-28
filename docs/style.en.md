@@ -46,7 +46,7 @@ world.observer(this, move || {
 })
 ```
 
-### ln_world - no try_fetch
+### lnworld - no try_fetch
 
 DO NOT:
 
@@ -62,7 +62,7 @@ DO:
 world.fetch(handle).val;
 ```
 
-### ln_world - do not overuse blocks and drop
+### lnworld - do not overuse blocks and drop
 
 DO NOT:
 

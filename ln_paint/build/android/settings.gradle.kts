@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ln_paint_android"
+rootProject.name = "lnpaint_android"
 include(":app")

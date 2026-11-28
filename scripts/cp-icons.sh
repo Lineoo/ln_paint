@@ -10,4 +10,4 @@ cd "$root"
 # copy to builds
 
 icon=${1:-icon_dev}
-cp ln_paint/res/logos/$icon-512x.png ln_paint/build/android/app/src/main/res/mipmap-xxxhdpi/icon.png
+cp lnpaint/res/logos/$icon-512x.png lnpaint/build/android/app/src/main/res/mipmap-xxxhdpi/icon.png

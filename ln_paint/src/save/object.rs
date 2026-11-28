@@ -1,5 +1,5 @@
 use glam::UVec2;
-use ln_world::{Element, Handle, HandleAny, HandleGeneric, World};
+use lnworld::{Element, Handle, HandleAny, HandleGeneric, World};
 use redb::{ReadableDatabase, ReadableTable, TableDefinition};
 use uuid::Uuid;
 

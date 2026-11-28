@@ -1,5 +1,5 @@
 use glam::{I64Vec2, IVec2, UVec2, Vec2};
-use ln_world::{Element, Handle, HandleGeneric, World};
+use lnworld::{Element, Handle, HandleGeneric, World};
 use lyon::{
     math::Point,
     path::{Path, Winding},

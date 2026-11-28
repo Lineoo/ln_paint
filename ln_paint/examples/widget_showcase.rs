@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use cosmic_text::{Align, Attrs, Family, Metrics};
 use glam::Vec4;
-use ln_paint::{
+use lnpaint::{
     color::{hsl::Hsl, oklab::Oklab},
     lnwin::Lnwin,
     res::Icon,
@@ -28,7 +28,7 @@ use ln_paint::{
     unit::{Axis, IRect},
     val::Val,
 };
-use ln_world::{Element, Handle, World};
+use lnworld::{Element, Handle, World};
 use winit::event_loop::EventLoop;
 
 fn main() {
@@ -51,7 +51,7 @@ pub struct WidgetShowcase {
 }
 
 impl Element for WidgetShowcase {
-    fn when_insert(&mut self, world: &World, this: ln_world::Handle<Self>) {
+    fn when_insert(&mut self, world: &World, this: lnworld::Handle<Self>) {
         world.scope("widget_showcase");
         world.set_autodeps(Some(this));
         world.dependency(this, self.common.visible);

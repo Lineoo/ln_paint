@@ -1,4 +1,4 @@
-use ln_world::{Element, World};
+use lnworld::{Element, World};
 
 #[derive(Debug, PartialEq, Eq)]
 struct Tag(&'static str);

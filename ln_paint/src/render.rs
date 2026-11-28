@@ -12,7 +12,7 @@ use std::{
 };
 
 use glam::UVec2;
-use ln_world::{Element, Handle, World};
+use lnworld::{Element, Handle, World};
 use wgpu::*;
 use winit::{dpi::PhysicalSize, event::WindowEvent};
 

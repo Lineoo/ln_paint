@@ -1,5 +1,5 @@
 use glam::IVec2;
-use ln_world::{Element, Handle, HandleGeneric, World};
+use lnworld::{Element, Handle, HandleGeneric, World};
 
 use crate::{
     input::collider::ToolRectCollider,

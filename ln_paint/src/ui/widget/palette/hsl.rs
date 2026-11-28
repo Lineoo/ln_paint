@@ -1,7 +1,7 @@
 use std::f32::consts::TAU;
 
 use glam::{I64Vec2, UVec2, Vec2, Vec4};
-use ln_world::{Element, Handle, HandleGeneric, World};
+use lnworld::{Element, Handle, HandleGeneric, World};
 
 use crate::{
     color::{hsl::Hsl, srgb::SrgbLinear},

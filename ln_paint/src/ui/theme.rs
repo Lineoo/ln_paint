@@ -1,5 +1,5 @@
 use glam::Vec4;
-use ln_world::{Element, Handle, World};
+use lnworld::{Element, Handle, World};
 
 use crate::{
     color::{oklab::Oklch, srgb::SrgbLinear},

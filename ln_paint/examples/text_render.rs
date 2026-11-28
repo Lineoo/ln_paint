@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use cosmic_text::{Align, Attrs, Family, Metrics};
-use ln_paint::{
+use lnpaint::{
     lnwin::Lnwin,
     ui::{
         common::WidgetCommon,
@@ -14,7 +14,7 @@ use ln_paint::{
     unit::IRect,
     val::Val,
 };
-use ln_world::{Element, Handle, World};
+use lnworld::{Element, Handle, World};
 use winit::event_loop::EventLoop;
 
 /// Benchmark fonts: pinned explicitly so nothing is resolved by fallback.

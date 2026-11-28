@@ -10,7 +10,7 @@ import android.view.WindowInsetsController
 class MainActivity : NativeActivity() {
     companion object {
         init {
-            System.loadLibrary("ln_paint")
+            System.loadLibrary("lnpaint")
         }
     }
 

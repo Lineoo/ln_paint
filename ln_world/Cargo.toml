@@ -1,5 +1,5 @@
 [package]
-name = "ln_world"
+name = "lnworld"
 license = "MIT OR Apache-2.0"
 version.workspace = true
 edition.workspace = true

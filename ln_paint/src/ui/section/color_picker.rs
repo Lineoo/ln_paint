@@ -1,7 +1,7 @@
 use std::f32::consts::SQRT_2;
 
 use glam::{IVec2, UVec2, Vec4};
-use ln_world::{Element, Handle, World};
+use lnworld:{Element, Handle, World};
 use uuid::Uuid;
 
 use crate::{

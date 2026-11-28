@@ -1,10 +1,10 @@
-<p><img src="ln_paint/res/logos/banner.svg" alt="LnPaint 横幅" align="center"/></p>
+<p><img src="lnpaint/res/logos/banner.svg" alt="LnPaint 横幅" align="center"/></p>
 
 [English](./README.md) | **中文**
 
 ----------
 
-<img src="ln_paint/res/logos/icon_lime.svg" alt="LnPaint 图标" align="right"/>
+<img src="lnpaint/res/logos/icon_lime.svg" alt="LnPaint 图标" align="right"/>
 
 **绘限（LnPaint）** 是一个简单轻量、GPU 加速、跨平台的绘画应用，使用 Rust 编写，由 `winit` 和 `wgpu` 驱动。
 
@@ -20,9 +20,9 @@
 通过 `cargo` 手动构建：
 
 ```
-$ git clone --depth 1 https://github.com/Lineoo/ln_paint
-$ cd ln_paint
-$ cargo build --package=ln_paint --bin ln_paint
+$ git clone --depth 1 https://github.com/Lineoo/lnpaint
+$ cd lnpaint
+$ cargo build --package=lnpaint --bin lnpaint
 ```
 
 ### Android
@@ -45,8 +45,8 @@ $ ./gradlew assembleDebug
 
 此工作区包含多个具有不同许可证的 crate：
 
-- **ln_paint** crate 基于 **AGPL-3.0-or-later** 授权。
-- **ln_world** crate 基于 **MIT OR Apache-2.0** 双许可证授权。
+- **lnpaint** crate 基于 **AGPL-3.0-or-later** 授权。
+- **lnworld** crate 基于 **MIT OR Apache-2.0** 双许可证授权。
 
 详情请参阅 crate 级别的 README 文件或 license 字段。
 

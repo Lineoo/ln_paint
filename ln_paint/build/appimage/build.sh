@@ -1,35 +1,35 @@
 #!/usr/bin/env bash
-# Build an AppImage from an already compiled ln_paint binary.
+# Build an AppImage from an already compiled lnpaint binary.
 #
-# Usage: ln_paint/build/appimage/build.sh [output]
+# Usage: lnpaint/build/appimage/build.sh [output]
 #
 # Environment:
-#   BIN          path to the compiled ln_paint binary
+#   BIN          path to the compiled lnpaint binary
 #   APPIMAGETOOL path to appimagetool (default: appimagetool in PATH)
 
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../../.." && pwd)"
-OUT="${1:-$ROOT/target/appimage/ln_paint.AppImage}"
+OUT="${1:-$ROOT/target/appimage/lnpaint.AppImage}"
 APPDIR="$(dirname "$OUT")/AppDir"
 
-VERSION="$(sed -n 's/^version = "\(.*\)"$/\1/p' "$ROOT/ln_paint/Cargo.toml" | head -n1)"
+VERSION="$(sed -n 's/^version = "\(.*\)"$/\1/p' "$ROOT/lnpaint/Cargo.toml" | head -n1)"
 if [[ -z "$VERSION" ]]; then
-    echo "cannot read version from ln_paint/Cargo.toml" >&2
+    echo "cannot read version from lnpaint/Cargo.toml" >&2
     exit 1
 fi
 
 case "$VERSION" in
-    *-dev) ICON="$ROOT/ln_paint/res/logos/icon_dev-512x.png" ;;
-    *) ICON="$ROOT/ln_paint/res/logos/icon_lime-512x.png" ;;
+    *-dev) ICON="$ROOT/lnpaint/res/logos/icon_dev-512x.png" ;;
+    *) ICON="$ROOT/lnpaint/res/logos/icon_lime-512x.png" ;;
 esac
 
 TARGET="${TARGET:-x86_64-unknown-linux-gnu}"
-BIN="${BIN:-$ROOT/target/$TARGET/release/ln_paint}"
-[[ -x "$BIN" ]] || BIN="$ROOT/target/release/ln_paint"
+BIN="${BIN:-$ROOT/target/$TARGET/release/lnpaint}"
+[[ -x "$BIN" ]] || BIN="$ROOT/target/release/lnpaint"
 if [[ ! -x "$BIN" ]]; then
-    echo "missing ln_paint binary; build it first or set BIN" >&2
+    echo "missing lnpaint binary; build it first or set BIN" >&2
     exit 1
 fi
 
@@ -40,14 +40,14 @@ if ! command -v "$APPIMAGETOOL" >/dev/null 2>&1; then
 fi
 
 rm -rf "$APPDIR"
-install -Dm755 "$BIN" "$APPDIR/usr/bin/ln_paint"
+install -Dm755 "$BIN" "$APPDIR/usr/bin/lnpaint"
 install -Dm755 "$HERE/AppRun" "$APPDIR/AppRun"
-install -Dm644 "$ICON" "$APPDIR/usr/share/icons/hicolor/512x512/apps/ln_paint.png"
-ln -s usr/share/icons/hicolor/512x512/apps/ln_paint.png "$APPDIR/ln_paint.png"
-ln -s ln_paint.png "$APPDIR/.DirIcon"
+install -Dm644 "$ICON" "$APPDIR/usr/share/icons/hicolor/512x512/apps/lnpaint.png"
+ln -s usr/share/icons/hicolor/512x512/apps/lnpaint.png "$APPDIR/lnpaint.png"
+ln -s lnpaint.png "$APPDIR/.DirIcon"
 
-sed "s|@VERSION@|$VERSION|" "$HERE/ln_paint.desktop" > "$APPDIR/ln_paint.desktop"
-install -Dm644 "$APPDIR/ln_paint.desktop" "$APPDIR/usr/share/applications/ln_paint.desktop"
+sed "s|@VERSION@|$VERSION|" "$HERE/lnpaint.desktop" > "$APPDIR/lnpaint.desktop"
+install -Dm644 "$APPDIR/lnpaint.desktop" "$APPDIR/usr/share/applications/lnpaint.desktop"
 
 mkdir -p "$(dirname "$OUT")"
 rm -f "$OUT"

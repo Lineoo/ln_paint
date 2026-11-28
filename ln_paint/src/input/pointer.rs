@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use glam::{DVec2, I8Vec2, I64Vec2, Vec2};
 use hashbrown::HashMap;
-use ln_world::{Element, Handle, HandleAny, World};
+use lnworld::{Element, Handle, HandleAny, World};
 use winit::event::{
     ButtonSource, ElementState, MouseButton, MouseScrollDelta, PointerKind, PointerSource,
     WindowEvent,

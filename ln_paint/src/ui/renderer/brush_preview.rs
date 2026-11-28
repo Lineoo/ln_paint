@@ -1,5 +1,5 @@
 use glam::{DVec2, I64Vec2, UVec2};
-use ln_world::{Descriptor, Element, Handle, HandleGeneric, World};
+use lnworld::{Descriptor, Element, Handle, HandleGeneric, World};
 use wgpu::{
     CommandEncoderDescriptor, ComputePassDescriptor, Extent3d, TexelCopyBufferLayout,
     TexelCopyTextureInfo, TextureAspect,

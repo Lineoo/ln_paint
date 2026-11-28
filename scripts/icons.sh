@@ -11,7 +11,7 @@ cd "$root"
 
 files=(icon_dark icon_dev icon_light icon_lime icon_symbolic)
 for f in "${files[@]}"; do
-    resvg -w 512 -h 512 ln_paint/res/logos/$f.svg ln_paint/res/logos/$f-512x.png
+    resvg -w 512 -h 512 lnpaint/res/logos/$f.svg lnpaint/res/logos/$f-512x.png
 done
 
 # copy to builds

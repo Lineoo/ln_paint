@@ -55,7 +55,7 @@ LNPAINT_HEADLESS=1 \
 LNPAINT_TMP_SAVE=1 \
 LNPAINT_FORCE_FALLBACK_ADAPTER=1 \
 LNPAINT_EXPORT_PATH=$PWD/target/headless/shot.png \
-./target/debug/ln_paint
+./target/debug/lnpaint
 ```
 
 The exporter requests redraws until the requested frame is rendered, then writes the PNG once and marks the export as done. The application logs the output path when the file has been written:

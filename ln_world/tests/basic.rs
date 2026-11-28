@@ -1,4 +1,4 @@
-use ln_world::*;
+use lnworld::*;
 
 #[derive(Debug, PartialEq, Eq)]
 struct TestInserter(usize);

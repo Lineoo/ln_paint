@@ -1,5 +1,5 @@
 use glam::{IVec2, UVec2};
-use ln_world::{Element, Handle, World};
+use lnworld::{Element, Handle, World};
 
 use crate::{
     paint::{

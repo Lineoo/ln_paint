@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-for f in ln_paint/res/icon/*.svg; do
+for f in lnpaint/res/icon/*.svg; do
     [[ -f "$f" ]] || continue
 
     base="$(basename "$f" .svg)"

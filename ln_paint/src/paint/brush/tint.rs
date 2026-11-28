@@ -1,5 +1,5 @@
 use glam::{IVec2, UVec2, Vec4};
-use ln_world::Element;
+use lnworld::Element;
 
 use crate::{
     brush_params,

@@ -1,6 +1,6 @@
 use cosmic_text::{Align, Attrs, Metrics};
 use glam::{IVec2, UVec2, Vec4};
-use ln_world::{Element, Handle, World};
+use lnworld::{Element, Handle, World};
 
 use crate::{
     color::oklab::Oklab,

@@ -1,4 +1,4 @@
-use ln_world::{Descriptor, Element, Handle, World};
+use lnworld::{Descriptor, Element, Handle, World};
 
 use crate::{
     unit::{Axis, IRect},

@@ -1,5 +1,5 @@
 use glam::I64Vec2;
-use ln_world::{Element, Handle, World};
+use lnworld::{Element, Handle, World};
 
 use crate::{
     input::{drag::Drag, pointer::PointerEvent},

@@ -8,7 +8,7 @@ use std::{
 
 use glam::{DVec2, I64Vec2, IVec2, UVec2, Vec4};
 use hashbrown::HashMap;
-use ln_world::{Element, Handle, World};
+use lnworld::{Element, Handle, World};
 use wgpu::{CommandEncoderDescriptor, ComputePassDescriptor};
 
 use crate::{

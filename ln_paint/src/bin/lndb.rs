@@ -23,7 +23,7 @@ fn main() {
     let database = matches.get_one::<PathBuf>("database").unwrap();
     let mount = matches.get_one::<PathBuf>("mount").unwrap();
 
-    ln_paint::save::fuse::mount(database, mount).unwrap();
+    lnpaint::save::fuse::mount(database, mount).unwrap();
 }
 
 #[cfg(not(target_os = "linux"))]

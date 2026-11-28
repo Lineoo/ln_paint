@@ -1,11 +1,11 @@
 [package]
-name = "ln_paint"
+name = "lnpaint"
 license = "AGPL-3.0-or-later"
 version.workspace = true
 edition.workspace = true
 
 [lib]
-name = "ln_paint"
+name = "lnpaint"
 crate-type = ["lib", "cdylib"]
 
 [dependencies]
@@ -40,8 +40,8 @@ wgpu = "30.0"
 zeno = "0.3.3"
 zstd = "0.13.3"
 
-[dependencies.ln_world]
-path = "../ln_world"
+[dependencies.lnworld]
+path = "../lnworld"
 
 [dependencies.winit]
 version = "0.31.0-beta.2"

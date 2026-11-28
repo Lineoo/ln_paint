@@ -1,6 +1,6 @@
 pub mod anim;
 
-use ln_world::{Element, Handle, HandleGeneric, World};
+use lnworld::{Element, Handle, HandleGeneric, World};
 
 type GetFunc<T> = Box<dyn Fn(&World) -> &T + Send + 'static>;
 type SetFunc<T> = Box<dyn Fn(&World, T) + Send + 'static>;

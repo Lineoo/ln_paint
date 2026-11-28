@@ -54,7 +54,7 @@ val cargoNdk = tasks.register<Exec>("cargoNdk") {
         "--platform=21",
         "--output-dir=build/android/app/src/main/jniLibs",
         "build",
-        "--package=ln_paint",
+        "--package=lnpaint",
         "--lib"
     )
     if (cargoProfile.get() == "release") {

@@ -1,6 +1,6 @@
 use cosmic_text::{Align, Attrs, Family, Metrics};
 use glam::{DVec2, IVec2, UVec2, Vec4};
-use ln_world::{Element, Handle, HandleGeneric, World};
+use lnworld:{Element, Handle, HandleGeneric, World};
 
 use crate::{
     color::{

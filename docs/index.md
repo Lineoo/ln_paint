@@ -2,7 +2,7 @@
 
 不全，以代码库为准。如果代码库不一样可能是正在进行重构。
 
-### `ln_paint/` 主软件
+### `lnpaint/` 主软件
 
 - `build/`
     - `android/` 包含给安卓用的 gradle 和 Kotlin 代码
@@ -14,9 +14,9 @@
 - `fonts/` 预嵌入安卓的字体
 - `lang/` 本地化
 - `src/lib.rs` 库入口
-- `src/bin/ln_paint.rs` 桌面端入口
+- `src/bin/lnpaint.rs` 桌面端入口
 
-### `ln_paint/src/` 主软件代码
+### `lnpaint/src/` 主软件代码
 
 - `ui/`
     - `renderer/` 基础渲染
@@ -96,7 +96,7 @@
 - `val` 数据绑定
     - `anim` 数据动画
 
-### `ln_world/` 管理系统
+### `lnworld/` 管理系统
 
 - `src/lib.rs` 主代码
 

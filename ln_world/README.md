@@ -11,4 +11,4 @@ This crate is licensed under either of
 
 at your option.
 
-Note: dual-licenses only apply to current crate `ln_world`, not the entire repository. 
+Note: dual-licenses only apply to current crate `lnworld`, not the entire repository. 

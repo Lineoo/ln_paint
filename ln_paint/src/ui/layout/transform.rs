@@ -1,5 +1,5 @@
 use glam::{IVec2, UVec2};
-use ln_world::{Descriptor, Handle, World};
+use lnworld::{Descriptor, Handle, World};
 
 use crate::{
     unit::IRect,

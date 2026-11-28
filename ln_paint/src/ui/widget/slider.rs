@@ -1,6 +1,6 @@
 use cosmic_text::{Align, Metrics};
 use glam::UVec2;
-use ln_world::{Element, Handle, HandleGeneric, World};
+use lnworld::{Element, Handle, HandleGeneric, World};
 
 use crate::{
     input::{collider::ToolRectCollider, pointer::PointerEvent},

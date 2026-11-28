@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use glam::UVec2;
-use ln_world::{Element, Handle, World};
+use lnworld:{Element, Handle, World};
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
     *,

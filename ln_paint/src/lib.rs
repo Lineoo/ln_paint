@@ -26,7 +26,7 @@ pub fn desktop_main() {
 #[unsafe(no_mangle)]
 pub fn android_main(app: winit::platform::android::activity::AndroidApp) {
     use android_logger::{Config, FilterBuilder};
-    use ln_world::World;
+    use lnworld::World;
     use winit::{
         event_loop::EventLoop,
         platform::android::{EventLoopBuilderExtAndroid, activity::WindowManagerFlags},
@@ -42,7 +42,7 @@ pub fn android_main(app: winit::platform::android::activity::AndroidApp) {
                     .filter(Some("wgpu"), log::LevelFilter::Warn)
                     .build(),
             )
-            .with_tag("ln_paint"),
+            .with_tag("lnpaint"),
     );
 
     log::info!("This is LnPaint Mobile. Welcome!");

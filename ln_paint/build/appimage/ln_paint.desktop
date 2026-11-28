@@ -1,8 +1,8 @@
 [Desktop Entry]
 Type=Application
 Name=LnPaint
-Exec=ln_paint
-Icon=ln_paint
+Exec=lnpaint
+Icon=lnpaint
 Categories=Graphics;2DGraphics;
 Terminal=false
 X-AppImage-Version=@VERSION@

@@ -1,5 +1,5 @@
 use glam::Vec2;
-use ln_world::{Element, Handle, World};
+use lnworld:{Element, Handle, World};
 use lyon::{
     math::{Point, Transform, Vector},
     path::Path,

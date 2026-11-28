@@ -10,7 +10,7 @@ use std::{
     time::{Duration, Instant, SystemTime},
 };
 
-use ln_world::{Element, Handle, World};
+use lnworld::{Element, Handle, World};
 use redb::{Database, WriteTransaction, backends::InMemoryBackend};
 use toml_edit::{DocumentMut, Item, Value};
 use winit::event::WindowEvent;

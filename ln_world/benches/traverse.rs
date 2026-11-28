@@ -2,7 +2,7 @@
 
 extern crate test;
 
-use ln_world::{Element, World};
+use lnworld::{Element, World};
 use test::Bencher;
 
 struct Camera;

@@ -1,5 +1,5 @@
 use cosmic_text::{Attrs, Metrics};
-use ln_world::{Element, Handle, World};
+use lnworld::{Element, Handle, World};
 
 use crate::{
     input::{

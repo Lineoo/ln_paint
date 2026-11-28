@@ -1,7 +1,7 @@
 use std::mem::size_of;
 
 use glam::{I64Vec2, IVec2, UVec2};
-use ln_world::Element;
+use lnworld::Element;
 
 use crate::{
     brush_params,

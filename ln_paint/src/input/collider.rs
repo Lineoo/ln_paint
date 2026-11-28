@@ -1,5 +1,5 @@
 use glam::Vec2;
-use ln_world::{Element, Handle, HandleAny, World};
+use lnworld::{Element, Handle, HandleAny, World};
 
 use crate::{
     input::pointer::Pointer,

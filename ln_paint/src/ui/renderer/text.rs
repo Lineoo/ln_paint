@@ -6,7 +6,7 @@ use cosmic_text::{
 };
 use etagere::{AllocatorOptions, AtlasAllocator, size2};
 use glam::{DVec2, I64Vec2, IVec2, UVec2, Vec2};
-use ln_world::{Element, Handle, World};
+use lnworld::{Element, Handle, World};
 use smallvec::SmallVec;
 use swash::scale::Source;
 use wgpu::{

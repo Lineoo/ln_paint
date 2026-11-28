@@ -1,7 +1,7 @@
 use std::time::{Duration, Instant};
 
 use glam::Vec4;
-use ln_world::{Descriptor, Element, Handle, World};
+use lnworld::{Descriptor, Element, Handle, World};
 
 use crate::{
     color::srgb::SrgbLinear,

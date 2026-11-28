@@ -1,4 +1,4 @@
-use ln_world::Handle;
+use lnworld::Handle;
 
 use crate::{render::camera::Camera, ui::theme::Theme, val::Val};
 

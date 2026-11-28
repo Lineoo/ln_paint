@@ -1,10 +1,10 @@
-<p><img src="ln_paint/res/logos/banner.svg" alt="LnPaint Banner" align="center"/></p>
+<p><img src="lnpaint/res/logos/banner.svg" alt="LnPaint Banner" align="center"/></p>
 
 **English** | [中文](./README.zh_CN.md)
 
 ----------
 
-<img src="ln_paint/res/logos/icon_lime.svg" alt="LnPaint Icon" align="right"/>
+<img src="lnpaint/res/logos/icon_lime.svg" alt="LnPaint Icon" align="right"/>
 
 **LnPaint** is a simple, light-weight, GPU-accelerated, cross-platform painting application written in Rust, driven by `winit` and `wgpu`.
 
@@ -22,9 +22,9 @@
 Manually build through `cargo`:
 
 ```
-$ git clone --depth 1 https://github.com/Lineoo/ln_paint
-$ cd ln_paint
-$ cargo build --package=ln_paint --bin ln_paint
+$ git clone --depth 1 https://github.com/Lineoo/lnpaint
+$ cd lnpaint
+$ cargo build --package=lnpaint --bin lnpaint
 ```
 
 ### Android
@@ -35,7 +35,7 @@ Use `cargo-ndk` to help setup environment variables, see `docs/ndk.md` (Chinese)
 
 ```
 $ cargo install cargo-ndk
-$ cd ln_paint/build/android
+$ cd lnpaint/build/android
 $ ./gradlew assembleDebug
 ```
 
@@ -47,8 +47,8 @@ The entire repository is licensed under **GNU Affero General Public License v3.0
 
 This workspace contains multiple crates with different licenses:
 
-- Crate **ln_paint** is licensed under **AGPL-3.0-or-later**.
-- Crate **ln_world** is dual-licensed under **MIT OR Apache-2.0**.
+- Crate **lnpaint** is licensed under **AGPL-3.0-or-later**.
+- Crate **lnworld** is dual-licensed under **MIT OR Apache-2.0**.
 
 See the crate-level README file or license field for details.
 

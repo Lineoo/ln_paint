@@ -5,7 +5,7 @@ use std::{
 
 use glam::{DVec2, I64Vec2, IVec2, UVec2};
 use hashbrown::HashMap;
-use ln_world::{Element, Handle, World};
+use lnworld::{Element, Handle, World};
 #[cfg(target_os = "android")]
 use winit::platform::android::activity::AndroidApp;
 use winit::{

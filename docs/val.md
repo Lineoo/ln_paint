@@ -1,6 +1,6 @@
 # Val 数据绑定 #
 
-注意数据绑定是 `ln_paint` 范围的。这是一个建立在 observer 系统上的数据流控制系统。
+注意数据绑定是 `lnpaint` 范围的。这是一个建立在 observer 系统上的数据流控制系统。
 
 ## 数据更新 ValChanged
 

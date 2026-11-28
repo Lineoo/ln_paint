@@ -1,5 +1,5 @@
 use glam::{IVec2, UVec2};
-use ln_world::{Element, Handle, World};
+use lnworld::{Element, Handle, World};
 use wgpu::{
     BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor,
     BindGroupLayoutEntry, BindingResource, BindingType, BlendState, Buffer, BufferBinding,

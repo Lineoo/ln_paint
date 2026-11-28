@@ -3,7 +3,7 @@
 
 set -e
 
-cd ln_paint/build/android/
+cd lnpaint/build/android/
 ./gradlew :app:installDebug
 adb shell am start -W -a android.intent.action.MAIN -n org.linn.lnpaint.dev/org.linn.lnpaint.MainActivity
 uid=$(adb shell pm list package -U org.linn.lnpaint.dev | sed -n 's/.*uid:\([0-9]*\).*/\1/p' | tr -d '\r')

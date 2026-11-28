@@ -1,5 +1,5 @@
 use glam::{DVec2, I64Vec2, IVec2, Mat2, UVec2, Vec2};
-use ln_world::{Descriptor, Element, Handle, World};
+use lnworld::{Descriptor, Element, Handle, World};
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
     *,

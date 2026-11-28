@@ -1,5 +1,5 @@
 use glam::{IVec2, UVec2};
-use ln_world::Element;
+use lnworld::Element;
 use wgpu::{BindGroup, ComputePass};
 
 use crate::{
