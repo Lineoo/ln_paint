@@ -130,7 +130,7 @@ impl IRect {
         IRect {
             origin: IVec2::new(
                 point.x - (anchor.x * extend.x as f64).round() as i32,
-                point.y - (anchor.y + extend.y as f64).round() as i32,
+                point.y - (anchor.y * extend.y as f64).round() as i32,
             ),
             extend: UVec2::new(extend.x, extend.y),
         }

@@ -41,9 +41,15 @@ struct ColorSnipMenu {
     common: WidgetCommon,
     source: Handle<ColorSnip>,
     position: IVec2,
+    anchor: DVec2,
 }
 
-fn open_menu(world: &World, source: Handle<ColorSnip>, screen: DVec2) -> Handle<ColorSnipMenu> {
+fn open_menu(
+    world: &World,
+    source: Handle<ColorSnip>,
+    screen: DVec2,
+    touch: bool,
+) -> Handle<ColorSnipMenu> {
     let root = world.single_fetch::<RootCamera>().0;
     let position = world.fetch(root).screen_to_world(screen).q32_floor();
     let common = WidgetCommon {
@@ -54,6 +60,10 @@ fn open_menu(world: &World, source: Handle<ColorSnip>, screen: DVec2) -> Handle<
         common,
         source,
         position,
+        anchor: match touch {
+            true => DVec2::new(0.5, 0.0),
+            false => DVec2::new(0.0, 1.0),
+        },
     });
     world.dependency(menu, source);
     menu
@@ -192,7 +202,7 @@ impl Element for ColorSnip {
                     world.queue_trigger(rect.handle(), ValChanged);
                 } else if !held && hold.reached(event) {
                     held = true;
-                    menu = Some(open_menu(world, this, event.pointer().screen));
+                    menu = Some(open_menu(world, this, event.pointer().screen, true));
                 }
             }
             PointerEvent::Release(_) => {
@@ -210,7 +220,7 @@ impl Element for ColorSnip {
             }
             PointerEvent::Scroll { .. } => world.queue_trigger(input, event.clone()),
             PointerEvent::Menu(pointer) => {
-                open_menu(world, this, pointer.screen);
+                open_menu(world, this, pointer.screen, false);
             }
             PointerEvent::Hover(_) => {}
         });
@@ -227,7 +237,7 @@ impl Element for ColorSnipMenu {
         let theme = world.fetch(self.common.theme);
         let rect = world.insert(Val::new(IRect::from_anchor_extend(
             self.position,
-            DVec2::new(0.0, 1.0),
+            self.anchor,
             UVec2::new(128, 48),
         )));
         let button_rect = world.build(Transform::new(TransformValue::shrink(4, 4), rect));
