@@ -163,6 +163,7 @@ impl Element for ColorSnip {
                 world.queue_trigger(hover, ValChanged);
             }
             PointerEvent::Press(_) => {
+                world.insert(hold.task());
                 held = false;
                 menu = None;
                 source = Some(world.fetch(world.fetch(this).rect).val.center());

@@ -1,6 +1,9 @@
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
-use crate::input::pointer::PointerEvent;
+use crate::{
+    input::pointer::{PointerEvent, PointerNotify, PointerTool},
+    lnwin::Task,
+};
 
 /// How long a press must last to count as a hold.
 const HOLD_TIME: Duration = Duration::from_millis(400);
@@ -21,6 +24,15 @@ impl Hold {
         match event {
             PointerEvent::Move(capture) => capture.start_instant.elapsed() >= self.duration,
             _ => false,
+        }
+    }
+
+    pub fn task(&self) -> Task {
+        Task {
+            instant: Instant::now() + self.duration,
+            content: Box::new(|world| {
+                world.queue_trigger(world.single::<PointerTool>(), PointerNotify);
+            }),
         }
     }
 }

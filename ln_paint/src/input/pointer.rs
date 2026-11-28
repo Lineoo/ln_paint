@@ -50,6 +50,9 @@ pub struct PointerReacquire {
     pub target: HandleAny,
 }
 
+/// trigger on [PointerTool], resend [PointerEvent::Move] to every active capture
+pub struct PointerNotify;
+
 impl PointerEvent {
     pub fn pointer(&self) -> Pointer {
         match self {
@@ -245,6 +248,19 @@ impl Element for PointerTool {
         });
 
         world.dependency(ob, this);
+
+        world.observer(this, move |_: &PointerNotify, world| {
+            let mut tool = world.fetch_mut(this);
+            let kinds = tool
+                .pointers
+                .iter()
+                .filter(|(_, state)| state.capture.is_some())
+                .map(|(&kind, _)| kind)
+                .collect::<Vec<_>>();
+            for kind in kinds {
+                tool.move_capture(world, kind);
+            }
+        });
 
         world.observer(this, move |PointerReacquire { target }, world| {
             let mut tool = world.fetch_mut(this);

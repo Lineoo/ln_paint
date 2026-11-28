@@ -12,7 +12,7 @@ use winit::{
     application::ApplicationHandler,
     dpi::{PhysicalPosition, PhysicalSize},
     event::{StartCause, WindowEvent},
-    event_loop::{ActiveEventLoop, ControlFlow},
+    event_loop::{ActiveEventLoop, ControlFlow, EventLoopProxy},
     window::{Window, WindowAttributes, WindowId},
 };
 
@@ -82,6 +82,7 @@ impl ApplicationHandler for Lnwin {
             });
             let lnwindow = Lnwindow {
                 window,
+                proxy: event_loop.create_proxy(),
                 payload,
                 scale_factor_override,
             };
@@ -109,15 +110,11 @@ impl ApplicationHandler for Lnwin {
             if task.instant <= now {
                 let task = task.retrieve();
                 self.world.queue(move |world| {
-                    world.remove_with(task, |task, world| {
-                        log::debug!("Oi!");
-                        (task.content)(world)
-                    });
+                    world.remove_with(task, |task, world| (task.content)(world));
                 });
             }
         });
         if let Some(earliest) = earliest {
-            log::debug!("Lets wait!");
             event_loop.set_control_flow(ControlFlow::WaitUntil(earliest));
         } else {
             event_loop.set_control_flow(ControlFlow::Wait);
@@ -151,6 +148,7 @@ impl ApplicationHandler for Lnwin {
 /// The main window.
 pub struct Lnwindow {
     pub window: Arc<dyn Window>,
+    pub proxy: EventLoopProxy,
     pub payload: Option<Payload>,
     pub scale_factor_override: Option<f64>,
 }
@@ -349,7 +347,11 @@ pub struct Task {
     pub content: Box<dyn FnOnce(&World) + Send>,
 }
 
-impl Element for Task {}
+impl Element for Task {
+    fn when_insert(&mut self, world: &World, _this: Handle<Self>) {
+        world.single_fetch::<Lnwindow>().proxy.wake_up();
+    }
+}
 
 #[cfg(target_os = "android")]
 pub struct LnAndroid(pub AndroidApp);

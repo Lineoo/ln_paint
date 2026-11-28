@@ -377,6 +377,7 @@ impl Element for LayerDrag {
             let prev = std::mem::replace(&mut state, LayerDragState::None);
             state = match (prev, event) {
                 (LayerDragState::None, PointerEvent::Press(capture)) => {
+                    world.insert(hold.task());
                     this.velocity = DVec2::ZERO;
                     this.zoom_velocity = 0.0;
                     let draw = world.single::<LayerDraw>().untyped();
@@ -787,45 +788,51 @@ impl Element for LayerDraw {
 
             let prev = std::mem::replace(&mut state, LayerDrawState::None);
             state = match (prev, event) {
-                (LayerDrawState::None, PointerEvent::Press(capture)) => match (this.mode, ctrl) {
-                    (LayerInputMode::Normal, true) | (LayerInputMode::Pick, _) => {
-                        page.pick_color(capture.pointer.position + this.input_offset_main, world);
-                        LayerDrawState::PickColor
-                    }
-                    (LayerInputMode::Normal, false) => {
-                        let draw = Dab {
-                            position: capture.pointer.position + this.input_offset_main,
-                            force: capture.pointer.force.unwrap_or(1.0),
-                        };
+                (LayerDrawState::None, PointerEvent::Press(capture)) => {
+                    world.insert(hold.task());
+                    match (this.mode, ctrl) {
+                        (LayerInputMode::Normal, true) | (LayerInputMode::Pick, _) => {
+                            page.pick_color(
+                                capture.pointer.position + this.input_offset_main,
+                                world,
+                            );
+                            LayerDrawState::PickColor
+                        }
+                        (LayerInputMode::Normal, false) => {
+                            let draw = Dab {
+                                position: capture.pointer.position + this.input_offset_main,
+                                force: capture.pointer.force.unwrap_or(1.0),
+                            };
 
-                        page.draw_active(draw);
-                        lnwindow.window.request_redraw();
+                            page.draw_active(draw);
+                            lnwindow.window.request_redraw();
 
-                        LayerDrawState::Paint
-                    }
-                    (LayerInputMode::Area, _) => {
-                        let container = world.fetch(container);
-                        let camera = world.fetch(container.child);
-                        // TODO Theme is not singleton
-                        let theme = world.single_fetch::<Theme>();
-                        let start_position = camera.screen_to_world(center);
-                        let rect = world.insert(Val::new(IRect::new_half(
-                            start_position.q32_round(),
-                            UVec2::ZERO,
-                        )));
-                        let mode = world.insert(Val::new(AreaMode::None));
-                        let area = world.insert(Area {
-                            common: page.common,
-                            rect,
-                            color: theme.color.primary,
-                            mode,
-                        });
-                        LayerDrawState::CreateArea {
-                            start_position,
-                            area,
+                            LayerDrawState::Paint
+                        }
+                        (LayerInputMode::Area, _) => {
+                            let container = world.fetch(container);
+                            let camera = world.fetch(container.child);
+                            // TODO Theme is not singleton
+                            let theme = world.single_fetch::<Theme>();
+                            let start_position = camera.screen_to_world(center);
+                            let rect = world.insert(Val::new(IRect::new_half(
+                                start_position.q32_round(),
+                                UVec2::ZERO,
+                            )));
+                            let mode = world.insert(Val::new(AreaMode::None));
+                            let area = world.insert(Area {
+                                common: page.common,
+                                rect,
+                                color: theme.color.primary,
+                                mode,
+                            });
+                            LayerDrawState::CreateArea {
+                                start_position,
+                                area,
+                            }
                         }
                     }
-                },
+                }
 
                 // Draw
                 (
