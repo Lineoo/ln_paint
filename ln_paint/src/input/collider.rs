@@ -60,6 +60,7 @@ impl Element for ToolControl {
         world.scope("tool_control");
         world.set_autodeps(Some(this));
 
+        world.dependency(this, world.single::<Lnwindow>());
         world.dependency(this, self.common.visible);
         world.dependency(this, self.common.camera);
         let mut camera = world.fetch_mut(self.common.camera);

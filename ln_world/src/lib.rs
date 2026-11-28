@@ -983,13 +983,13 @@ impl World {
         .untyped()
     }
 
-    /// Will immediately triggered and acquire mutable access to `target`.
+    /// Will immediately triggered and acquire validate `target`.
     pub fn trigger<E: Send + 'static>(&self, target: impl HandleGeneric, event: &E) -> usize {
         let info = self.info(target);
         let trace = self.scope.borrow().clone();
 
         if let Err(e) = self.validate(target) {
-            // TODO silent return
+            // XXX should panic
             log::warn!(
                 "{e} [{} .<{}>{:?}]",
                 trace.label,
@@ -1020,9 +1020,12 @@ impl World {
         cnt
     }
 
+    /// Specially, `target` could be invalid in actual execution.
     pub fn queue_trigger<E: Send + 'static>(&self, target: impl HandleGeneric, event: E) {
         self.queue(move |world| {
-            world.trigger(target, &event);
+            if world.validate(target).is_ok() {
+                world.trigger(target, &event);
+            }
         });
     }
 
