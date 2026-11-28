@@ -1,4 +1,5 @@
 use std::{
+    f32::consts::PI,
     sync::{
         Arc,
         mpsc::{Receiver, Sender, channel},
@@ -9,6 +10,10 @@ use std::{
 use glam::{DVec2, I64Vec2, IVec2, UVec2, Vec4};
 use hashbrown::HashMap;
 use lnworld::{Element, Handle, World};
+use lyon::{
+    math::{Angle, Point, Vector},
+    path::Path,
+};
 use wgpu::{CommandEncoderDescriptor, ComputePassDescriptor};
 
 use crate::{
@@ -33,14 +38,37 @@ use crate::{
         nest::{Nest, NestAttr},
     },
     save::{Autosave, Save, object::Objects},
-    ui::{common::WidgetCommon, renderer::rrect::RRect},
+    ui::{
+        common::WidgetCommon,
+        renderer::{rrect::RRect, vtor::Vtor},
+    },
     unit::{FI64Ext, IRect},
-    val::{Val, ValChanged},
+    val::{Val, ValBind, ValChanged},
 };
 
 const BRIDGE_CHUNK_SIZE: UVec2 = UVec2::splat(1024);
 const SCRATCH_POOL_CAP: usize = 32;
 const DEFAULT_ZOOM_OFFSET: f64 = 0.0;
+const PICK_RING_RADIUS: u32 = 56;
+const PICK_RING_WIDTH: f32 = 16.0;
+
+fn pick_ring_path(top: bool) -> Path {
+    let center = Point::new(0.5, 0.5);
+    let outer = 0.5;
+    let inner = outer - PICK_RING_WIDTH / (PICK_RING_RADIUS as f32 * 2.0);
+    let (sweep, back) = match top {
+        true => (Angle::radians(-PI), Angle::radians(PI)),
+        false => (Angle::radians(PI), Angle::radians(-PI)),
+    };
+
+    let mut builder = Path::svg_builder();
+    builder.move_to(Point::new(center.x - outer, center.y));
+    builder.arc(center, Vector::new(outer, outer), sweep, Angle::zero());
+    builder.line_to(Point::new(center.x + inner, center.y));
+    builder.arc(center, Vector::new(inner, inner), back, Angle::zero());
+    builder.close();
+    builder.build()
+}
 
 // TODO rename module to `page`
 
@@ -108,6 +136,9 @@ pub struct LayerPage {
     pub cursor_rect: Handle<Val<IRect>>,
     pub cursor_shadow_rect: Handle<Val<IRect>>,
     pub cursor_visible: Handle<Val<bool>>,
+    pick_ring_visible: Handle<Val<bool>>,
+    pick_ring_color: Handle<Val<SrgbLinear>>,
+    pick_ring_source: Handle<Val<SrgbLinear>>,
     pub zoom_offset: f64,
 
     stream_camera: Option<(i64, IRect)>,
@@ -213,6 +244,33 @@ impl LayerPage {
             color: world.insert(Val::new(SrgbLinear(Vec4::new(0.0, 0.0, 0.0, 1.0) * 0.3))),
             radius: 0.5,
             width: BRUSH_PREVIEW_SHADOW_BLUR as f32,
+        });
+
+        let pick_ring_visible = world.insert(Val::new(false));
+        let pick_ring_rect = ValBind::transfer(world, cursor_rect, |rect| {
+            IRect::new_half(rect.center(), UVec2::splat(PICK_RING_RADIUS))
+        });
+        let pick_ring_color = world.insert(Val::new(SrgbLinear(Vec4::ONE)));
+        let pick_ring_source = world.insert(Val::new(SrgbLinear(Vec4::ONE)));
+        let pick_ring_common = WidgetCommon {
+            visible: pick_ring_visible,
+            ..cursor_common
+        };
+        world.insert(Vtor {
+            common: pick_ring_common,
+            rect: pick_ring_rect,
+            color: pick_ring_color,
+            order: 111,
+            path: pick_ring_path(true),
+            outdated: false,
+        });
+        world.insert(Vtor {
+            common: pick_ring_common,
+            rect: pick_ring_rect,
+            color: pick_ring_source,
+            order: 111,
+            path: pick_ring_path(false),
+            outdated: false,
         });
 
         let color = Srgb(Vec4::new(0.0, 0.0, 0.0, 1.0));
@@ -342,6 +400,9 @@ impl LayerPage {
             cursor_rect,
             cursor_shadow_rect,
             cursor_visible,
+            pick_ring_visible,
+            pick_ring_color,
+            pick_ring_source,
             zoom_offset: DEFAULT_ZOOM_OFFSET,
             stream_camera: None,
             thread_tx: input_tx,
@@ -477,6 +538,31 @@ impl LayerPage {
         self.active.set_color(color);
     }
 
+    pub fn begin_pick(&mut self, world: &World) {
+        let mut visible = world.fetch_mut(self.pick_ring_visible);
+        if visible.val {
+            return;
+        }
+        visible.val = true;
+        world.queue_trigger(visible.handle(), ValChanged);
+
+        let color = self.color.to_linear();
+        for handle in [self.pick_ring_source, self.pick_ring_color] {
+            let mut val = world.fetch_mut(handle);
+            val.val = color;
+            world.queue_trigger(val.handle(), ValChanged);
+        }
+    }
+
+    pub fn end_pick(&mut self, world: &World) {
+        let mut visible = world.fetch_mut(self.pick_ring_visible);
+        if !visible.val {
+            return;
+        }
+        visible.val = false;
+        world.queue_trigger(visible.handle(), ValChanged);
+    }
+
     pub fn pick_color(&mut self, cursor: I64Vec2, world: &World) {
         let cmd = world.commander();
         self.lp
@@ -484,6 +570,11 @@ impl LayerPage {
                 cmd.queue(move |world| {
                     let mut page = world.single_fetch_mut::<LayerPage>();
                     page.set_color(color.with_alpha(1.0));
+                    if world.fetch(page.pick_ring_visible).val {
+                        let mut picked = world.fetch_mut(page.pick_ring_color);
+                        picked.val = color.with_alpha(1.0).to_linear();
+                        world.queue_trigger(picked.handle(), ValChanged);
+                    }
                     world.queue_trigger(page.handle(), ValChanged);
                 });
             });

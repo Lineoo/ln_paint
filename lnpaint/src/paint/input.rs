@@ -784,6 +784,7 @@ impl Element for LayerDraw {
                     world.insert(hold.task());
                     match (this.mode, ctrl) {
                         (LayerInputMode::Normal, true) | (LayerInputMode::Pick, _) => {
+                            page.begin_pick(world);
                             page.pick_color(
                                 capture.pointer.position + this.input_offset_main,
                                 world,
@@ -850,6 +851,7 @@ impl Element for LayerDraw {
                     } else if held {
                         page.discard();
                         if this.hold_pick {
+                            page.begin_pick(world);
                             LayerDrawState::PickColor
                         } else {
                             LayerDrawState::PaintErase
@@ -905,6 +907,7 @@ impl Element for LayerDraw {
                 (LayerDrawState::PickColor, PointerEvent::Release(capture)) => {
                     page.pick_color(capture.pointer.position + this.input_offset_main, world);
                     if capture.members.is_empty() {
+                        page.end_pick(world);
                         this.mode = LayerInputMode::Normal;
                         world.queue_trigger(this.handle(), ValChanged);
                         world.queue_trigger(world.single::<LayerPage>(), ValChanged);
