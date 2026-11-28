@@ -18,11 +18,9 @@ use winit::event::WindowEvent;
 #[cfg(target_os = "android")]
 use crate::lnwin::LnAndroid;
 use crate::{
+    input::pointer::{OffsetCorrection, TiltCorrection},
     lnwin::{Lnwindow, Task},
-    paint::{
-        input::{OffsetCorrection, TiltCorrection},
-        wrapper::PageContainerArchive,
-    },
+    paint::wrapper::PageContainerArchive,
     save::{
         chunk::{TABLE_LAYER_CHUNK, TABLE_LAYER_CHUNK_RAW},
         object::TABLE_LAYER_OBJECT,

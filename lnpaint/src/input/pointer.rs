@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use glam::{DVec2, I8Vec2, I64Vec2, Vec2};
+use glam::{DVec2, I8Vec2, I64Vec2, Mat3, Vec2};
 use hashbrown::HashMap;
 use lnworld::{Element, Handle, HandleAny, World};
 use winit::event::{
@@ -12,6 +12,7 @@ use crate::{
     input::collider::{ToolControl, ToolControlUpdate},
     lnwin::Lnwindow,
     render::camera::Camera,
+    save::Save,
 };
 
 /// Capture variants carry data from `Press`; hover variants only describe the current pointer.
@@ -35,6 +36,24 @@ pub struct Pointer {
     pub tilt: Vec2,
     pub force: Option<f32>,
     pub position: I64Vec2,
+}
+
+/// based on tilt data generate an actual used tilt data
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct TiltCorrection {
+    #[serde(default)]
+    portrait: Mat3,
+    #[serde(default)]
+    landscape: Mat3,
+}
+
+/// based on tilt data generate an offset on position
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct OffsetCorrection {
+    #[serde(default)]
+    portrait: Mat3,
+    #[serde(default)]
+    landscape: Mat3,
 }
 
 #[derive(Debug, Clone)]
@@ -117,6 +136,7 @@ impl Element for PointerTool {
                     state.pointer.pixel = DVec2::new(position.x, position.y);
                     state.pointer.tilt = source_tilt(source);
                     state.pointer.force = source_force(source);
+                    correct(world, &mut state.pointer);
 
                     if this.pointers[&kind].capture.is_some() {
                         let pointer = this.pointers[&kind].pointer;
@@ -155,6 +175,7 @@ impl Element for PointerTool {
                     pointer.pointer.screen = lnwindow.cursor_to_screen(*position);
                     pointer.pointer.pixel = DVec2::new(position.x, position.y);
                     pointer.pointer.tilt = button_tilt(button);
+                    correct(world, &mut pointer.pointer);
 
                     match state {
                         ElementState::Pressed => {
@@ -203,6 +224,7 @@ impl Element for PointerTool {
                     let pointer = this.state(*kind);
                     pointer.pointer.screen = lnwindow.cursor_to_screen(*position);
                     pointer.pointer.pixel = DVec2::new(position.x, position.y);
+                    correct(world, &mut pointer.pointer);
                     log::trace!(
                         "pointer entered {kind:?} pixel={:?} screen={:?}",
                         pointer.pointer.pixel,
@@ -218,6 +240,7 @@ impl Element for PointerTool {
                     {
                         state.pointer.screen = lnwindow.cursor_to_screen(*position);
                         state.pointer.pixel = DVec2::new(position.x, position.y);
+                        correct(world, &mut state.pointer);
                     }
 
                     let Some(state) = this.pointers.get(kind) else {
@@ -527,6 +550,43 @@ impl PointerTool {
         }
         state.hover = hit.map(|hit| hit.0);
     }
+}
+
+fn correct(world: &World, pointer: &mut Pointer) {
+    let save = world.single_fetch::<Save>();
+    let sn = save.sn();
+    let portrait = is_portrait(world);
+    if let Some(correction) = &sn.tilt_correction {
+        let matrix = match portrait {
+            true => correction.portrait,
+            false => correction.landscape,
+        };
+        let transformed = matrix * pointer.tilt.extend(1.);
+        pointer.tilt = transformed.truncate() / transformed.z;
+    }
+    if let Some(correction) = &sn.offset_correction {
+        let matrix = match portrait {
+            true => correction.portrait,
+            false => correction.landscape,
+        };
+        let transformed = matrix * pointer.tilt.extend(1.);
+        pointer.screen = pointer.screen + (transformed.truncate() / transformed.z).as_dvec2();
+    }
+}
+
+#[cfg(not(target_os = "android"))]
+fn is_portrait(_world: &World) -> bool {
+    false
+}
+
+#[cfg(target_os = "android")]
+fn is_portrait(world: &World) -> bool {
+    // Android NativeActivity due to some reason won't update configuration's
+    // orientation attribute (keep init state), so we use surface size to tell
+    // if it's portrait
+    let app = world.single_fetch::<Lnwindow>();
+    let size = app.window.surface_size();
+    size.height > size.width
 }
 
 fn source_tilt(source: &PointerSource) -> Vec2 {

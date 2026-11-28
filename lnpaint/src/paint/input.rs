@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use glam::{DVec2, I64Vec2, Mat3, UVec2};
+use glam::{DVec2, I64Vec2, UVec2};
 use lnworld::{Element, Handle, HandleAny, HandleGeneric, World};
 use winit::{
     cursor::{Cursor, CursorIcon},
@@ -23,7 +23,6 @@ use crate::{
         wrapper::LayerPage,
     },
     render::{RenderPrepareControl, camera::CameraUtils, nest::Nest},
-    save::Save,
     ui::{
         theme::{Theme, ThemeScheme},
         widget::area::{Area, AreaMode},
@@ -71,7 +70,6 @@ enum LayerDragState {
 pub struct LayerDraw {
     pub mode: LayerInputMode,
     pub hold_pick: bool,
-    pub input_offset_main: I64Vec2,
 }
 
 #[derive(Default, Debug, Clone, Copy)]
@@ -95,24 +93,6 @@ enum LayerDrawState {
     },
 }
 
-/// based on tilt data generate an actual used tilt data
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-pub struct TiltCorrection {
-    #[serde(default)]
-    portrait: Mat3,
-    #[serde(default)]
-    landscape: Mat3,
-}
-
-/// based on tilt data generate an offset on position
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-pub struct OffsetCorrection {
-    #[serde(default)]
-    portrait: Mat3,
-    #[serde(default)]
-    landscape: Mat3,
-}
-
 impl Default for LayerDrag {
     fn default() -> Self {
         Self {
@@ -134,7 +114,6 @@ impl Default for LayerDraw {
         Self {
             mode: LayerInputMode::Normal,
             hold_pick: false,
-            input_offset_main: I64Vec2::ZERO,
         }
     }
 }
@@ -714,49 +693,18 @@ impl Element for LayerDraw {
                 return;
             }
 
-            let page_camera = world.fetch(page.common.camera);
             let root_camera = world.single_fetch::<RootCamera>().0;
             let camera = world.fetch(root_camera);
-            let save = world.single_fetch::<Save>();
-
-            let mut offset = DVec2::ZERO;
-            let mut screen = pointer.screen;
-            let mut tilt = pointer.tilt;
-            if let Some(tilt_correction) = &save.sn().tilt_correction {
-                tilt = match is_portrait(world) {
-                    true => {
-                        let transformed = tilt_correction.portrait * tilt.extend(1.);
-                        transformed.truncate() / transformed.z
-                    }
-                    false => {
-                        let transformed = tilt_correction.landscape * tilt.extend(1.);
-                        transformed.truncate() / transformed.z
-                    }
-                }
-            }
-            if let Some(offset_correction) = &save.sn().offset_correction {
-                offset = match is_portrait(world) {
-                    true => {
-                        let transformed = offset_correction.portrait * tilt.extend(1.);
-                        transformed.truncate() / transformed.z
-                    }
-                    false => {
-                        let transformed = offset_correction.landscape * tilt.extend(1.);
-                        transformed.truncate() / transformed.z
-                    }
-                }
-                .as_dvec2()
-            }
-            screen += offset;
-            this.input_offset_main = page_camera.screen_to_world_relative(offset);
 
             let mut cursor_rect = world.fetch_mut(page.cursor_rect);
-            cursor_rect.val =
-                IRect::new_half(camera.screen_to_world(screen).q32_round(), UVec2::new(1, 1));
+            cursor_rect.val = IRect::new_half(
+                camera.screen_to_world(pointer.screen).q32_round(),
+                UVec2::new(1, 1),
+            );
             world.queue_trigger(cursor_rect.handle(), ValChanged);
 
             let mut cursor_shadow_rect = world.fetch_mut(page.cursor_shadow_rect);
-            cursor_shadow_rect.val = cursor_rect.val + (tilt * 48.0).as_ivec2();
+            cursor_shadow_rect.val = cursor_rect.val + (pointer.tilt * 48.0).as_ivec2();
             world.queue_trigger(cursor_shadow_rect.handle(), ValChanged);
 
             if !matches!(pointer.kind, PointerKind::Touch(_)) {
@@ -785,15 +733,12 @@ impl Element for LayerDraw {
                     match (this.mode, ctrl) {
                         (LayerInputMode::Normal, true) | (LayerInputMode::Pick, _) => {
                             page.begin_pick(world);
-                            page.pick_color(
-                                capture.pointer.position + this.input_offset_main,
-                                world,
-                            );
+                            page.pick_color(capture.pointer.position, world);
                             LayerDrawState::PickColor
                         }
                         (LayerInputMode::Normal, false) => {
                             let draw = Dab {
-                                position: capture.pointer.position + this.input_offset_main,
+                                position: capture.pointer.position,
                                 force: capture.pointer.force.unwrap_or(1.0),
                             };
 
@@ -839,7 +784,7 @@ impl Element for LayerDraw {
                 }
                 (LayerDrawState::Paint, PointerEvent::Move(capture)) => {
                     let draw = Dab {
-                        position: capture.pointer.position + this.input_offset_main,
+                        position: capture.pointer.position,
                         force: capture.pointer.force.unwrap_or(1.0),
                     };
 
@@ -862,7 +807,7 @@ impl Element for LayerDraw {
                 }
                 (LayerDrawState::PaintNoErase, PointerEvent::Move(capture)) => {
                     let draw = Dab {
-                        position: capture.pointer.position + this.input_offset_main,
+                        position: capture.pointer.position,
                         force: capture.pointer.force.unwrap_or(1.0),
                     };
 
@@ -873,7 +818,7 @@ impl Element for LayerDraw {
                 }
                 (LayerDrawState::PaintErase, PointerEvent::Move(capture)) => {
                     let draw = Dab {
-                        position: capture.pointer.position + this.input_offset_main,
+                        position: capture.pointer.position,
                         force: capture.pointer.force.unwrap_or(1.0),
                     };
 
@@ -897,15 +842,15 @@ impl Element for LayerDraw {
                 }
 
                 (LayerDrawState::PickColor, PointerEvent::Press(capture)) => {
-                    page.pick_color(capture.pointer.position + this.input_offset_main, world);
+                    page.pick_color(capture.pointer.position, world);
                     LayerDrawState::PickColor
                 }
                 (LayerDrawState::PickColor, PointerEvent::Move(capture)) => {
-                    page.pick_color(capture.pointer.position + this.input_offset_main, world);
+                    page.pick_color(capture.pointer.position, world);
                     LayerDrawState::PickColor
                 }
                 (LayerDrawState::PickColor, PointerEvent::Release(capture)) => {
-                    page.pick_color(capture.pointer.position + this.input_offset_main, world);
+                    page.pick_color(capture.pointer.position, world);
                     if capture.members.is_empty() {
                         page.end_pick(world);
                         this.mode = LayerInputMode::Normal;
@@ -1138,19 +1083,4 @@ fn group_pinch(event: &PointerEvent, center: DVec2) -> Option<f64> {
     } else {
         None
     }
-}
-
-#[cfg(not(target_os = "android"))]
-fn is_portrait(_world: &World) -> bool {
-    false
-}
-
-#[cfg(target_os = "android")]
-fn is_portrait(world: &World) -> bool {
-    // Android NativeActivity due to some reason won't update configuration's
-    // orientation attribute (keep init state), so we use surface size to tell
-    // if it's portrait
-    let app = world.single_fetch::<Lnwindow>();
-    let size = app.window.surface_size();
-    size.height > size.width
 }
