@@ -1,6 +1,6 @@
 use cosmic_text::{Attrs, Family, Metrics};
 use glam::I64Vec2;
-use lnworld:{Element, Handle, World};
+use lnworld::{Element, Handle, World};
 
 use crate::{
     paint::wrapper::LayerPage,

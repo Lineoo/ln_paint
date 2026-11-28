@@ -1,5 +1,5 @@
 use glam::{DVec2, I64Vec2, UVec2};
-use lnworld:{Descriptor, Element, Handle, HandleGeneric, World};
+use lnworld::{Descriptor, Element, Handle, HandleGeneric, World};
 
 use crate::{
     input::collider::{ToolControl, ToolHitResult},
