@@ -13,7 +13,9 @@ use crate::{
         collider::{ToolControl, ToolControlUpdate, ToolHitResult},
         drag::Drag,
         hold::Hold,
-        pointer::{Pointer, PointerCapture, PointerEvent, PointerReacquire, PointerTool},
+        pointer::{
+            Pointer, PointerCapture, PointerEvent, PointerReacquire, PointerTool, PointerTransfer,
+        },
     },
     lnwin::{Lnwindow, RootCamera},
     paint::{
@@ -50,10 +52,6 @@ enum LayerDragState {
     Pending {
         press: PointerCapture,
         target: Option<HandleAny>,
-    },
-    Object {
-        target: HandleAny,
-        capture: PointerCapture,
     },
     Grab {
         start_position: DVec2,
@@ -391,23 +389,23 @@ impl Element for LayerDrag {
                     }
                 }
 
-                // Object
+                (LayerDragState::None, PointerEvent::Move(_)) => LayerDragState::None,
+                (LayerDragState::None, PointerEvent::Release(_)) => LayerDragState::None,
                 (LayerDragState::Pending { .. }, PointerEvent::Press(_)) => {
                     grab(&mut this, utils, world, container, center, pinch)
                 }
                 (LayerDragState::Pending { press, target }, PointerEvent::Move(capture)) => {
-                    if held {
-                        match target {
-                            Some(target) => {
-                                world.queue_trigger(target, PointerEvent::Press(press.clone()));
-                                world.queue_trigger(target, PointerEvent::Move(capture.clone()));
-                                LayerDragState::Object {
-                                    target,
-                                    capture: capture.clone(),
-                                }
-                            }
-                            None => grab(&mut this, utils, world, container, center, pinch),
-                        }
+                    if held && let Some(target) = target {
+                        world.queue_trigger(
+                            world.single::<PointerTool>(),
+                            PointerTransfer {
+                                kind: capture.pointer.kind,
+                                target,
+                            },
+                        );
+                        LayerDragState::None
+                    } else if held || dragged {
+                        grab(&mut this, utils, world, container, center, pinch)
                     } else if dragged {
                         grab(&mut this, utils, world, container, center, pinch)
                     } else {
@@ -422,21 +420,6 @@ impl Element for LayerDrag {
                         world.queue_trigger(target, PointerEvent::Press(press));
                         world.queue_trigger(target, PointerEvent::Release(capture.clone()));
                     }
-                    LayerDragState::None
-                }
-                (LayerDragState::Object { target, capture }, PointerEvent::Press(_)) => {
-                    world.queue_trigger(target, PointerEvent::Release(capture));
-                    grab(&mut this, utils, world, container, center, pinch)
-                }
-                (LayerDragState::Object { target, .. }, PointerEvent::Move(capture)) => {
-                    world.queue_trigger(target, PointerEvent::Move(capture.clone()));
-                    LayerDragState::Object {
-                        target,
-                        capture: capture.clone(),
-                    }
-                }
-                (LayerDragState::Object { target, .. }, PointerEvent::Release(capture)) => {
-                    world.queue_trigger(target, PointerEvent::Release(capture.clone()));
                     LayerDragState::None
                 }
 
@@ -472,7 +455,10 @@ impl Element for LayerDrag {
                     }
 
                     log::trace!(
-                        "drag grab term {:?} release={is_release} members={} dt={dt:.5} center_delta={:?} term_velocity={term_velocity:?} term_zoom_velocity={term_zoom_velocity}",
+                        "drag grab term {:?} release={is_release} \
+                        members={} dt={dt:.5} \
+                        center_delta={:?} term_velocity={term_velocity:?} \
+                        term_zoom_velocity={term_zoom_velocity}",
                         capture.pointer.kind,
                         capture.members.len(),
                         (prev_center - last_center).q32_as_f64(),
@@ -545,8 +531,10 @@ impl Element for LayerDrag {
                     } else {
                         utils.write_camera(world, container);
                         let dt = last_instant.elapsed().as_secs_f64();
+
                         log::trace!(
-                            "drag grab move {:?} dt={dt:.5} center_delta={:?} velocity={velocity:?}",
+                            "drag grab move {:?} dt={dt:.5} \
+                            center_delta={:?} velocity={velocity:?}",
                             capture.pointer.kind,
                             (prev_center - last_center).q32_as_f64(),
                         );
@@ -635,7 +623,11 @@ impl Element for LayerDrag {
                     }
                 }
 
-                _ => unreachable!(),
+                (_, PointerEvent::Enter(_)) => LayerDragState::None,
+                (_, PointerEvent::Leave(_)) => LayerDragState::None,
+                (_, PointerEvent::Hover(_)) => LayerDragState::None,
+                (_, PointerEvent::Scroll { .. }) => LayerDragState::None,
+                (_, PointerEvent::Menu(_)) => LayerDragState::None,
             };
 
             if matches!(event, PointerEvent::Release(_)) {

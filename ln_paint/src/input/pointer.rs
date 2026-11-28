@@ -53,6 +53,12 @@ pub struct PointerReacquire {
 /// trigger on [PointerTool], resend [PointerEvent::Move] to every active capture
 pub struct PointerNotify;
 
+/// trigger on [PointerTool], move the capture of `kind` to `target`
+pub struct PointerTransfer {
+    pub kind: PointerKind,
+    pub target: HandleAny,
+}
+
 impl PointerEvent {
     pub fn pointer(&self) -> Pointer {
         match self {
@@ -262,6 +268,11 @@ impl Element for PointerTool {
             }
         });
 
+        world.observer(this, move |PointerTransfer { kind, target }, world| {
+            let mut tool = world.fetch_mut(this);
+            tool.transfer(world, *kind, *target);
+        });
+
         world.observer(this, move |PointerReacquire { target }, world| {
             let mut tool = world.fetch_mut(this);
             let kinds = tool
@@ -398,6 +409,51 @@ impl PointerTool {
 
         let event = PointerEvent::Move(self.capture(kind));
         world.queue_trigger(capture.target, event);
+    }
+
+    fn transfer(&mut self, world: &World, kind: PointerKind, target: HandleAny) {
+        let source = self.pointers[&kind].capture.unwrap();
+        if source.target == target {
+            return;
+        }
+
+        let pointer = self.pointers[&kind].pointer;
+        let position = world.fetch(source.camera).screen_to_world(pointer.screen);
+        self.pointers.get_mut(&kind).unwrap().pointer.position = position;
+
+        world.queue_trigger(source.target, PointerEvent::Release(self.capture(kind)));
+        world.queue_trigger(source.target, PointerEvent::Leave(pointer));
+
+        if let Some(group) = self.groups.get_mut(&source.target) {
+            group.retain(|&other| other != kind);
+            if group.is_empty() {
+                self.groups.remove(&source.target);
+            }
+        }
+
+        let capture = Capture {
+            target,
+            camera: source.camera,
+            start: Pointer {
+                position,
+                ..pointer
+            },
+            start_instant: Instant::now(),
+        };
+        let state = self.pointers.get_mut(&kind).unwrap();
+        state.hover = Some(target);
+        state.capture = Some(capture);
+
+        self.groups.entry(target).or_default().push(kind);
+
+        world.queue_trigger(
+            target,
+            PointerEvent::Enter(Pointer {
+                position,
+                ..pointer
+            }),
+        );
+        world.queue_trigger(target, PointerEvent::Press(self.capture(kind)));
     }
 
     fn release(&mut self, world: &World, kind: PointerKind) {
