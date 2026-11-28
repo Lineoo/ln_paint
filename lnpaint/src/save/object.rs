@@ -76,7 +76,11 @@ pub struct Object {
     pub handle: ObjectHandle,
 }
 
-impl Element for Object {}
+impl Element for Object {
+    fn when_insert(&mut self, world: &World, this: Handle<Self>) {
+        world.dependency(this, self.handle);
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ObjectHandle {

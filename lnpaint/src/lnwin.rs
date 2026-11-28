@@ -110,6 +110,7 @@ impl ApplicationHandler for Lnwin {
             if task.instant <= now {
                 let task = task.retrieve();
                 self.world.queue(move |world| {
+                    world.scope("task-execution");
                     world.remove_with(task, |task, world| (task.content)(world));
                 });
             }
