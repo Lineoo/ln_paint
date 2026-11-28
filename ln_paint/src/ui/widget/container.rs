@@ -1,6 +1,5 @@
 use glam::I64Vec2;
 use ln_world::{Element, Handle, World};
-use winit::dpi::PhysicalPosition;
 
 use crate::{
     input::{drag::Drag, pointer::PointerEvent},
@@ -49,8 +48,8 @@ impl Element for Container {
                     let nest = world.fetch(this.nest);
                     let parent_camera = world.fetch(nest.common.camera);
                     let lnwindow = world.single_fetch::<Lnwindow>();
-                    let cursor = PhysicalPosition::new(drag.delta.x, drag.delta.y);
-                    parent_camera.screen_to_world_relative(lnwindow.cursor_to_screen(cursor))
+                    parent_camera
+                        .screen_to_world_relative(lnwindow.cursor_to_screen_relative(drag.delta))
                 }
             };
 

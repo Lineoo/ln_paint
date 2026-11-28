@@ -307,6 +307,13 @@ impl Lnwindow {
         DVec2::new(x, y)
     }
 
+    pub fn cursor_to_screen_relative(&self, position: DVec2) -> DVec2 {
+        let size = self.window.surface_size();
+        let x = (position.x * 2.0) / size.width as f64;
+        let y = (position.y * -2.0) / size.height as f64;
+        DVec2::new(x, y)
+    }
+
     pub fn screen_to_cursor(&self, ndc: DVec2) -> PhysicalPosition<f64> {
         let size = self.window.surface_size();
         let x = (ndc.x + 1.0) * size.width as f64 / 2.0;
