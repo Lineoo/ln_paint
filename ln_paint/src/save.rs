@@ -16,8 +16,7 @@ use winit::event::WindowEvent;
 #[cfg(target_os = "android")]
 use crate::lnwin::LnAndroid;
 use crate::{
-    input::timer::{Timer, TimerHit},
-    lnwin::Lnwindow,
+    lnwin::{Lnwindow, Task},
     paint::{
         input::{OffsetCorrection, TiltCorrection},
         wrapper::PageContainerArchive,
@@ -463,15 +462,22 @@ impl Autosave {
 
 impl Element for Autosave {}
 
+fn autosave_task(world: &World, duration: Duration) {
+    world.insert(Task {
+        instant: Instant::now() + duration,
+        content: Box::new(move |world| {
+            Autosave::autosave_all(world);
+            autosave_task(world, duration);
+        }),
+    });
+}
+
 impl Element for AutosaveScheduler {
     fn when_insert(&mut self, world: &World, this: Handle<Self>) {
         world.scope("autosave_scheduler");
         world.set_autodeps(Some(this));
 
-        let timer = world.insert(Timer::new(self.autosave_duration));
-        world.observer(timer, move |TimerHit, world| {
-            Autosave::autosave_all(world);
-        });
+        autosave_task(world, self.autosave_duration);
 
         world.observer(
             world.single::<Lnwindow>(),
