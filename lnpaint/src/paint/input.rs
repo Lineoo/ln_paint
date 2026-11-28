@@ -13,16 +13,14 @@ use crate::{
         collider::{ToolControl, ToolControlUpdate, ToolHitResult},
         drag::Drag,
         hold::Hold,
-        pointer::{
-            Pointer, PointerCapture, PointerEvent, PointerReacquire, PointerTool, PointerTransfer,
-        },
+        pointer::{Pointer, PointerEvent, PointerReacquire, PointerTool, PointerTransfer},
     },
     lnwin::{Lnwindow, RootCamera},
     paint::{
         brush::{Dab, param::BrushParamKey},
         wrapper::LayerPage,
     },
-    render::{RenderPrepareControl, camera::CameraUtils, nest::Nest},
+    render::RenderPrepareControl,
     ui::{
         theme::{Theme, ThemeScheme},
         widget::area::{Area, AreaMode},
@@ -47,11 +45,6 @@ pub struct LayerDrag {
 #[derive(Debug)]
 enum LayerDragState {
     None,
-    /// control group press, waiting to decide between drag and object
-    Pending {
-        press: PointerCapture,
-        target: Option<HandleAny>,
-    },
     Grab {
         start_position: DVec2,
         start_pinch: Option<f64>,
@@ -60,6 +53,8 @@ enum LayerDragState {
         last_instant: Instant,
         velocity: DVec2,
         zoom_velocity: f64,
+        /// control group press, waiting to decide between drag and object
+        pending: Option<HandleAny>,
     },
     Scale {
         start_position: DVec2,
@@ -359,48 +354,39 @@ impl Element for LayerDrag {
                     this.zoom_velocity = 0.0;
                     let draw = world.single::<LayerDraw>().untyped();
                     // the draw layer is the draw group's fallback, not an object target
-                    let target = ToolControl::intersect(world, &capture.pointer, child)
+                    let pending = ToolControl::intersect(world, &capture.pointer, child)
                         .filter(|hit| hit.handle != draw)
                         .map(|hit| hit.handle);
-                    LayerDragState::Pending {
-                        press: capture.clone(),
-                        target,
+                    this.velocity = DVec2::ZERO;
+                    utils.read_camera(world, container);
+                    utils.anchor_cursor_by_anchor_center(DVec2::ZERO);
+                    utils.camera_cursor_by_anchor_center(center);
+                    if let Some(distance) = pinch {
+                        utils.camera_distance_by_anchor_zoom_cursor(distance);
                     }
-                }
 
-                (LayerDragState::None, PointerEvent::Move(_)) => LayerDragState::None,
-                (LayerDragState::None, PointerEvent::Release(_)) => LayerDragState::None,
-                (LayerDragState::Pending { .. }, PointerEvent::Press(_)) => {
-                    grab(&mut this, utils, world, container, center, pinch)
-                }
-                (LayerDragState::Pending { press, target }, PointerEvent::Move(capture)) => {
-                    if held && let Some(target) = target {
-                        world.queue_trigger(
-                            world.single::<PointerTool>(),
-                            PointerTransfer {
-                                kind: capture.pointer.kind,
-                                target,
-                            },
-                        );
-                        LayerDragState::None
-                    } else if held || dragged {
-                        grab(&mut this, utils, world, container, center, pinch)
-                    } else if dragged {
-                        grab(&mut this, utils, world, container, center, pinch)
+                    if this.ctrl {
+                        utils.camera_distance_by_anchor_zoom_cursor(1.0);
+                        utils.write_camera(world, container);
+                        LayerDragState::Scale {
+                            start_position: center,
+                        }
                     } else {
-                        LayerDragState::Pending {
-                            press: press.clone(),
-                            target,
+                        utils.write_camera(world, container);
+                        LayerDragState::Grab {
+                            start_position: center,
+                            start_pinch: pinch,
+                            last_center: utils.camera_center(),
+                            last_zoom: utils.camera_zoom(),
+                            last_instant: Instant::now(),
+                            velocity: DVec2::ZERO,
+                            zoom_velocity: 0.0,
+                            pending,
                         }
                     }
                 }
-                (LayerDragState::Pending { press, target }, PointerEvent::Release(capture)) => {
-                    if !dragged && let Some(target) = target {
-                        world.queue_trigger(target, PointerEvent::Press(press));
-                        world.queue_trigger(target, PointerEvent::Release(capture.clone()));
-                    }
-                    LayerDragState::None
-                }
+                (LayerDragState::None, PointerEvent::Move(_)) => LayerDragState::None,
+                (LayerDragState::None, PointerEvent::Release(_)) => LayerDragState::None,
 
                 // Drag
                 (
@@ -410,6 +396,7 @@ impl Element for LayerDrag {
                         last_instant,
                         velocity,
                         zoom_velocity,
+                        pending,
                         ..
                     },
                     PointerEvent::Press(capture) | PointerEvent::Release(capture),
@@ -466,10 +453,14 @@ impl Element for LayerDrag {
                             last_instant: Instant::now(),
                             velocity,
                             zoom_velocity,
+                            pending: None,
                         }
                     } else {
                         this.velocity = term_velocity;
-                        // inertia is advanced by RenderPrepareControl, which only runs on redraw
+                        if !dragged && let Some(pending) = pending {
+                            world.queue_trigger(pending, PointerEvent::Press(capture.clone()));
+                            world.queue_trigger(pending, PointerEvent::Release(capture.clone()));
+                        }
                         lnwindow.window.request_redraw();
                         LayerDragState::None
                     }
@@ -483,6 +474,7 @@ impl Element for LayerDrag {
                         last_instant,
                         velocity,
                         zoom_velocity,
+                        pending,
                     },
                     PointerEvent::Move(capture),
                 ) => {
@@ -500,7 +492,16 @@ impl Element for LayerDrag {
                         utils.camera_distance_by_camera_zoom_center(distance);
                     }
 
-                    if this.ctrl {
+                    if held && let Some(pending) = pending {
+                        world.queue_trigger(
+                            world.single::<PointerTool>(),
+                            PointerTransfer {
+                                kind: capture.pointer.kind,
+                                target: pending,
+                            },
+                        );
+                        LayerDragState::None
+                    } else if this.ctrl {
                         utils.camera_cursor_by_anchor_center(center);
                         utils.camera_distance_by_anchor_zoom_cursor(1.0);
                         utils.write_camera(world, container);
@@ -518,6 +519,11 @@ impl Element for LayerDrag {
                             (prev_center - last_center).q32_as_f64(),
                         );
 
+                        let pending = match dragged {
+                            true => pending,
+                            false => None,
+                        };
+
                         // only the latest point in a pointer event batch is valid
                         // .. > (.. .. last) > (.. .. prev) > (now .. ..)
                         // what we evaluate here is (prev - last)
@@ -534,6 +540,7 @@ impl Element for LayerDrag {
                                 velocity: velocity * (1. - factor) + new_velocity * factor,
                                 zoom_velocity: zoom_velocity * (1. - factor)
                                     + new_zoom_velocity * factor,
+                                pending,
                             }
                         } else {
                             LayerDragState::Grab {
@@ -544,6 +551,7 @@ impl Element for LayerDrag {
                                 last_instant,
                                 velocity,
                                 zoom_velocity,
+                                pending,
                             }
                         }
                     }
@@ -598,6 +606,7 @@ impl Element for LayerDrag {
                             last_instant: Instant::now(),
                             velocity: DVec2::ZERO,
                             zoom_velocity: 0.0,
+                            pending: None,
                         }
                     }
                 }
@@ -931,10 +940,10 @@ fn update_drag_icon(
     lnwindow: &Lnwindow,
 ) {
     match (this.space, this.ctrl, mode, state) {
-        (true, true, _, LayerDragState::None | LayerDragState::Pending { .. }) => {
+        (true, true, _, LayerDragState::None) => {
             lnwindow.window.set_cursor(Cursor::Icon(CursorIcon::ZoomIn));
         }
-        (true, false, _, LayerDragState::None | LayerDragState::Pending { .. }) => {
+        (true, false, _, LayerDragState::None) => {
             lnwindow.window.set_cursor(Cursor::Icon(CursorIcon::Grab));
         }
         (false, true, _, LayerDragState::None) => {
@@ -996,42 +1005,6 @@ fn draw_group(pointer: &Pointer, input: &LayerDrag) -> bool {
         PointerKind::Mouse | PointerKind::TabletTool(_) => true,
         PointerKind::Touch(_) => input.touch_draw,
         PointerKind::Unknown => false,
-    }
-}
-
-fn grab(
-    this: &mut LayerDrag,
-    utils: &mut CameraUtils,
-    world: &World,
-    container: Handle<Nest>,
-    center: DVec2,
-    pinch: Option<f64>,
-) -> LayerDragState {
-    this.velocity = DVec2::ZERO;
-    utils.read_camera(world, container);
-    utils.anchor_cursor_by_anchor_center(DVec2::ZERO);
-    utils.camera_cursor_by_anchor_center(center);
-    if let Some(distance) = pinch {
-        utils.camera_distance_by_anchor_zoom_cursor(distance);
-    }
-
-    if this.ctrl {
-        utils.camera_distance_by_anchor_zoom_cursor(1.0);
-        utils.write_camera(world, container);
-        LayerDragState::Scale {
-            start_position: center,
-        }
-    } else {
-        utils.write_camera(world, container);
-        LayerDragState::Grab {
-            start_position: center,
-            start_pinch: pinch,
-            last_center: utils.camera_center(),
-            last_zoom: utils.camera_zoom(),
-            last_instant: Instant::now(),
-            velocity: DVec2::ZERO,
-            zoom_velocity: 0.0,
-        }
     }
 }
 
