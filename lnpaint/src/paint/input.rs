@@ -654,7 +654,7 @@ impl Element for LayerDraw {
         });
 
         let lnwindow = world.single::<Lnwindow>();
-        let mut drag = Drag::default();
+        let mut drag = Drag::new(2.0);
         let hold = Hold::default();
         let mut state = LayerDrawState::None;
         world.observer(this, move |event: &PointerEvent, world| {

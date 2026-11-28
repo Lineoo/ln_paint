@@ -3,7 +3,7 @@ use glam::DVec2;
 use crate::input::pointer::{PointerCapture, PointerEvent};
 
 /// Screen-pixel distance from the press point that starts a drag.
-const THRESHOLD: f64 = 20.0;
+const THRESHOLD: f64 = 40.0;
 
 /// Drag gesture state, fed with pointer events.
 ///
