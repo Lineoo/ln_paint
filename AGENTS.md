@@ -41,3 +41,4 @@ Documents in `docs/`. Most of them are in Chinese if not specially marked with l
 - `env.md` - Available environment variables.
 - `headless.en.md` - How to use headless rendering.
 - `ndk.md` - Android `cargo ndk` usage and `cargo ndk-env` fingerprint pitfalls. Not very useful for agents environment.
+- `android.md` - Android lifecycle/threading gotchas

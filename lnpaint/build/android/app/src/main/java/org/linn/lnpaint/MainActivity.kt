@@ -8,12 +8,6 @@ import android.view.WindowInsets
 import android.view.WindowInsetsController
 
 class MainActivity : NativeActivity() {
-    companion object {
-        init {
-            System.loadLibrary("lnpaint")
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         hideNavigationBar()
