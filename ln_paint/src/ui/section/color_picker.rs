@@ -2,6 +2,7 @@ use std::f32::consts::SQRT_2;
 
 use glam::{IVec2, UVec2, Vec4};
 use ln_world::{Element, Handle, World};
+use uuid::Uuid;
 
 use crate::{
     color::{hsl::Hsl, oklab::Oklab},
@@ -9,6 +10,7 @@ use crate::{
     paint::wrapper::LayerPage,
     render::nest::{NestAttr, NestBuilder, NestRect},
     res::Icon,
+    save::object::{Object, ObjectHandle},
     ui::{
         common::WidgetCommon,
         layout::transform::{Transform, TransformValue},
@@ -168,7 +170,7 @@ impl Element for ColorPickerButton {
                     .q32_round();
                 let rect = world.insert(Val::new(IRect::new_half(position, UVec2::splat(24))));
 
-                world.insert(ColorSnip {
+                let snip = world.insert(ColorSnip {
                     common: WidgetCommon {
                         camera: page_camera.handle(),
                         ..this.common
@@ -178,6 +180,11 @@ impl Element for ColorPickerButton {
                         position,
                         color: page.color(),
                     },
+                });
+
+                world.insert(Object {
+                    uuid: Uuid::now_v7(),
+                    handle: ObjectHandle::ColorSnip(snip),
                 });
 
                 rect
